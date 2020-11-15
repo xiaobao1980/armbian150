@@ -63,16 +63,6 @@ elif [[ $BOARD == rockpi-s ]]; then
 	MINILOADER_BLOB='rk33/rk3308_miniloader_sd_nand_v1.13.bin'
 	BL31_BLOB='rk33/rk3308_bl31_v2.10.elf'
 
-elif [[ $BOARD == firefly-p1 ]]; then
-
-	BOOT_USE_BLOBS=yes
-	BOOT_SOC=rk3399
-
-	DDR_BLOB='rk33/rk3399_ddr_933MHz_v1.24.bin'
-	MINILOADER_BLOB='rk33/rk3399_miniloader_v1.19.bin'
-	BL31_BLOB='rk33/rk3399_bl31_v1.30.elf'
-#	BL31_ADDR="0x10000"
-
 else
 
 	ATFPATCHDIR='atf-rk3399'

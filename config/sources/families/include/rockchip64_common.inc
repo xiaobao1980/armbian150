@@ -82,9 +82,9 @@ case $BRANCH in
 
 	dev)
 
-		MAINLINE_KERNEL_SOURCE='git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git'
+		MAINLINE_KERNEL_SOURCE='https://github.com/torvalds/linux.git'
 		KERNELPATCHDIR='rockchip64-'$BRANCH
-		KERNELBRANCH="tag:v5.10-rc5"
+		KERNELBRANCH="tag:v5.10-rc6"
 		LINUXFAMILY=rockchip64
 		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
@@ -142,7 +142,7 @@ prepare_boot_configuration()
 
 	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
 
-		UBOOT_TARGET_MAP+=" rkspi_loader.img"
+		UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB tpl/u-boot-tpl.bin spl/u-boot-spl.bin u-boot.itb ${UBOOT_TARGET_MAP} rkspi_loader.img"
 
 	fi
 }
@@ -177,14 +177,7 @@ uboot_custom_postprocess()
 	RKBIN_DIR="$SRC/cache/sources/rkbin-tools"
 
 	if [[ $BOOT_USE_MAINLINE_ATF == yes || $BOOT_USE_TPL_SPL_BLOB == yes ]]; then
-
-		if [[ $BOOT_SUPPORT_SPI == yes ]]; then
-			tools/mkimage -n rk3399 -T rkspi -d tpl/u-boot-tpl.bin:spl/u-boot-spl.bin rkspi_tpl_spl.img
-			dd if=/dev/zero of=rkspi_loader.img count=8128 status=none
-			dd if=rkspi_tpl_spl.img of=rkspi_loader.img conv=notrunc status=none
-			dd if=u-boot.itb of=rkspi_loader.img seek=768 conv=notrunc status=none
-		fi
-
+		:
 	elif [[ $BOOT_USE_BLOBS == yes ]]; then
 
 		local tempfile=$(mktemp)
@@ -218,6 +211,13 @@ uboot_custom_postprocess()
 		echo "Unsupported u-boot processing configuration!"
 		exit 1
 	fi
+
+	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
+		tools/mkimage -n $BOOT_SOC -T rkspi -d tpl/u-boot-tpl.bin:spl/u-boot-spl.bin rkspi_tpl_spl.img
+		dd if=/dev/zero of=rkspi_loader.img count=8128 status=none
+		dd if=rkspi_tpl_spl.img of=rkspi_loader.img conv=notrunc status=none
+		dd if=u-boot.itb of=rkspi_loader.img seek=768 conv=notrunc status=none
+	fi
 }
 
 write_uboot_platform()
@@ -249,7 +249,7 @@ write_uboot_platform_mtd()
 	if [[ -f $1/rkspi_loader.img ]]; then
 
 		dd if=$1/rkspi_loader.img of=$2 conv=notrunc status=none >/dev/null 2>&1
-	
+
 	else
 
 		echo "SPI u-boot image not found!"
@@ -329,7 +329,7 @@ family_tweaks()
 family_tweaks_bsp()
 {
 
-	if [[ $BOOTCONFIG == *3328* ]] && [[ $BRANCH != legacy ]]; then	
+	if [[ $BOOTCONFIG == *3328* ]] && [[ $BRANCH != legacy ]]; then
 		mkdir -p "$destination"/etc/X11/xorg.conf.d
 		cat <<-EOF > "$destination"/etc/X11/xorg.conf.d/02-driver.conf
 		# set fbdev as default driver.
@@ -367,7 +367,7 @@ family_tweaks_bsp()
 		mkdir -p $destination/etc/udev/hwdb.d/
 		cp $SRC/packages/bsp/pinebook-pro/10-usb-kbd.hwdb $destination/etc/udev/hwdb.d/
 		## brightness and power management defaults
-		mkdir -p $destination/usr/local/share/xdg/xfce4/xfconf/xfce-perchannel-xml/		
+		mkdir -p $destination/usr/local/share/xdg/xfce4/xfconf/xfce-perchannel-xml/
 		cp $SRC/packages/bsp/pinebook-pro/xfce4-power-manager.xml $destination/usr/local/share/xdg/xfce4/xfconf/xfce-perchannel-xml/
 		## additional keyboard configs in lib/desktop.sh
 

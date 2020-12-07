@@ -1,11 +1,13 @@
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -86,6 +86,7 @@
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-evb-rev3-cros.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-firefly-android.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-firefly-linux.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-roc-pc-mezzanine.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-fpga.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-gru-gru.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-gru-kevin-r0.dtb
+@@ -16,7 +16,8 @@
+ 	rk3399-nanopi4-rev22.dtb \
+ 	rk3399-kobol-helios64.dtb \
+ 	rk3399-firefly.dtb \
+-	rk3399-roc-pc.dtb
++	rk3399-roc-pc.dtb \
++	rk3399-roc-pc-mezzanine.dtb
+ 
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
+ 	rk3328-nanopi-r2-rev00.dtb \
 

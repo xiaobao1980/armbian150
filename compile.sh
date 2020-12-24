@@ -75,7 +75,7 @@ update_src() {
 				fi
 			done
 		else
-			git checkout "${LIB_TAG:-armbian-tv}"
+			git checkout "${LIB_TAG:-master}"
 			git pull
 		fi
 	fi

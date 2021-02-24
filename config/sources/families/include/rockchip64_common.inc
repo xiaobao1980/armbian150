@@ -8,7 +8,7 @@ BOOTDELAY=0
 OVERLAY_PREFIX='rockchip'
 SERIALCON=${SERIALCON:=$([ $BRANCH == "legacy" ] && echo "ttyFIQ0:1500000" || echo "ttyS2:1500000")}
 GOVERNOR="ondemand"
-BOOTBRANCH="tag:v2020.07"
+BOOTBRANCH="tag:v2021.01"
 PACKAGE_LIST_FAMILY="ethtool"
 
 RKBIN_DIR="$SRC/cache/sources/rkbin-tools"
@@ -25,7 +25,7 @@ else # rk3308, rk3328
 
 fi
 
-if [[ $BOARD == nanopi-r2s || $BOARD == rockpi-e || $BOARD == nanopineo3 || $BOARD == renegade || $BOARD == station-m1 ]]; then
+if [[ $BOARD == nanopi-r2s || $BOARD == rockpi-e || $BOARD == nanopineo3 || $BOARD == renegade || $BOARD == station-m1 || $BOARD == z28pro ]]; then
 
 	BOOT_USE_BLOBS=yes
 	BOOT_SOC=rk3328
@@ -48,7 +48,16 @@ elif [[ $BOARD == pinebook-pro ]]; then
 	BOOT_SOC=rk3399
 	ATFPATCHDIR='atf-rk3399'
 
-elif [[ $BOARD == rockpi-4* || $BOARD == station-p1 ]]; then
+elif [[ $BOARD == rockpi-4* ]]; then
+
+	BOOT_USE_BLOBS=yes
+	BOOT_SUPPORT_SPI=yes
+	BOOT_SOC=rk3399
+	DDR_BLOB='rk33/rk3399_ddr_933MHz_v1.20.bin' # 1GB model does not boot with later versions
+	MINILOADER_BLOB='rk33/rk3399_miniloader_v1.19.bin'
+	BL31_BLOB='rk33/rk3399_bl31_v1.30.elf'
+
+elif [[ $BOARD == station-p1 ]]; then
 
 	BOOT_USE_BLOBS=yes
 	BOOT_SUPPORT_SPI=yes
@@ -83,7 +92,7 @@ case $BRANCH in
 	current)
 
 		KERNELPATCHDIR='rockchip64-'$BRANCH
-		KERNELBRANCH="branch:linux-5.9.y"
+		KERNELBRANCH="branch:linux-5.10.y"
 		LINUXFAMILY=rockchip64
 		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
@@ -92,7 +101,7 @@ case $BRANCH in
 	dev)
 
 		KERNELPATCHDIR='rockchip64-'$BRANCH
-		KERNELBRANCH="branch:linux-5.10.y"
+		KERNELBRANCH="branch:linux-5.11.y"
 		LINUXFAMILY=rockchip64
 		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
@@ -173,7 +182,7 @@ legacy_uboot_locations()
 uboot_custom_postprocess()
 {
 	if [ "$(uname -m)" = "aarch64" ]; then
-		if [ "$(lsb_release -sc)" = "focal" ]; then
+		if [ "$(lsb_release -sc)" = "focal" -o "$(lsb_release -sc)" = "hirsute" ]; then
 			PKG_PREFIX="qemu-x86_64-static "
 		else
 			PKG_PREFIX="qemu-x86_64 "
@@ -363,7 +372,7 @@ family_tweaks_bsp()
 		install -m 755 $SRC/packages/bsp/rk3399/brcm_patchram_plus_rk3399 $destination/usr/bin
 		cp $SRC/packages/bsp/rk3399/rk3399-bluetooth.service $destination/lib/systemd/system/
 
-		if [[ $BOARD == nanop*4* || $BOARD == firefly* ]]; then
+		if [[ $BOARD == nanop*4* || $BOARD == firefly* || $BOARD == orangepi-rk3399 ]]; then
 			sed -i s%BCM4345C5%BCM4356A2%g $destination/lib/systemd/system/rk3399-bluetooth.service
 		fi
 	fi
@@ -419,6 +428,7 @@ family_tweaks_bsp()
 		# UPS service
 		cp $SRC/packages/bsp/helios64/helios64-ups.service $destination/lib/systemd/system/
 		cp $SRC/packages/bsp/helios64/helios64-ups.timer $destination/lib/systemd/system/
+		install -m 755 $SRC/packages/bsp/helios64/helios64-ups.sh $destination/usr/bin/helios64-ups.sh
 
 	fi
 

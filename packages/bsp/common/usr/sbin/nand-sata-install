@@ -30,14 +30,14 @@ if grep -q 'sun4i' /proc/cpuinfo; then DEVICE_TYPE="a10";
 elif grep -q 'sun5i' /proc/cpuinfo; then DEVICE_TYPE="a13";
 else DEVICE_TYPE="a20"; fi
 BOOTLOADER="${CWD}/${DEVICE_TYPE}/bootloader"
-case ${LINUXFAMILY} in
-	rk3328|rk3399|rockchip64|rockpis)
+#case ${LINUXFAMILY} in
+#	rk3328|rk3399|rockchip64|rockpis)
 		FIRSTSECTOR=32768
-		;;
-	*)
-		FIRSTSECTOR=8192
-		;;
-esac
+#		;;
+#	*)
+#		FIRSTSECTOR=8192
+#		;;
+#esac
 
 #recognize_root
 root_uuid=$(sed -e 's/^.*root=//' -e 's/ .*$//' < /proc/cmdline)
@@ -65,11 +65,11 @@ fi
 mkopts[btrfs]='-f'
 mkopts[f2fs]='-f'
 
-mountopts[ext2]='defaults,noatime,nodiratime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
-mountopts[ext3]='defaults,noatime,nodiratime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
-mountopts[ext4]='defaults,noatime,nodiratime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
-mountopts[btrfs]='defaults,noatime,nodiratime,commit=600,compress=lzo,x-gvfs-hide			0	2'
-mountopts[f2fs]='defaults,noatime,nodiratime,x-gvfs-hide	0	2'
+mountopts[ext2]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
+mountopts[ext3]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
+mountopts[ext4]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
+mountopts[btrfs]='defaults,noatime,commit=600,compress=lzo,x-gvfs-hide			0	2'
+mountopts[f2fs]='defaults,noatime,x-gvfs-hide	0	2'
 
 # Create boot and root file system "$1" = boot, "$2" = root (Example: create_armbian "/dev/nand1" "/dev/sda3")
 create_armbian()
@@ -212,7 +212,7 @@ create_armbian()
 		echo "Finishing installation to NAND." >> $logfile
 		REMOVESDTXT="and remove SD to boot from NAND"
 		echo "$1 /boot vfat	defaults 0 0" >> "${TempDir}"/rootfs/etc/fstab
-		echo "$2 / ext4 defaults,noatime,nodiratime,commit=600,errors=remount-ro 0 1" >> "${TempDir}"/rootfs/etc/fstab
+		echo "$2 / ext4 defaults,noatime,commit=600,errors=remount-ro 0 1" >> "${TempDir}"/rootfs/etc/fstab
 		dialog --title "$title" --backtitle "$backtitle" --infobox "\nConverting kernel ... few seconds." 5 60
 		mkimage -A arm -O linux -T kernel -C none -a "0x40008000" -e "0x40008000" -n "Linux kernel" -d \
 			/boot/zImage "${TempDir}"/bootfs/uImage >/dev/null 2>&1
@@ -279,7 +279,13 @@ create_armbian()
 			[[ -f "${TempDir}"/bootfs/boot/boot.ini ]] && sed -e 's,^setenv rootdev.*$,setenv rootdev "'"$targetuuid"'",' -i "${TempDir}"/bootfs/boot/boot.ini
 			[[ -f "${TempDir}"/rootfs/boot/boot.ini ]] && sed -e 's,^setenv rootdev.*$,setenv rootdev "'"$targetuuid"'",' -i "${TempDir}"/rootfs/boot/boot.ini
 		fi
-		mkimage -C none -A arm -T script -d "${TempDir}"/bootfs/boot/boot.cmd "${TempDir}"/bootfs/boot/boot.scr	>/dev/null 2>&1 || (echo 'Error while creating U-Boot loader image with mkimage' >&2 ; exit 5)
+
+		if [[ -f "${TempDir}"/bootfs/boot/extlinux/extlinux.conf ]]; then
+			sed -e 's,root='"$root_uuid"',root='"$targetuuid"',g' -i "${TempDir}"/bootfs/boot/extlinux/extlinux.conf
+			[[ -f "${TempDir}"/bootfs/boot/boot.cmd ]] && rm "${TempDir}"/bootfs/boot/boot.cmd
+		else
+			mkimage -C none -A arm -T script -d "${TempDir}"/bootfs/boot/boot.cmd "${TempDir}"/bootfs/boot/boot.scr	>/dev/null 2>&1 || (echo 'Error while creating U-Boot loader image with mkimage' >&2 ; exit 5)
+		fi
 
 		# fstab adj
 		if [[ "$1" != "$2" ]]; then

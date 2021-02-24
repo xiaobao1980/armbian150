@@ -129,7 +129,7 @@ get_package_list_hash()
 
 # create_sources_list <release> <basedir>
 #
-# <release>: stretch|buster|bullseye|xenial|bionic|groovy|focal
+# <release>: stretch|buster|bullseye|xenial|bionic|groovy|focal|groovy|hirsute|sid
 # <basedir>: path to root directory
 #
 create_sources_list()
@@ -139,7 +139,7 @@ create_sources_list()
 	[[ -z $basedir ]] && exit_with_error "No basedir passed to create_sources_list"
 
 	case $release in
-	stretch|buster|bullseye)
+	stretch|buster|bullseye|sid)
 	cat <<-EOF > "${basedir}"/etc/apt/sources.list
 	deb http://${DEBIAN_MIRROR} $release main contrib non-free
 	#deb-src http://${DEBIAN_MIRROR} $release main contrib non-free
@@ -155,7 +155,7 @@ create_sources_list()
 	EOF
 	;;
 
-	xenial|bionic|groovy|focal)
+	xenial|bionic|groovy|focal|groovy|hirsute)
 	cat <<-EOF > "${basedir}"/etc/apt/sources.list
 	deb http://${UBUNTU_MIRROR} $release main restricted universe multiverse
 	#deb-src http://${UBUNTU_MIRROR} $release main restricted universe multiverse
@@ -598,30 +598,48 @@ display_alert "Building kernel splash logo" "$RELEASE" "info"
 
 
 
+DISTRIBUTIONS_DESC_DIR="config/distributions"
+
 function distro_menu ()
 {
 # create a select menu for choosing a distribution based EXPERT status
-# also sets DISTRIBUTION_STATUS which goes to BSP package / armbian-release
 
-	for i in "${!distro_name[@]}"
-	do
-		if [[ "${i}" == "${1}" ]]; then
-			if [[ "${distro_support[$i]}" != "supported" && $EXPERT != "yes" ]]; then
-				:
-			else
-				local text=""
-				[[ $EXPERT == "yes" ]] && local text="(${distro_support[$i]})"
-				options+=("$i" "${distro_name[$i]} $text")
-			fi
-			DISTRIBUTION_STATUS=${distro_support[$i]}
-			break
+	local distrib_dir="${1}"
+
+	if [[ -d "${distrib_dir}" && -f "${distrib_dir}/support" ]]; then
+		local support_level="$(cat "${distrib_dir}/support")"
+		if [[ "${support_level}" != "supported" && $EXPERT != "yes" ]]; then
+			:
+		else
+			local distro_codename="$(basename "${distrib_dir}")"
+			local distro_fullname="$(cat "${distrib_dir}/name")"
+			local expert_infos=""
+			[[ $EXPERT == "yes" ]] && expert_infos="(${support_level})"
+			options+=("${distro_codename}" "${distro_fullname} ${expert_infos}")
 		fi
-	done
+	fi
 
 }
 
 
+function distros_options() {
+	for distrib_dir in "${DISTRIBUTIONS_DESC_DIR}/"*; do
+		distro_menu "${distrib_dir}"
+	done
+}
 
+function set_distribution_status() {
+
+  local distro_support_desc_filepath="${DISTRIBUTIONS_DESC_DIR}/${RELEASE}/support"
+	if [[ ! -f "${distro_support_desc_filepath}" ]]; then
+		exit_with_error "Distribution ${distribution_name} does not exist"
+	else
+		DISTRIBUTION_STATUS="$(cat "${distro_support_desc_filepath}")"
+	fi
+	
+	[[ "${DISTRIBUTION_STATUS}" != "supported" ]] && [[ "${EXPERT}" != "yes" ]] && exit_with_error "Armbian ${RELEASE} is unsupported and, therefore, only available to experts (EXPERT=yes)"
+	 
+}
 
 adding_packages()
 {
@@ -654,7 +672,7 @@ addtorepo()
 # parameter "delete" remove incoming directory if publishing is succesful
 # function: cycle trough distributions
 
-	local distributions=("xenial" "stretch" "bionic" "buster" "bullseye" "groovy" "focal")
+	local distributions=("xenial" "stretch" "bionic" "buster" "bullseye" "groovy" "focal" "hirsute" "sid")
 	local errors=0
 
 	for release in "${distributions[@]}"; do
@@ -766,7 +784,7 @@ addtorepo()
 
 
 repo-manipulate() {
-	local DISTROS=("xenial" "stretch" "bionic" "buster" "bullseye" "groovy" "focal")
+	local DISTROS=("xenial" "stretch" "bionic" "buster" "bullseye" "groovy" "focal" "hirsute" "sid")
 	case $@ in
 		serve)
 			# display repository content
@@ -992,15 +1010,15 @@ prepare_host()
 	nfs-kernel-server btrfs-progs ncurses-term p7zip-full kmod dosfstools libc6-dev-armhf-cross imagemagick \
 	curl patchutils liblz4-tool libpython2.7-dev linux-base swig aptly acl python3-dev \
 	locales ncurses-base pixz dialog systemd-container udev libc6 qemu\
-	bison libbison-dev flex libfl-dev cryptsetup gpg gnupg1 cpio aria2 pigz dirmngr python3-distutils jq"
+	bison libbison-dev flex libfl-dev cryptsetup gpg gnupg1 cpio aria2 pigz dirmngr python3-distutils"
 
 # build aarch64
   fi
 
 	local codename=$(lsb_release -sc)
 
-	# Getting ready for Ubuntu 20.04
-	if [[ $codename == focal || $codename == groovy || $codename == ulyana ]]; then
+	# Add support for Ubuntu 20.04, 21.04 and Mint Ulyana
+	if [[ $codename =~ ^(focal|groovy|hirsute|ulyana)$ ]]; then
 		hostdeps+=" python2 python3"
 		ln -fs /usr/bin/python2.7 /usr/bin/python2
 		ln -fs /usr/bin/python2.7 /usr/bin/python
@@ -1010,13 +1028,12 @@ prepare_host()
 
 	display_alert "Build host OS release" "${codename:-(unknown)}" "info"
 
-	# Ubuntu Focal x86_64 is the only fully supported host OS release
-	# Ubuntu Bionic x86_64 support is no longer supported
+	# Ubuntu 20.04.x (Focal) x86_64 is the only fully supported host OS release
 	# Using Docker/VirtualBox/Vagrant is the only supported way to run the build script on other Linux distributions
 	#
 	# NO_HOST_RELEASE_CHECK overrides the check for a supported host system
-	# Disable host OS check at your own risk, any issues reported with unsupported releases will be closed without a discussion
-	if [[ -z $codename || "buster groovy focal debbie tricia ulyana" != *"$codename"* ]]; then
+	# Disable host OS check at your own risk. Any issues reported with unsupported releases will be closed without discussion
+	if [[ -z $codename || "buster groovy focal hirsute debbie tricia ulyana" != *"$codename"* ]]; then
 		if [[ $NO_HOST_RELEASE_CHECK == yes ]]; then
 			display_alert "You are running on an unsupported system" "${codename:-(unknown)}" "wrn"
 			display_alert "Do not report any errors, warnings or other issues encountered beyond this point" "" "wrn"
@@ -1032,7 +1049,7 @@ prepare_host()
 # build aarch64
   if [[ $(dpkg --print-architecture) == amd64 ]]; then
 
-	if [[ -z $codename || "focal" == "$codename" || "groovy" == "$codename"  || "debbie" == "$codename"  || "buster" == "$codename" || "ulyana" == "$codename" ]]; then
+	if [[ -z $codename || $codename =~ ^(focal|groovy|debbie|buster|hirsute|ulyana)$ ]]; then
 	    hostdeps="${hostdeps/lib32ncurses5 lib32tinfo5/lib32ncurses6 lib32tinfo6}"
 	fi
 

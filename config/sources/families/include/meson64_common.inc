@@ -5,6 +5,7 @@ LINUXFAMILY=meson64
 ARCH=arm64
 SERIALCON=ttyAML0
 SRC_LOADADDR='LOADADDR=0x1080000'
+BOOTBRANCH="tag:v2021.01"
 OVERLAY_PREFIX='meson'
 
 # this family does not need it
@@ -19,15 +20,9 @@ CPUMAX=1536000
 GOVERNOR=conservative
 
 case $BRANCH in
-	
-	legacy)
-		KERNELSOURCE='https://github.com/hardkernel/linux'
-		KERNELBRANCH='branch:odroidg12-4.9.y'
-		KERNELDIR='linux-odroid'
-	;;
 
         current)
-                KERNELBRANCH='branch:linux-5.9.y'
+                KERNELBRANCH='branch:linux-5.10.y'
                 KERNELPATCHDIR='meson64-current'
         ;;
 
@@ -39,7 +34,7 @@ case $BRANCH in
 esac
 
 if [ "$(uname -m)" = "aarch64" ]; then
-	if [ "$(lsb_release -sc)" = "focal" ]; then
+	if [ "$(lsb_release -sc)" = "focal" -o "$(lsb_release -sc)" = "hirsute" ]; then
 		PKG_PREFIX="qemu-x86_64-static "
 	else
 		PKG_PREFIX="qemu-x86_64 "
@@ -215,11 +210,43 @@ family_tweaks_bsp()
 	install -m 755 $SRC/packages/bsp/rockchip/hdmi-hotplug $destination/usr/local/bin
 
 	mkdir -p "$destination"/etc/X11/xorg.conf.d
+	if [[ $BOARD == odroidc2 || $BOARD == nanopik2 || $BOARD == lepatato || $BOARD == lafrite || $BOARD == vim1 ]]; then 
+
 	cat <<-EOF > "$destination"/etc/X11/xorg.conf.d/02-driver.conf
 	# set fbdev as default driver.
 	Section "Device"
-         Identifier "NOGPU"
-         Driver "fbdev"
-	EndSection
+	    Identifier "NOGPU"
+	    Driver "fbdev"
+	    EndSection
 	EOF
+
+	elif [[ $BOARD == odroidn2 || $BOARD == odroidc4 || $BOARD == vim2 ]]; then
+
+	cat <<-EOF > "$destination"/etc/X11/xorg.conf
+	Section "Device"
+	    Identifier  "Armsoc Graphics"
+	    
+	    ## Use armsoc driver
+	    #   Driver          "armsoc"
+	    ## End armsoc configuration
+	    
+	    ## Use modesetting and glamor
+	        Driver      "modesetting"
+	        Option      "AccelMethod"    "glamor"     ### "glamor" to enable 3D acceleration, "none" to disable.
+	        Option      "DRI"            "2"
+	        Option      "Dri2Vsync"      "true"
+	        Option      "TripleBuffer"   "True"
+	    ## End glamor configuration
+	    
+	    EndSection
+       
+	    Section "Screen"
+	        Identifier "Default Screen"
+	            SubSection "Display"
+	                Depth 24
+	            EndSubSection
+	        EndSection
+	EOF
+
+	fi
 }

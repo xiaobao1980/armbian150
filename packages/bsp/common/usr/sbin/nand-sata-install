@@ -327,6 +327,10 @@ create_armbian()
 			sed -e 's,setenv rootfstype.*,setenv rootfstype '"$FilesystemChoosen"',' -i /boot/boot.cmd
 			sed -e 's,setenv rootfstype.*,setenv rootfstype '"$FilesystemChoosen"',' -i /boot/boot.ini
 		fi
+		if [[ -f /bootfs/boot/extlinux/extlinux.conf ]]; then
+			sed -e 's,root='"$root_uuid"',root='"$satauuid"',g' -i /boot/extlinux/extlinux.conf
+			[[ -f /boot/boot.cmd ]] && rm /boot/boot.cmd
+		fi
 		[[ -f /boot/boot.cmd ]] && mkimage -C none -A arm -T script -d /boot/boot.cmd /boot/boot.scr >/dev/null 2>&1 || (echo 'Error while creating U-Boot loader image with mkimage' >&2 ; exit 7)
 		mkdir -p "${TempDir}"/rootfs/media/mmc/boot
 		echo "${sduuid}	/media/mmcboot	ext4    ${mountopts[ext4]}" >> "${TempDir}"/rootfs/etc/fstab

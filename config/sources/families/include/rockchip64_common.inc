@@ -96,6 +96,12 @@ case $BRANCH in
 		LINUXFAMILY=rockchip64
 		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
+		if [[ $BOARD == station* ]]; then
+			KERNELPATCHDIR='station-'$BRANCH
+			LINUXFAMILY=station
+			LINUXCONFIG='linux-station-'$BRANCH
+		fi
+
 	;;
 
 	dev)

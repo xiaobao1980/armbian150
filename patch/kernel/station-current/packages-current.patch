@@ -24,7 +24,7 @@
  	# Create postinst prerm scripts for headers
  	if [ "$3" = "headers" ]; then
  
-@@ -141,7 +124,6 @@
+@@ -142,7 +125,6 @@
  kernel_headers_dir="$objtree/debian/hdrtmp"
  libc_headers_dir="$objtree/debian/headertmp"
  dbg_dir="$objtree/debian/dbgtmp"
@@ -32,7 +32,7 @@
  packagename=linux-image-"$BRANCH$LOCALVERSION"
  kernel_headers_packagename=linux-headers-"$BRANCH$LOCALVERSION"
  dtb_packagename=linux-dtb-"$BRANCH$LOCALVERSION"
-@@ -178,9 +160,7 @@
+@@ -179,9 +161,7 @@
  BUILD_DEBUG=$(if_enabled_echo CONFIG_DEBUG_INFO Yes)
  
  # Setup the directory structure
@@ -43,16 +43,16 @@
  mkdir -m 755 -p "$tmpdir/DEBIAN"
  mkdir -p "$tmpdir/lib" "$tmpdir/boot"
  mkdir -p "$kernel_headers_dir/lib/modules/$version/"
-@@ -201,7 +181,7 @@
+@@ -202,7 +182,7 @@
  if is_enabled CONFIG_OF_EARLY_FLATTREE; then
  	# Only some architectures with OF support have this target
  	if [ -d "${srctree}/arch/$SRCARCH/boot/dts" ]; then
 -		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/usr/lib/$packagename" dtbs_install
-+		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/dtb" dtbs_install
++		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/dtb/" dtbs_install
  	fi
  fi
  
-@@ -232,11 +212,6 @@
+@@ -233,11 +213,6 @@
  	fi
  fi
  
@@ -64,27 +64,8 @@
  if [ "$ARCH" != "um" ]; then
  	$MAKE -f $srctree/Makefile headers
  	$MAKE -f $srctree/Makefile headers_install INSTALL_HDR_PATH="$libc_headers_dir/usr"
-@@ -272,44 +247,21 @@
- 	chmod 755 "$tmpdir/DEBIAN/$script"
- done
- 
--##
--## Create sym link to kernel image
--##
-+## Add postinstall
- sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/postinst
--cat >> $tmpdir/DEBIAN/postinst <<EOT
--ln -sf $(basename $installed_image_path) /boot/$image_name 2> /dev/null || mv /$installed_image_path /boot/$image_name
--touch /boot/.next
-+cat >> $tmpdir/DEBIAN/postinst <<EOT
-+mv /$installed_image_path /boot/$image_name
- exit 0
- EOT
- 
--##
--## FAT install workaround
--##
-+## Add preinstall
+@@ -288,29 +263,11 @@
+ ##
  sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/preinst
  cat >> $tmpdir/DEBIAN/preinst <<EOT
 -# exit if we are running chroot
@@ -117,7 +98,7 @@
  
  # Build kernel header package
  (cd $srctree; find . -name Makefile\* -o -name Kconfig\* -o -name \*.pl) > "$objtree/debian/hdrsrcfiles"
-@@ -337,7 +289,6 @@
+@@ -339,7 +296,6 @@
  
  if [ "$ARCH" != "um" ]; then
  	create_package "$kernel_headers_packagename" "$kernel_headers_dir" "headers"

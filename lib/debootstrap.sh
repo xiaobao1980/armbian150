@@ -613,27 +613,32 @@ prepare_partitions()
 			sed -i "s/console=.*/console=$DEFAULT_CONSOLE/" $SDCARD/boot/armbianEnv.txt
 		else
 			echo "console=$DEFAULT_CONSOLE" >> $SDCARD/boot/armbianEnv.txt
-        fi
+	        fi
 	fi
 
-	if [[ $SRC_EXTLINUX == yes ]]; then
-		mkdir -p $SDCARD/boot/extlinux
+#	if [[ $SRC_EXTLINUX == yes ]]; then
+#		mkdir -p $SDCARD/boot/extlinux
 
-		cat << EOF > "$SDCARD/boot/extlinux/extlinux.conf"
-LABEL Armbian
-  LINUX /boot/Image
-  INITRD /boot/uInitrd
-  FDT /boot/dtb/$BOOT_FDT_FILE
-  APPEND root=$rootfs $SRC_CMDLINE rootflags=data=writeback rw no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 bootsplash.bootfile=bootsplash.armbian
-EOF
+#		cat << EOF > "$SDCARD/boot/extlinux/extlinux.conf"
+#LABEL Armbian
+#  LINUX /boot/Image
+#  INITRD /boot/uInitrd
+#  FDT /boot/dtb/$BOOT_FDT_FILE
+#  APPEND root=$rootfs $SRC_CMDLINE rootflags=data=writeback rw no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 bootsplash.bootfile=bootsplash.armbian
+#EOF
 
-		[[ -f $SDCARD/boot/armbianEnv.txt ]] && rm $SDCARD/boot/armbianEnv.txt
-		[[ -f $SDCARD/boot/boot.cmd ]] && rm $SDCARD/boot/boot.cmd
-	fi
+#		[[ -f $SDCARD/boot/armbianEnv.txt ]] && rm $SDCARD/boot/armbianEnv.txt
+#		[[ -f $SDCARD/boot/boot.cmd ]] && rm $SDCARD/boot/boot.cmd
+#	fi
 
 	# recompile .cmd to .scr if boot.cmd exists
 	[[ -f $SDCARD/boot/boot.cmd ]] && \
 		mkimage -C none -A arm -T script -d $SDCARD/boot/boot.cmd $SDCARD/boot/boot.scr > /dev/null 2>&1
+
+	if [[ -f $SDCARD/boot/extlinux/extlinux.conf ]]; then
+		echo "  APPEND root=$rootfs $SRC_CMDLINE $MAIN_CMDLINE" >> $SDCARD/boot/extlinux/extlinux.conf
+		[[ -f $SDCARD/boot/armbianEnv.txt ]] && rm $SDCARD/boot/armbianEnv.txt
+	fi
 
 } #############################################################################
 

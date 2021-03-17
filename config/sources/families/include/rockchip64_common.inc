@@ -100,6 +100,7 @@ case $BRANCH in
 			KERNELPATCHDIR='station-'$BRANCH
 			LINUXFAMILY=station
 			LINUXCONFIG='linux-station-'$BRANCH
+			EXTRAWIFI_LOCAL="yes"
 		fi
 
 	;;

@@ -165,14 +165,25 @@ install_common()
 	local bootscript_src=${BOOTSCRIPT%%:*}
 	local bootscript_dst=${BOOTSCRIPT##*:}
 
-	if [[ $SRC_EXTLINUX == yes ]]; then
-		mkdir -p $SDCARD/boot/extlinux
+#	if [[ $SRC_EXTLINUX == yes ]]; then
+#		mkdir -p $SDCARD/boot/extlinux
 
-		cat << EOF > "$SDCARD/boot/extlinux/extlinux.conf"
-LABEL Armbian
-  LINUX /boot/$NAME_KERNEL
-  INITRD /boot/$NAME_INITRD
-  FDT /boot/dtb/$BOOT_FDT_FILE
+#		cat << EOF > "$SDCARD/boot/extlinux/extlinux.conf"
+#LABEL Armbian
+#  LINUX /boot/$NAME_KERNEL
+#  INITRD /boot/$NAME_INITRD
+#  FDT /boot/dtb/$BOOT_FDT_FILE
+#EOF
+
+# create extlinux config file
+    if [[ $SRC_EXTLINUX == yes ]]; then
+
+	mkdir -p $SDCARD/boot/extlinux
+	cat <<-EOF > "$SDCARD/boot/extlinux/extlinux.conf"
+	LABEL Armbian
+	  LINUX /boot/Image
+	  INITRD /boot/uInitrd
+	  FDT /boot/dtb/$BOOT_FDT_FILE
 EOF
 
 	else

@@ -211,7 +211,7 @@ create_board_package()
     rootdev=\$(sed -e 's/^.*root=//' -e 's/ .*\$//' < /proc/cmdline)
     rootfstype=\$(sed -e 's/^.*rootfstype=//' -e 's/ .*$//' < /proc/cmdline)
 
-    # recreate armbianEnv.txt only not exists
+    # recreate armbianEnv.txt if it and extlinux does not exists
     if [ ! -f /boot/armbianEnv.txt ] && [ ! -f /boot/extlinux/extlinux.conf ]; then
       cp /usr/share/armbian/armbianEnv.txt /boot  >/dev/null 2>&1
       echo "rootdev="\$rootdev >> /boot/armbianEnv.txt

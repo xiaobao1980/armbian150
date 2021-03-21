@@ -64,7 +64,12 @@
  if [ "$ARCH" != "um" ]; then
  	$MAKE -f $srctree/Makefile headers
  	$MAKE -f $srctree/Makefile headers_install INSTALL_HDR_PATH="$libc_headers_dir/usr"
-@@ -288,29 +263,11 @@
+@@ -284,33 +259,15 @@
+ EOT
+ 
+ ##
+-## FAT install workaround
++## Add preinstall
  ##
  sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/preinst
  cat >> $tmpdir/DEBIAN/preinst <<EOT

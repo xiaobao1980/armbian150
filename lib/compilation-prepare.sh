@@ -68,7 +68,8 @@ compilation_prepare()
 		process_patch_file "${SRC}/patch/misc/general-packaging-4.4.y-rockchip64.patch" "applying"
 	fi
 
-	if [[ "${version}" == "4.4."* ]] && [[ "$LINUXFAMILY" == rockchip || "$LINUXFAMILY" == rk322x ]]; then
+	if [[ "${version}" == "4.4."* ]] && \
+	[[ "$LINUXFAMILY" == rockchip || "$LINUXFAMILY" == rk322x || "$LINUXFAMILY" == rk3288 ]]; then
                 display_alert "Adjustin" "packaging" "info"
                 cd "$kerneldir" || exit
                 process_patch_file "${SRC}/patch/misc/general-packaging-4.4.y.patch" "applying"

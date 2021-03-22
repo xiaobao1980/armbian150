@@ -2,7 +2,7 @@
 BOARD_NAME="RK3288"
 BOARDFAMILY="rk3288"
 BOOTCONFIG="miqi-rk3288_defconfig"
-KERNEL_TARGET="current"
+KERNEL_TARGET="legacy,current,dev"
 FULL_DESKTOP="yes"
 BOOT_LOGO="desktop"
 BOOT_FDT_FILE="rk3288-firefly-reload.dtb"

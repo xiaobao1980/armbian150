@@ -173,9 +173,12 @@ install_common()
 		LABEL Armbian
 		  LINUX /boot/$NAME_KERNEL
 		  INITRD /boot/$NAME_INITRD
-		  FDT /boot/dtb/$BOOT_FDT_FILE
 	EOF
-
+		if [[ -n $BOOT_FDT_FILE ]]; then
+			echo "  FDT /boot/dtb/$BOOT_FDT_FILE" >> "$SDCARD/boot/extlinux/extlinux.conf"
+		else
+			echo "  FDTDIR /boot/dtb/" >> "$SDCARD/boot/extlinux/extlinux.conf"
+		fi
 	else
 
 		cp "${SRC}/config/bootscripts/${bootscript_src}" "${SDCARD}/boot/${bootscript_dst}"

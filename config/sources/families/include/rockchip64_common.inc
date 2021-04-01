@@ -101,6 +101,11 @@ case $BRANCH in
 			LINUXFAMILY=station
 			LINUXCONFIG='linux-station-'$BRANCH
 			EXTRAWIFI_LOCAL="yes"
+		elif [[ $BOARD == renegade ]]; then
+			KERNELPATCHDIR='station-'$BRANCH
+			LINUXFAMILY=renegade
+			LINUXCONFIG='linux-station-'$BRANCH
+			EXTRAWIFI_LOCAL="yes"
 		fi
 
 	;;

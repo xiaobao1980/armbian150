@@ -96,14 +96,9 @@ case $BRANCH in
 		LINUXFAMILY=rockchip64
 		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
-		if [[ $BOARD == station* ]]; then
+		if [[ $BOARD == station* || $BOARD == renegade ]]; then
 			KERNELPATCHDIR='station-'$BRANCH
 			LINUXFAMILY=station
-			LINUXCONFIG='linux-station-'$BRANCH
-			EXTRAWIFI_LOCAL="yes"
-		elif [[ $BOARD == renegade ]]; then
-			KERNELPATCHDIR='station-'$BRANCH
-			LINUXFAMILY=renegade
 			LINUXCONFIG='linux-station-'$BRANCH
 			EXTRAWIFI_LOCAL="yes"
 		fi

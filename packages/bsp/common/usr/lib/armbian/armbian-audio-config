@@ -158,9 +158,6 @@ do
   mixer $card 'Stereo DAC MIXL DAC L1' on
   mixer $card 'Stereo DAC MIXR DAC R1' on
 
-# Amlogic S8xx HDMI
-  mixer $card 'HDMI CTRL SRC' 'I2S'
-
 done
 
 fi

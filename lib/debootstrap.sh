@@ -143,7 +143,7 @@ create_rootfs_cache()
 
 	done
 
-	if [[ -f $cache_fname && ! -f $cache_fname.aria2 && "$ROOT_FS_CREATE_ONLY" != "force" ]]; then
+	if [[ -f $cache_fname && ! -f $cache_fname.aria2 && "$ROOT_FS_CREATE_ONLY" = "force" ]]; then
 		local date_diff=$(( ($(date +%s) - $(stat -c %Y $cache_fname)) / 86400 ))
 		display_alert "Extracting $display_name" "$date_diff days old" "info"
 		pv -p -b -r -c -N "[ .... ] $display_name" "$cache_fname" | lz4 -dc | tar xp --xattrs -C $SDCARD/

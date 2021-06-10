@@ -164,11 +164,11 @@ if [[ "${1}" == docker && -f /etc/debian_version && -z "$(command -v docker)" ]]
 	[[ "${codename}" == "debbie" ]] && codename="buster" && codeid="debian"
 	[[ "${codename}" == "ulyana" ]] && codename="focal" && codeid="ubuntu"
 
-	# different binnaries for Hirsute
-	[[ "${codename}" == "hirsute" ]] && DOCKER_BINARY="docker containerd docker.io"
+	# different binaries for some. TBD. Need to check for all others
+	[[ "${codename}" =~ focal|hirsute ]] && DOCKER_BINARY="docker containerd docker.io"
 
 	display_alert "Docker not installed." "Installing" "Info"
-	echo "deb [arch=amd64] https://download.docker.com/linux/${codeid} ${codename} edge" > /etc/apt/sources.list.d/docker.list
+	echo "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/${codeid} ${codename} stable" > /etc/apt/sources.list.d/docker.list
 
 	# minimal set of utilities that are needed for prep
 	packages=("curl" "gnupg")

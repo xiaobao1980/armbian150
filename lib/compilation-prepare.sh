@@ -469,8 +469,11 @@ compilation_prepare()
 		if [ "$EXTRAWIFI_LOCAL" == yes ]; then
 			display_alert "No patch" "Realtek 8822BS" "info"
 		else
-			# add support for K5.12+
-			process_patch_file "${SRC}/patch/misc/wireless-realtek-8811cu-5.12.patch" "applying"
+		# add support for K5.11+
+		process_patch_file "${SRC}/patch/misc/wireless-rtl8811cu.patch" "applying"
+
+		# add support for K5.12+
+		process_patch_file "${SRC}/patch/misc/wireless-realtek-8811cu-5.12.patch" "applying"
 		fi
 
 	fi
@@ -519,7 +522,10 @@ compilation_prepare()
 		if [ "$EXTRAWIFI_LOCAL" == yes ]; then
 			display_alert "No patch" "Realtek 8822BS" "info"
 		else
-			process_patch_file "${SRC}/patch/misc/wireless-realtek-8188eu-5.12.patch" "applying"
+		process_patch_file "${SRC}/patch/misc/wireless-rtl8188eu.patch" "applying"
+
+		# add support for K5.12+
+		process_patch_file "${SRC}/patch/misc/wireless-realtek-8188eu-5.12.patch" "applying"
 		fi
 
 	fi
@@ -568,7 +574,8 @@ compilation_prepare()
 		if [ "$EXTRAWIFI_LOCAL" == yes ]; then
 			display_alert "No patch" "Realtek 88x2BU" "info"
 		else
-			process_patch_file "${SRC}/patch/misc/wireless-realtek-88x2bu-5.12.patch" "applying"
+		# add support for K5.12+
+		process_patch_file "${SRC}/patch/misc/wireless-realtek-88x2bu-5.12.patch" "applying"
 		fi
 
 	fi
@@ -621,11 +628,11 @@ compilation_prepare()
 		if [ "$EXTRAWIFI_LOCAL" == yes ]; then
 			display_alert "No patch" "Realtek 8822BS" "info"
 		else
-	                # add support for K5.11+
-	                process_patch_file "${SRC}/patch/misc/wireless-rtl8723ds.patch" "applying"
+                # add support for K5.11+
+                process_patch_file "${SRC}/patch/misc/wireless-rtl8723ds.patch" "applying"
 
-			# add support for K5.12+
-			process_patch_file "${SRC}/patch/misc/wireless-realtek-8723ds.patch" "applying"
+		# add support for K5.12+
+		process_patch_file "${SRC}/patch/misc/wireless-realtek-8723ds.patch" "applying"
 
 		fi
 
@@ -678,7 +685,7 @@ compilation_prepare()
 			cp "${SRC}/cache/sources/rtl8723du/${rtl8723duver#*:}/Kconfig" \
 			"$kerneldir/drivers/net/wireless/rtl8723du/Kconfig"
 		else
-			process_patch_file "${SRC}/patch/misc/wireless-rtl8723du.patch" "applying"
+		process_patch_file "${SRC}/patch/misc/wireless-rtl8723du.patch" "applying"
 		fi
 	fi
 

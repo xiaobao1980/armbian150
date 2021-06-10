@@ -149,7 +149,7 @@ create_rootfs_cache()
 		# speed up checking
 		if [[ -n "$ROOT_FS_CREATE_ONLY" ]]; then
 			touch $cache_fname.current
-			[[ $use_tmpfs = yes ]] && umount $SDCARD
+			umount --lazy "$SDCARD"
 			rm -rf $SDCARD
 			# remove exit trap
 			trap - INT TERM EXIT
@@ -367,7 +367,7 @@ create_rootfs_cache()
 
 	# used for internal purposes. Faster rootfs cache rebuilding
 	if [[ -n "$ROOT_FS_CREATE_ONLY" ]]; then
-		[[ $use_tmpfs = yes ]] && umount $SDCARD
+		umount --lazy "$SDCARD"
 		rm -rf $SDCARD
 		# remove exit trap
 		trap - INT TERM EXIT

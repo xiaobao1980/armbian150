@@ -1,0 +1,13 @@
+diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
+index 79dc02b956dc..357fd7671244 100644
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -386,6 +386,8 @@ int __irq_set_affinity(unsigned int irq, const struct cpumask *mask, bool force)
+ 	return ret;
+ }
+ 
++EXPORT_SYMBOL_GPL(__irq_set_affinity);
++
+ int irq_set_affinity_hint(unsigned int irq, const struct cpumask *m)
+ {
+ 	unsigned long flags;

@@ -1,22 +1,60 @@
-name: Armbian CI
+name: Build
 
 on:
-#  schedule:
-#     - cron:  '*/15 * * * *'
+  schedule:
+    - cron:  '0 4 * * *'
 
   workflow_dispatch:
 
-#  push:
-#    branches: master
-
-#  schedule:
-#    - cron:  '0 */3 * * *'
 
 jobs:
+
+    merge:
+
+      name: Merge nightly
+      runs-on: [self-hosted, Linux, x64]
+      if: ${{ github.repository_owner == 'Armbian' }}
+      steps:
+
+        - name: Checkout Armbian build script
+
+          uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+            repository: armbian/build
+            path: build
+            ref: nightly
+            clean: false
+
+        - name: Import GPG key
+
+          uses: crazy-max/ghaction-import-gpg@v3
+          with:
+            gpg-private-key: ${{ secrets.GPG_KEY2 }}
+            passphrase: ${{ secrets.GPG_PASSPHRASE2 }}
+            workdir: build
+            git-user-signingkey: true
+            git-commit-gpgsign: true
+
+        - name: Merge master into nightly
+
+          run: |
+
+            cd build
+            git config --global user.email "info@armbian.com"
+            git config --global user.name "Armbianworker"
+            git checkout master
+            git fetch
+            git merge origin/master
+            git checkout nightly
+            git merge master nightly
+            git push
+
 
     cache:
 
       name: Create rootfs cache
+      needs: merge
       runs-on: [self-hosted, Linux, x64, cache]
       if: ${{ github.repository_owner == 'Armbian' }}
       steps:
@@ -79,11 +117,12 @@ jobs:
 
             sudo apt-get -y -qq install parallel
             cd build/cache/rootfs
+            sudo chown -R $USER:$USER .
             (for file in $(ls | cut -d. -f1-4 | sort -u); do
                 if [ $(ls $file* | wc -l) -lt 3 ]; then
                    echo "$file"
                 fi
-            done) | parallel --jobs 32 'echo '${PASSPHRASE}' | sudo gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes {}'
+            done) | parallel --jobs 32 'echo '${PASSPHRASE}' | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes {}'
 
 #        - name: Install SSH key for storage
 #
@@ -177,6 +216,7 @@ jobs:
       #
 
       name: Changed beta kernels
+      needs: merge
       runs-on: [self-hosted, Linux, x64, big]
       if: ${{ github.repository_owner == 'Armbian' }}
       steps:
@@ -320,6 +360,7 @@ jobs:
       #
 
       name: Changed stable edge kernels
+      needs: merge
       runs-on: [self-hosted, Linux, x64, big]
       if: ${{ github.repository_owner == 'Armbian' }}
       steps:

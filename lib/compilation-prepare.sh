@@ -780,7 +780,7 @@ compilation_prepare()
 
 	# Remotectl RK
 
-	if linux-version compare "${version}" ge 3.14 && [[ "$LINUXFAMILY" == station* ]]; then
+	if linux-version compare "${version}" ge 5.9 && [[ "$LINUXFAMILY" == station* ]]; then
 
 		# attach to specifics tag or branch
 		display_alert "Adding" "Remotectl" "info"
@@ -804,7 +804,7 @@ compilation_prepare()
 
 	# RK ES8338
 
-	if linux-version compare "${version}" ge 3.14 && [[ "$LINUXFAMILY" == station* ]]; then
+	if linux-version compare "${version}" ge 5.9 && [[ "$LINUXFAMILY" == station* ]]; then
 
 		# attach to specifics tag or branch
 		display_alert "Adding" "ES8338" "info"
@@ -820,7 +820,7 @@ compilation_prepare()
 
 		# Add to section Makefile
 		echo "obj-\$(CONFIG_SND_SOC_ROCKCHIP_ES8388) += es8388/" >> $kerneldir/sound/soc/rockchip/Makefile
-#		echo "source "sound/soc/rockchip/es8388/Kconfig" >> $kerneldir/sound/soc/rockchip/Kconfig
+		echo "source \"sound/soc/rockchip/es8388/Kconfig\"" >> $kerneldir/sound/soc/rockchip/Kconfig
 
 	fi
 

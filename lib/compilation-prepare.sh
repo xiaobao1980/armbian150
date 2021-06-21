@@ -778,54 +778,6 @@ compilation_prepare()
 	fi
 
 
-	# Remotectl RK
-
-	if linux-version compare "${version}" ge 5.9 && [[ "$LINUXFAMILY" == station* ]]; then
-
-		# attach to specifics tag or branch
-		display_alert "Adding" "Remotectl" "info"
-
-		local remotectl="branch:remotectl"
-		fetch_from_repo "https://github.com/150balbes/wifi" "remotectl" "${remotectl}" "yes"
-	
-		cd "$kerneldir" || exit
-		rm -rf "$kerneldir/drivers/media/rc/remotectl"
-		mkdir -p $kerneldir/drivers/media/rc/remotectl/
-		cp -R "${SRC}/cache/sources/remotectl/remotectl/" $kerneldir/drivers/media/rc
-
-
-		# Add to section Makefile
-		echo "obj-\$(CONFIG_ROCKCHIP_REMOTECTL) += remotectl/" >> $kerneldir/drivers/media/rc/Makefile
-		sed -i '/source "drivers\/media\/rc\/keymaps\/Kconfig"/a source "drivers\/media\/rc\/remotectl\/Kconfig"' \
-		$kerneldir/drivers/media/rc/Kconfig
-
-	fi
-
-
-	# RK ES8338
-
-	if linux-version compare "${version}" ge 5.9 && [[ "$LINUXFAMILY" == station* ]]; then
-
-		# attach to specifics tag or branch
-		display_alert "Adding" "ES8338" "info"
-
-		local es8388="branch:es8388"
-		fetch_from_repo "https://github.com/150balbes/wifi" "es8388" "${es8388}" "yes"
-
-		cd "$kerneldir" || exit
-		rm -rf "$kerneldir/sound/soc/rockchip/es8388"
-		mkdir -p $kerneldir/sound/soc/rockchip/es8388/
-		cp -R "${SRC}/cache/sources/es8388/es8388" $kerneldir/sound/soc/rockchip
-
-
-		# Add to section Makefile
-		echo "obj-\$(CONFIG_SND_SOC_ROCKCHIP_ES8388) += es8388/" >> $kerneldir/sound/soc/rockchip/Makefile
-		echo "source \"sound/soc/rockchip/es8388/Kconfig\"" >> $kerneldir/sound/soc/rockchip/Kconfig
-
-	fi
-
-
-
 	if linux-version compare $version ge 4.4 && linux-version compare $version lt 5.8; then
 		display_alert "Adjusting" "Framebuffer driver for ST7789 IPS display" "info"
 		process_patch_file "${SRC}/patch/misc/fbtft-st7789v-invert-color.patch" "applying"

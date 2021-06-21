@@ -1,5 +1,3 @@
-diff --git a/sound/soc/codecs/es8328.c b/sound/soc/codecs/es8328.c
-index 7e26231a596a..9d89024ff0d6 100644
 --- a/sound/soc/codecs/es8328.c
 +++ b/sound/soc/codecs/es8328.c
 @@ -21,8 +21,13 @@
@@ -165,7 +163,7 @@ index 7e26231a596a..9d89024ff0d6 100644
 +
 +		if (hp_irq) {
 +			ret = devm_request_threaded_irq(dev, hp_irq, NULL, hp_det_irq_handler,
-+					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT, dev->of_node->name, NULL);
++					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT, "ES8323", NULL);
 +			if (ret < 0) {
 +				dev_err(dev, "request_irq failed: %d\n", ret);
 +				return ret;

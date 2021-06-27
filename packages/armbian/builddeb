@@ -80,6 +80,7 @@ EOT
 	chmod 775 $pdir/DEBIAN/prerm
 	fi
 
+
 	# Create the package
 	dpkg-gencontrol -p$pname -P"$pdir"
 	dpkg-deb --build "$pdir" ..

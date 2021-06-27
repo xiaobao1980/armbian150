@@ -635,8 +635,6 @@ compilation_prepare()
 		process_patch_file "${SRC}/patch/misc/wireless-realtek-8723ds.patch" "applying"
 
 		fi
-
-
 	fi
 
 
@@ -696,7 +694,7 @@ compilation_prepare()
 
 	# Wireless drivers for Realtek 8192CU chipsets
 
-	if linux-version compare "${version}" ge 3.14 && [ "$EXTRAWIFI_LOCAL" == yes ]; then
+	if linux-version compare "${version}" ge 5.14 && [ "$EXTRAWIFI_LOCAL" == yes ]; then
 
 		# attach to specifics tag or branch
 		display_alert "Adding" "Wireless drivers for Realtek 8192CU chipsets ${rtl8192cuver}" "info"

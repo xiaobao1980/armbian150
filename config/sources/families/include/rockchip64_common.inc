@@ -124,7 +124,6 @@ case $BRANCH in
 			KERNELPATCHDIR='station-'$BRANCH
 			LINUXFAMILY=station
 			LINUXCONFIG='linux-station-'$BRANCH
-			EXTRAWIFI_LOCAL="yes"
 		else
 			KERNELPATCHDIR='rockchip64-'$BRANCH
 			LINUXFAMILY=rockchip64

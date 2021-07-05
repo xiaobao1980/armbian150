@@ -143,7 +143,7 @@ get_package_list_hash()
 
 # create_sources_list <release> <basedir>
 #
-# <release>: stretch|buster|bullseye|xenial|bionic|groovy|focal|groovy|hirsute|sid
+# <release>: buster|bullseye|bionic|focal|hirsute|sid
 # <basedir>: path to root directory
 #
 create_sources_list()
@@ -816,7 +816,7 @@ repo-manipulate()
 # "update" search for new files in output/debs* to add them to repository
 # "purge" leave only last 5 versions
 
-	local DISTROS=($(grep -rw config/distributions/* -e 'supported' | cut -d"/" -f3))
+	local DISTROS=($(grep -rw config/distributions/*/ -e 'supported' | cut -d"/" -f3))
 
 	case $@ in
 
@@ -968,22 +968,26 @@ wait_for_package_manager()
 
 
 
-
 # prepare_host_basic
 #
 # * installs only basic packages
 #
 prepare_host_basic()
 {
-	# wait until package manager finishes possible system maintanace
-	wait_for_package_manager
+	# the checklist includes a list of package names separated by a space
+	local checklist="dialog psmisc acl uuid-runtime curl gnupg gawk"
 
-	# need to install dialog if person is starting with a interactive mode
+	# Don't use this function here.
+	# wait_for_package_manager
+	#
+	# The `psmisk` package is not installed yet.
+
+	# We will check one package and install the entire list.
 	if [[ $(dpkg-query -W -f='${db:Status-Abbrev}\n' dialog 2>/dev/null) != *ii* ]]; then
-		display_alert "Installing package" "dialog"
-		apt-get -q update && apt-get install -q -y --no-install-recommends dialog
+		display_alert "Installing basic packages" "$checklist"
+		apt-get -qq update && \
+		apt-get install -qq -y --no-install-recommends $checklist
 	fi
-
 }
 
 
@@ -1054,7 +1058,7 @@ prepare_host()
   fi
 
 	# Add support for Ubuntu 20.04, 21.04 and Mint Ulyana
-	if [[ $HOSTRELEASE =~ ^(focal|groovy|hirsute|ulyana|ulyssa|bullseye)$ ]]; then
+	if [[ $HOSTRELEASE =~ ^(focal|hirsute|ulyana|ulyssa|bullseye)$ ]]; then
 		hostdeps+=" python2 python3"
 		ln -fs /usr/bin/python2.7 /usr/bin/python2
 		ln -fs /usr/bin/python2.7 /usr/bin/python
@@ -1069,7 +1073,7 @@ prepare_host()
 	#
 	# NO_HOST_RELEASE_CHECK overrides the check for a supported host system
 	# Disable host OS check at your own risk. Any issues reported with unsupported releases will be closed without discussion
-	if [[ -z $HOSTRELEASE || "buster bullseye groovy focal hirsute debbie tricia ulyana ulyssa" != *"$HOSTRELEASE"* ]]; then
+	if [[ -z $HOSTRELEASE || "buster bullseye focal hirsute debbie tricia ulyana ulyssa" != *"$HOSTRELEASE"* ]]; then
 		if [[ $NO_HOST_RELEASE_CHECK == yes ]]; then
 			display_alert "You are running on an unsupported system" "${HOSTRELEASE:-(unknown)}" "wrn"
 			display_alert "Do not report any errors, warnings or other issues encountered beyond this point" "" "wrn"
@@ -1085,14 +1089,14 @@ prepare_host()
 # build aarch64
   if [[ $(dpkg --print-architecture) == amd64 ]]; then
 
-	if [[ -z $HOSTRELEASE || $HOSTRELEASE =~ ^(focal|groovy|debbie|buster|bullseye|hirsute|ulyana|ulyssa)$ ]]; then
+	if [[ -z $HOSTRELEASE || $HOSTRELEASE =~ ^(focal|debbie|buster|bullseye|hirsute|ulyana|ulyssa)$ ]]; then
 	    hostdeps="${hostdeps/lib32ncurses5 lib32tinfo5/lib32ncurses6 lib32tinfo6}"
 	fi
 
 	grep -q i386 <(dpkg --print-foreign-architectures) || dpkg --add-architecture i386
 # build aarch64
   fi
-  
+
 	if systemd-detect-virt -q -c; then
 		display_alert "Running in container" "$(systemd-detect-virt)" "info"
 		# disable apt-cacher unless NO_APT_CACHER=no is not specified explicitly

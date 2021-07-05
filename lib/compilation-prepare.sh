@@ -622,9 +622,9 @@ compilation_prepare()
 		$kerneldir/drivers/net/wireless/rtl8723du/Makefile
 
 		# Kconfig
-		sed -i 's/---help---/help/g' "${SRC}/cache/sources/rtl8723du/${rtl8723duver#*:}/Kconfig"
-		cp "${SRC}/cache/sources/rtl8723du/${rtl8723duver#*:}/Kconfig" \
-		"$kerneldir/drivers/net/wireless/rtl8723du/Kconfig"
+#		sed -i 's/---help---/help/g' "${SRC}/cache/sources/rtl8723du/${rtl8723duver#*:}/Kconfig"
+#		cp "${SRC}/cache/sources/rtl8723du/${rtl8723duver#*:}/Kconfig" \
+#		"$kerneldir/drivers/net/wireless/rtl8723du/Kconfig"
 
 		# Disable debug
 		sed -i "s/^CONFIG_RTW_DEBUG.*/CONFIG_RTW_DEBUG = n/" \

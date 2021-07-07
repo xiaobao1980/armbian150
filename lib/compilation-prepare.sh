@@ -630,9 +630,7 @@ compilation_prepare()
 		sed -i '/source "drivers\/net\/wireless\/ti\/Kconfig"/a source "drivers\/net\/wireless\/rtl8723du\/Kconfig"' \
 		$kerneldir/drivers/net/wireless/Kconfig
 
-		if [ "$EXTRAWIFI_LOCAL" != yes ]; then
 		process_patch_file "${SRC}/patch/misc/wireless-rtl8723du.patch" "applying"
-		fi
 	fi
 
 

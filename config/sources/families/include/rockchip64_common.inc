@@ -133,7 +133,7 @@ case $BRANCH in
 
 	edge)
 
-		KERNELBRANCH="branch:linux-5.12.y"
+		KERNELBRANCH="branch:linux-5.13.y"
 		if [[ $BOARD == station* || $BOARD == renegade ]]; then
 			KERNELPATCHDIR='station-'$BRANCH
 			LINUXFAMILY=station
@@ -357,6 +357,18 @@ family_tweaks()
 	fi
 
 
+	if [[ $BOARD == pinebook-pro ]]; then
+
+                chroot $SDCARD /bin/bash -c "echo SuspendState=freeze >> /etc/systemd/sleep.conf"
+                chroot $SDCARD /bin/bash -c "echo HandlePowerKey=ignore >> /etc/systemd/login.d"
+	fi
+
+	if [[ $BOARD == station* ]]; then
+
+		cp -R $SRC/packages/blobs/rtl8723bt_fw/* $SDCARD/lib/firmware/rtl_bt/
+
+	fi
+
 }
 
 
@@ -435,9 +447,6 @@ family_tweaks_bsp()
 
 	if [[ $BOARD == pinebook-pro ]]; then
 
-		chroot $SDCARD /bin/bash -c "echo SuspendState=freeze >> /etc/systemd/sleep.conf"
-		chroot $SDCARD /bin/bash -c "echo HandlePowerKey=ignore >> /etc/systemd/login.d"
-
 		# special keys
 		mkdir -p "${destination}"/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/
 		cp $SRC/packages/bsp/pinebook-pro/pointers.xml  "${destination}"/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/
@@ -450,12 +459,6 @@ family_tweaks_bsp()
 		# keyboard hwdb
 		mkdir -p "${destination}"/etc/udev/hwdb.d/
 		cp "${SRC}"/packages/bsp/pinebook-pro/10-usb-kbd.hwdb "${destination}"/etc/udev/hwdb.d/
-	fi
-
-	if [[ $BOARD == station* ]]; then
-
-		cp -R "${SRC}/packages/blobs/rtl8723bt_fw/*" "${destination}/lib/firmware/rtl_bt/"
-
 	fi
 
 	# Graphics and media

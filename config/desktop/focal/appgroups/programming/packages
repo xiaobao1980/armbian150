@@ -1,1 +1,6 @@
-build-essential clang meld regexxer geany 
+build-essential
+clang
+codium
+geany
+meld
+regexxer

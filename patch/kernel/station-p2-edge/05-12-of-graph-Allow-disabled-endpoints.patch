@@ -1,0 +1,31 @@
+diff --git a/drivers/gpu/drm/drm_of.c b/drivers/gpu/drm/drm_of.c
+index 37c34146eea83..c2fd9fe505767 100644
+--- a/drivers/gpu/drm/drm_of.c
++++ b/drivers/gpu/drm/drm_of.c
+@@ -67,10 +67,8 @@ uint32_t drm_of_find_possible_crtcs(struct drm_device *dev,
+ 
+ 	for_each_endpoint_of_node(port, ep) {
+ 		remote_port = of_graph_get_remote_port(ep);
+-		if (!remote_port) {
+-			of_node_put(ep);
+-			return 0;
+-		}
++		if (!remote_port)
++			continue;
+ 
+ 		possible_crtcs |= drm_of_crtc_port_mask(dev, remote_port);
+ 
+diff --git a/drivers/of/property.c b/drivers/of/property.c
+index a3483484a5a2a..40f8da7baa0a9 100644
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -730,6 +730,9 @@ EXPORT_SYMBOL(of_graph_get_endpoint_by_regs);
+  */
+ struct device_node *of_graph_get_remote_endpoint(const struct device_node *node)
+ {
++	if (!of_device_is_available(node))
++		return NULL;
++
+ 	/* Get remote endpoint node. */
+ 	return of_parse_phandle(node, "remote-endpoint", 0);
+ }

@@ -1,0 +1,19 @@
+diff --git a/Documentation/devicetree/bindings/media/video-interfaces.yaml b/Documentation/devicetree/bindings/media/video-interfaces.yaml
+index 4391dce2caee6..d7e516cd66f5f 100644
+--- a/Documentation/devicetree/bindings/media/video-interfaces.yaml
++++ b/Documentation/devicetree/bindings/media/video-interfaces.yaml
+@@ -84,6 +84,14 @@ properties:
+       source) by the master device (data sink). In the master mode the data
+       source device is also the source of the synchronization signals.
+ 
++  status:
++    enum:
++      - ok
++      - okay
++      - disabled
++    description:
++      Enables or disables the link. Disabled links are ignored.
++
+   bus-type:
+     $ref: /schemas/types.yaml#/definitions/uint32
+     enum:

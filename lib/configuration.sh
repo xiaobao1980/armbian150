@@ -21,6 +21,7 @@ fi
 [[ -z $ROOTPWD ]] && ROOTPWD="1234" # Must be changed @first login
 [[ -z $MAINTAINER ]] && MAINTAINER="Igor Pecovnik" # deb signature
 [[ -z $MAINTAINERMAIL ]] && MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
+[[ -z $DEB_COMPRESS ]] && DEB_COMPRESS="xz" # compress .debs with XZ by default. Use 'none' for faster/larger builds
 TZDATA=$(cat /etc/timezone) # Timezone for target is taken from host or defined here.
 USEALLCORES=yes # Use all CPU cores for compiling
 HOSTRELEASE=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d"=" -f2)
@@ -28,8 +29,8 @@ HOSTRELEASE=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d"=" -f2)
 [[ -z $EXIT_PATCHING_ERROR ]] && EXIT_PATCHING_ERROR="" # exit patching if failed
 [[ -z $HOST ]] && HOST="$BOARD" # set hostname to the board
 cd "${SRC}" || exit
-ROOTFSCACHE_VERSION=6
-CHROOT_CACHE_VERSION=7
+[[ -z "${ROOTFSCACHE_VERSION}" ]] && ROOTFSCACHE_VERSION=11
+[[ -z "${CHROOT_CACHE_VERSION}" ]] && CHROOT_CACHE_VERSION=7
 BUILD_REPOSITORY_URL=$(improved_git remote get-url $(improved_git remote 2>/dev/null | grep origin) 2>/dev/null)
 BUILD_REPOSITORY_COMMIT=$(improved_git describe --match=d_e_a_d_b_e_e_f --always --dirty 2>/dev/null)
 ROOTFS_CACHE_MAX=200 # max number of rootfs cache, older ones will be cleaned up
@@ -168,7 +169,7 @@ desktop_element_available_for_arch() {
 
 	local arch_limitation_file="${1}/only_for"
 
-	echo "Checking if ${desktop_element_path} is available for ${targeted_arch} in ${arch_limitation_file}" >> "${DEST}"/debug/output.log
+	echo "Checking if ${desktop_element_path} is available for ${targeted_arch} in ${arch_limitation_file}" >> "${DEST}"/${LOG_SUBPATH}/output.log
 	if [[ -f "${arch_limitation_file}" ]]; then
 		grep -- "${targeted_arch}" "${arch_limitation_file}"
 		return $?
@@ -321,7 +322,7 @@ fi
 # Write to variables :
 # - aggregated_content
 aggregate_content() {
-	LOG_OUTPUT_FILE="$SRC/output/debug/potential-paths.log"
+	LOG_OUTPUT_FILE="$SRC/output/${LOG_SUBPATH}/potential-paths.log"
 	echo -e "Potential paths :" >> "${LOG_OUTPUT_FILE}"
 	show_checklist_variables potential_paths
 	for filepath in ${potential_paths}; do
@@ -361,7 +362,7 @@ BOOTCONFIG_VAR_NAME=BOOTCONFIG_${BRANCH^^}
 [[ -z $ATFPATCHDIR ]] && ATFPATCHDIR="atf-$LINUXFAMILY"
 [[ -z $KERNELPATCHDIR ]] && KERNELPATCHDIR="$LINUXFAMILY-$BRANCH"
 
-if [[ "$RELEASE" =~ ^(xenial|bionic|focal|hirsute|impish)$ ]]; then
+if [[ "$RELEASE" =~ ^(xenial|bionic|focal|hirsute|impish|jammy)$ ]]; then
 		DISTRIBUTION="Ubuntu"
 	else
 		DISTRIBUTION="Debian"
@@ -503,7 +504,7 @@ DEBOOTSTRAP_COMPONENTS="${DEBOOTSTRAP_COMPONENTS// /,}"
 PACKAGE_LIST="$(one_line aggregate_all_cli "packages" " ")"
 PACKAGE_LIST_ADDITIONAL="$(one_line aggregate_all_cli "packages.additional" " ")"
 
-LOG_OUTPUT_FILE="$SRC/output/debug/debootstrap-list.log"
+LOG_OUTPUT_FILE="$SRC/output/${LOG_SUBPATH}/debootstrap-list.log"
 show_checklist_variables "DEBOOTSTRAP_LIST DEBOOTSTRAP_COMPONENTS PACKAGE_LIST PACKAGE_LIST_ADDITIONAL PACKAGE_LIST_UNINSTALL"
 
 # Dependent desktop packages
@@ -610,7 +611,7 @@ if [[ -n $PACKAGE_LIST_RM ]]; then
 fi
 
 
-LOG_OUTPUT_FILE="$SRC/output/debug/debootstrap-list.log"
+LOG_OUTPUT_FILE="$SRC/output/${LOG_SUBPATH}/debootstrap-list.log"
 echo -e "\nVariables after manual configuration" >>$LOG_OUTPUT_FILE
 show_checklist_variables "DEBOOTSTRAP_COMPONENTS DEBOOTSTRAP_LIST PACKAGE_LIST PACKAGE_MAIN_LIST"
 unset LOG_OUTPUT_FILE
@@ -619,7 +620,7 @@ unset LOG_OUTPUT_FILE
 [[ -z $NAMESERVER ]] && NAMESERVER="1.0.0.1" # default is cloudflare alternate
 
 # debug
-cat <<-EOF >> "${DEST}"/debug/output.log
+cat <<-EOF >> "${DEST}"/${LOG_SUBPATH}/output.log
 
 ## BUILD SCRIPT ENVIRONMENT
 

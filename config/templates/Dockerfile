@@ -49,6 +49,7 @@ RUN apt-get update \
        dialog \
        distcc \
        dosfstools \
+       dwarves \
        f2fs-tools \
        fakeroot \
        flex \
@@ -64,7 +65,7 @@ RUN apt-get update \
        libbison-dev \
        libc6-amd64-cross \
        libc6-dev-armhf-cross \
-       libfdt-dev \
+       libfdt-dev libelf-dev \
        libfile-fcntllock-perl \
        libfl-dev \
        liblz4-tool \

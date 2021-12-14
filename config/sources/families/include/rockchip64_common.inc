@@ -1,3 +1,4 @@
+enable_extension "rkbin-tools"
 ARCH=arm64
 KERNEL_IMAGE_TYPE=Image
 OFFSET=16
@@ -52,9 +53,9 @@ fi
 if [[ $BOOT_SOC == rk3328 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
-	DDR_BLOB='rk33/rk3328_ddr_333MHz_v1.16.bin'
-	MINILOADER_BLOB='rk33/rk322xh_miniloader_v2.50.bin'
-	BL31_BLOB='rk33/rk322xh_bl31_v1.44.elf'
+	DDR_BLOB='rk33/rk3328_ddr_933MHz_v1.16.bin'
+	MINILOADER_BLOB='rk33/rk3328_miniloader_v2.50.bin'
+	BL31_BLOB='rk33/rk3328_bl31_v1.42.elf'
 
 elif [[ $BOOT_SOC == rk3399 ]]; then
 
@@ -79,7 +80,7 @@ elif [[ $BOOT_SOC == rk3566 ]]; then
 elif [[ $BOOT_SOC == rk3568 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
-	DDR_BLOB='rk35/rk3568_ddr_1560MHz_v1.09.bin'
+	DDR_BLOB='rk35/rk3568_ddr_1560MHz_v1.10.bin'
 	BL31_BLOB='rk35/rk3568_bl31_v1.29.elf'
 
 elif [[ $BOARD == rockpi-s ]]; then
@@ -102,53 +103,16 @@ case $BRANCH in
 	current)
 
 		KERNELBRANCH="branch:linux-5.10.y"
-		if [[ $BOARD == station* || $BOARD == renegade || $BOARD == nanopct4 || $BOARD == firefly-rk3399 ]]; then
-			if [[ $BOARD == station-p2 || $BOARD == station-m2 ]]; then
-#				KERNELSOURCE='https://gitlab.collabora.com/benjamin.gaignard/for-upstream.git'
-#				KERNELBRANCH='branch:5.10_for_rockchip'
-#				KERNELSOURCE='https://gitlab.com/pine64-org/quartz-bsp/linux-next.git'
-#				KERNELBRANCH='branch:quartz64-vop2'
-				KERNELSOURCE='https://gitlab.com/pgwipeout/linux-next.git'
-#				KERNELBRANCH='branch:quartz64-v5.16'
-				KERNELBRANCH='branch:main'
-#				EXTRAWIFI="no"
-				KERNELPATCHDIR='station-p2-'$BRANCH
-				LINUXCONFIG='linux-station-p2-'$BRANCH
-				LINUXFAMILY=station-p2
-			else
-				KERNELPATCHDIR='station-'$BRANCH
-				LINUXFAMILY=station
-				LINUXCONFIG='linux-station-'$BRANCH
-#			LINUXFAMILY=rockchip64
-#			LINUXCONFIG='linux-rockchip64-'$BRANCH
-
-			fi
-		else
-			KERNELPATCHDIR='rockchip64-'$BRANCH
-			LINUXFAMILY=rockchip64
-			LINUXCONFIG='linux-rockchip64-'$BRANCH
-		fi
+		KERNELPATCHDIR='station-'$BRANCH
+		LINUXFAMILY=station
+		LINUXCONFIG='linux-station-'$BRANCH
 	;;
 
 	edge)
-		if [[ $BOARD == station-p2 || $BOARD == station-m2 ]]; then
-#			KERNELSOURCE='https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git'
-#			KERNELBRANCH='branch:master'
-			KERNELSOURCE='https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git'
-			KERNELBRANCH='tag:v5.16-rc3'
-			KERNELPATCHDIR='station-p2-'$BRANCH
-			LINUXCONFIG='linux-station-p2-'$BRANCH
-			LINUXFAMILY=station-p2
-#			EXTRAWIFI="no"
-		else
-			KERNELBRANCH="branch:linux-5.15.y"
-#			KERNELPATCHDIR='rockchip64-'$BRANCH
-#			LINUXFAMILY=rockchip64
-#			LINUXCONFIG='linux-rockchip64-'$BRANCH
-			KERNELPATCHDIR='station-'$BRANCH
-			LINUXFAMILY=station
-			LINUXCONFIG='linux-station-'$BRANCH
-		fi
+		KERNELBRANCH="branch:linux-5.15.y"
+		KERNELPATCHDIR='station-'$BRANCH
+		LINUXFAMILY=station
+		LINUXCONFIG='linux-station-'$BRANCH
 	;;
 
 esac
@@ -200,8 +164,7 @@ uboot_custom_postprocess()
 		:
 	elif [[ $BOOT_SCENARIO == "spl-blobs" ]]; then
 
-#		tools/mkimage -n $BOOT_SOC -T rksd -d $RKBIN_DIR/$DDR_BLOB:spl/u-boot-spl.bin idbloader.img
-		tools/mkimage -n $BOOT_SOC -T rksd -d $SRC/packages/blobs/station/rk3568_ddr_1560MHz_v1.10.bin:spl/u-boot-spl.bin idbloader.img
+		tools/mkimage -n $BOOT_SOC -T rksd -d $RKBIN_DIR/$DDR_BLOB:spl/u-boot-spl.bin idbloader.img
 
 	elif [[ $BOOT_SCENARIO == "only-blobs" ]]; then
 

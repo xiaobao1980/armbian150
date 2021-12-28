@@ -110,7 +110,8 @@ case $BRANCH in
 
 	edge)
 		KERNELBRANCH="branch:linux-5.15.y"
-		KERNELPATCHDIR='station-'$BRANCH
+#		KERNELPATCHDIR='station-'$BRANCH
+		KERNELPATCHDIR='station-new-'$BRANCH
 		LINUXFAMILY=station
 		LINUXCONFIG='linux-station-'$BRANCH
 	;;

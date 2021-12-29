@@ -109,11 +109,12 @@ case $BRANCH in
 	;;
 
 	edge)
+
 		KERNELBRANCH="branch:linux-5.15.y"
-#		KERNELPATCHDIR='station-'$BRANCH
-		KERNELPATCHDIR='station-new-'$BRANCH
-		LINUXFAMILY=station
-		LINUXCONFIG='linux-station-'$BRANCH
+		KERNELPATCHDIR='rockchip64-new-'$BRANCH
+		LINUXFAMILY=rockchip64
+		LINUXCONFIG='linux-rockchip64-new-'$BRANCH
+
 	;;
 
 esac

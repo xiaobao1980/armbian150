@@ -65,7 +65,7 @@ create_package() {
 	# in case we build in a setuid/setgid directory
 	chmod -R ug-s "$pdir"
 
-	# Create postinstall prerm script for headers
+	# Create postinst prerm script for headers
 	if [ "$3" = "headers" ]; then
 
 	# Set the time for all files to the current time.

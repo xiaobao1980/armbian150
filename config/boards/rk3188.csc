@@ -2,7 +2,7 @@
 BOARD_NAME="RK3188"
 BOARDFAMILY="rk3188"
 BOOTCONFIG="rbox-rk3188_defconfig"
-KERNEL_TARGET="current"
+KERNEL_TARGET="legacy,current,edge"
 FULL_DESKTOP="yes"
 BOOT_LOGO="desktop"
 BOOT_FDT_FILE="rk3188-ugoos-ut2.dtb"

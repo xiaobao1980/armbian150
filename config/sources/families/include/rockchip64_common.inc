@@ -111,9 +111,9 @@ case $BRANCH in
 	edge)
 
 		KERNELBRANCH="branch:linux-5.15.y"
-		KERNELPATCHDIR='rockchip64-new-'$BRANCH
-		LINUXFAMILY=rockchip64
-		LINUXCONFIG='linux-rockchip64-new-'$BRANCH
+		KERNELPATCHDIR='station-'$BRANCH
+		LINUXFAMILY=station
+		LINUXCONFIG='linux-station-'$BRANCH
 
 	;;
 

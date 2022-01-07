@@ -50,7 +50,14 @@ elif [[ "${BOOT_SOC}" == rk3568 ]]; then
 
 fi
 
-if [[ $BOOT_SOC == rk3328 ]]; then
+if [[ $BOOT_SOC == rk3328-old ]]; then
+
+	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
+	DDR_BLOB='rk33/rk3328_ddr_333MHz_v1.16.bin'
+	MINILOADER_BLOB='rk33/rk322xh_miniloader_v2.50.bin'
+	BL31_BLOB='rk33/rk322xh_bl31_v1.44.elf'
+
+elif [[ $BOOT_SOC == rk3328 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
 	DDR_BLOB='rk33/rk3328_ddr_933MHz_v1.16.bin'
@@ -103,17 +110,17 @@ case $BRANCH in
 	current)
 
 		KERNELBRANCH="branch:linux-5.10.y"
-		KERNELPATCHDIR='station-'$BRANCH
-		LINUXFAMILY=station
-		LINUXCONFIG='linux-station-'$BRANCH
+		KERNELPATCHDIR='rockchip64-'$BRANCH
+		LINUXFAMILY=rockchip64
+		LINUXCONFIG='linux-rockchip64-'$BRANCH
 	;;
 
 	edge)
 
+		KERNELPATCHDIR='rockchip64-'$BRANCH
 		KERNELBRANCH="branch:linux-5.15.y"
-		KERNELPATCHDIR='station-'$BRANCH
-		LINUXFAMILY=station
-		LINUXCONFIG='linux-station-'$BRANCH
+		LINUXFAMILY=rockchip64
+		LINUXCONFIG='linux-rockchip64-'$BRANCH
 
 	;;
 

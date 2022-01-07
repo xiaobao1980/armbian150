@@ -85,7 +85,7 @@ compilation_prepare()
 	fi
 
 	if [[ "${version}" == "4.4."* ]] && \
-	[[ "$LINUXFAMILY" == rockchip64 || "$LINUXFAMILY" == station* || "$LINUXFAMILY" == renegade ]]; then
+	[[ "$LINUXFAMILY" == rockchip64 || "$LINUXFAMILY" == media* || "$LINUXFAMILY" == renegade ]]; then
 		display_alert "Adjusting" "packaging" "info"
 		cd "$kerneldir" || exit
 		process_patch_file "${SRC}/patch/misc/general-packaging-4.4.y-rockchip64.patch" "applying"

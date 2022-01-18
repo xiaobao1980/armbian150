@@ -1177,12 +1177,15 @@ wait_for_package_manager()
 
 
 # Installing debian packages in the armbian build system.
-# The function accepts three optional parameters:
+# The function accepts four optional parameters:
+# autoupdate - If the installation list is not empty then update first.
 # upgrade, clean - the same name for apt
 # verbose - detailed log for the function
 #
 # list="pkg1 pkg2 pkg3 pkgbadname pkg-1.0 | pkg-2.0 pkg5 (>= 9)"
 # install_pkg_deb upgrade verbose $list
+# or
+# install_pkg_deb autoupdate $list
 #
 # If the package has a bad name, we will see it in the log file.
 # If there is an LOG_OUTPUT_FILE variable and it has a value as
@@ -1196,6 +1199,7 @@ install_pkg_deb ()
 	local list=""
 	local log_file
 	local for_install
+	local need_autoup=false
 	local need_upgrade=false
 	local need_clean=false
 	local need_verbose=false
@@ -1208,6 +1212,7 @@ install_pkg_deb ()
 	list=$(
 	for p in $*;do
 		case $p in
+			autoupdate) need_autoup=true; continue ;;
 			upgrade) need_upgrade=true; continue ;;
 			clean) need_clean=true; continue ;;
 			verbose) need_verbose=true; continue ;;
@@ -1253,7 +1258,7 @@ install_pkg_deb ()
 	fi
 
 	if [ -n "$for_install" ]; then
-		if ! $need_upgrade; then
+		if $need_autoup; then
 			apt-get -q update
 			apt-get -y upgrade
 		fi
@@ -1465,7 +1470,7 @@ prepare_host()
 	sudo echo "apt-cacher-ng    apt-cacher-ng/tunnelenable      boolean false" | sudo debconf-set-selections
 
 	LOG_OUTPUT_FILE="${DEST}"/${LOG_SUBPATH}/hostdeps.log
-	install_pkg_deb "$hostdeps"
+	install_pkg_deb "autoupdate $hostdeps"
 	unset LOG_OUTPUT_FILE
 
 	update-ccache-symlinks
@@ -1588,23 +1593,22 @@ function webseed ()
 {
 	# list of mirrors that host our files
 	unset text
-	WEBSEED=($(curl -s https://redirect.armbian.com/mirrors | jq '.[] |.[] | values' | grep https | awk '!a[$0]++'))
+	# Hardcoded to EU mirrors since
+	local CCODE=$(curl -s redirect.armbian.com/geoip | jq '.continent.code' -r)
+	WEBSEED=($(curl -s https://redirect.armbian.com/mirrors | jq -r '.'${CCODE}' | .[] | values'))
 	# aria2 simply split chunks based on sources count not depending on download speed
 	# when selecting china mirrors, use only China mirror, others are very slow there
 	if [[ $DOWNLOAD_MIRROR == china ]]; then
 		WEBSEED=(
-		"https://mirrors.tuna.tsinghua.edu.cn/armbian-releases/"
+		https://mirrors.tuna.tsinghua.edu.cn/armbian-releases/
 		)
 	elif [[ $DOWNLOAD_MIRROR == bfsu ]]; then
 		WEBSEED=(
-		"https://mirrors.bfsu.edu.cn/armbian-releases/"
+		https://mirrors.bfsu.edu.cn/armbian-releases/
 		)
 	fi
 	for toolchain in ${WEBSEED[@]}; do
-		# use only live, tnahosting return ok also when file is absent
-		if [[ $(wget -S --spider "${toolchain}${1}" 2>&1 >/dev/null | grep 'HTTP/1.1 200 OK') && ${toolchain} != *tnahosting* ]]; then
-			text="${text} ${toolchain}${1}"
-		fi
+		text="${text} ${toolchain}${1}"
 	done
 	text="${text:1}"
 	echo "${text}"
@@ -1693,7 +1697,7 @@ download_and_verify()
 	# direct download if torrent fails
 	if [[ ! -f "${localdir}/${filename}.complete" ]]; then
 		if [[ ! `timeout 10 curl --head --fail --silent ${server}${remotedir}/${filename} 2>&1 >/dev/null` ]]; then
-			display_alert "downloading from $(echo $server | cut -d'/' -f3 | cut -d':' -f1) using http(s) network" "$filename"
+			display_alert "downloading using http(s) network" "$filename"
 			aria2c --download-result=hide --rpc-save-upload-metadata=false --console-log-level=error \
 			--dht-file-path="${SRC}"/cache/.aria2/dht.dat --disable-ipv6=true --summary-interval=0 --auto-file-renaming=false --dir="${localdir}" ${server}${remotedir}/${filename} $(webseed "${remotedir}/${filename}") -o "${filename}"
 			# mark complete

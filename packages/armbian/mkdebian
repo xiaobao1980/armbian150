@@ -216,6 +216,7 @@ fi
 
 if is_enabled CONFIG_DEBUG_INFO; then
 cat <<EOF >> debian/control
+
 Package: $dbg_packagename
 Section: debug
 Architecture: $debarch

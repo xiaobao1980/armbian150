@@ -1371,7 +1371,7 @@ prepare_host()
 
   if [[ $(dpkg --print-architecture) == amd64 ]]; then
 
-	hostdeps+=" distcc lib32ncurses-dev lib32stdc++6 libc6-i386 zlib1g:i386"
+	hostdeps+=" distcc lib32ncurses-dev lib32stdc++6 libc6-i386"
 	grep -q i386 <(dpkg --print-foreign-architectures) || dpkg --add-architecture i386
 
   elif [[ $(dpkg --print-architecture) == arm64 ]]; then
@@ -1451,26 +1451,6 @@ prepare_host()
 	ADD_HOST_DEPENDENCIES
 
 	if [ -n "${EXTRA_BUILD_DEPS}" ]; then hostdeps+=" ${EXTRA_BUILD_DEPS}"; fi
-
-	# distribution packages are buggy, download from author
-
-# build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]]; then
-
-	if [[ ! -f /etc/apt/sources.list.d/aptly.list ]]; then
-		display_alert "Updating from external repository" "aptly" "info"
-		if [ x"" != x"${http_proxy}" ]; then
-			apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="${http_proxy}" --recv-keys ED75B5A4483DA07C >/dev/null 2>&1
-		else
-			apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ED75B5A4483DA07C >/dev/null 2>&1
-		fi
-		echo "deb http://repo.aptly.info/ nightly main" > /etc/apt/sources.list.d/aptly.list
-	else
-		sed "s/squeeze/nightly/" -i /etc/apt/sources.list.d/aptly.list
-	fi
-
-# build aarch64
-  fi
 
 	display_alert "Installing build dependencies"
 	# don't prompt for apt cacher selection

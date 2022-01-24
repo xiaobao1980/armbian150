@@ -88,7 +88,8 @@ elif [[ $BOOT_SOC == rk3568 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
 	DDR_BLOB='rk35/rk3568_ddr_1560MHz_v1.10.bin'
-	BL31_BLOB='rk35/rk3568_bl31_v1.29.elf'
+#	BL31_BLOB='rk35/rk3568_bl31_v1.29.elf'
+	BL31_BLOB='rk35/rk3568_bl31_v1.28.elf'
 
 elif [[ $BOARD == rockpi-s ]]; then
 

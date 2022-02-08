@@ -2,7 +2,7 @@
 BOARD_NAME="AW-H6-TV"
 BOARDFAMILY="sun50iw6"
 BOOTCONFIG="tanix_tx6_defconfig"
-KERNEL_TARGET="current,edge"
+KERNEL_TARGET="current"
 FULL_DESKTOP="yes"
 ATFBRANCH="tag:v2.2"
 BOOT_LOGO="desktop"

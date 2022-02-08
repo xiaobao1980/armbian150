@@ -45,6 +45,22 @@ else
 	REPO_CONFIG="aptly.conf"
 fi
 
+# image artefact destination with or without subfolder
+FINALDEST=$DEST/images
+if [[ "${MAKE_FOLDERS}" == yes ]]; then
+
+	if [[ "$RC" == yes ]]; then
+		FINALDEST=$DEST/images/"${BOARD}"/RC
+	elif [[ "$BETA" == yes ]]; then
+		FINALDEST=$DEST/images/"${BOARD}"/nightly
+	else
+		FINALDEST=$DEST/images/"${BOARD}"/archive
+	fi
+
+	install -d ${FINALDEST}
+fi
+
+
 # TODO: fixed name can't be used for parallel image building
 ROOT_MAPPER="armbian-root"
 
@@ -74,7 +90,7 @@ case $REGIONAL_MIRROR in
 	china)
 		[[ -z $USE_MAINLINE_GOOGLE_MIRROR ]] && [[ -z $MAINLINE_MIRROR ]] && MAINLINE_MIRROR=tuna
 		[[ -z $USE_GITHUB_UBOOT_MIRROR ]] && [[ -z $UBOOT_MIRROR ]] && UBOOT_MIRROR=gitee
-		[[ -z $GITHUB_MIRROR ]] && GITHUB_MIRROR=fastgit
+		[[ -z $GITHUB_MIRROR ]] && GITHUB_MIRROR=cnpmjs
 		[[ -z $DOWNLOAD_MIRROR ]] && DOWNLOAD_MIRROR=china
 		;;
 	*)

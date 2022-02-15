@@ -182,7 +182,7 @@ fi
 # XXX: have each arch Makefile export a variable of the canonical image install
 # path instead
 case $ARCH in
-	++aarch64 | arm64)
+	++aarch64|arm64)
 		image_name=Image
 		installed_image_path="boot/vmlinuz-$version"
 		;;
@@ -193,7 +193,7 @@ case $ARCH in
 	um)
 		installed_image_path="usr/bin/linux-$version"
 		;;
-	parisc | mips | powerpc)
+	parisc|mips|powerpc)
 		installed_image_path="boot/vmlinux-$version"
 		;;
 	*)
@@ -240,10 +240,12 @@ if is_enabled CONFIG_MODULES; then
 	INSTALL_MOD_PATH="$tmpdir" $MAKE -f $srctree/Makefile modules_install
 	rm -f "$tmpdir/lib/modules/$version/build"
 	rm -f "$tmpdir/lib/modules/$version/source"
+
 	if [ "$ARCH" = "um" ]; then
 		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/uml/modules/$version/"
 		rmdir "$tmpdir/lib/modules/$version"
 	fi
+
 	if [ -n "$BUILD_DEBUG" ]; then
 		for module in $(find $tmpdir/lib/modules/ -name *.ko -printf '%P\n'); do
 			module=lib/modules/$module
@@ -316,6 +318,7 @@ cat >> $tmpdir/DEBIAN/preinst <<- EOT
 				break
 			fi
 		done
+
 		bootfstype=\$(blkid -s TYPE -o value \$boot_partition)
 		if [ "\$bootfstype" = "vfat" ]; then
 			umount /boot

@@ -39,7 +39,6 @@ fonts-symbola
 fonts-ubuntu-console
 foomatic-db-compressed-ppds
 ghostscript-x
-gir1.2-appindicator3-0.1
 gnome-bluetooth
 gnome-font-viewer
 gromit
@@ -62,7 +61,6 @@ language-pack-pt
 language-pack-ru
 language-pack-sl
 laptop-detect
-libappindicator3-1
 libatk-adaptor
 libfont-afm-perl
 libfontconfig1

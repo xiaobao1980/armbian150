@@ -47,7 +47,6 @@ fonts-ubuntu-console
 foomatic-db-compressed-ppds
 gdebi
 ghostscript-x
-gir1.2-appindicator3-0.1
 gir1.2-cinnamondesktop-3.0
 gir1.2-cmenu-3.0
 gir1.2-cvc-1.0
@@ -82,7 +81,6 @@ language-pack-gnome-pt
 language-pack-gnome-ru
 language-pack-gnome-sl
 laptop-detect
-libappindicator3-1
 libatk-adaptor
 libcinnamon-desktop4
 libcinnamon-menu-3-0

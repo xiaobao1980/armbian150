@@ -478,9 +478,9 @@ index 000000000..fac2db500
 +//	status = "okay";
 +//};
 +
-+//&i2c5 {
-+//	status = "okay";
-+//};
++&vop {
++    compatible = "rockchip,rk3568-vop";
++};
 +
 +&i2s0_8ch {
 +	status = "okay";

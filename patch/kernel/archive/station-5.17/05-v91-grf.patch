@@ -26,7 +26,7 @@
  		.compatible = "rockchip,rk3399-grf",
  		.data = (void *)&rk3399_grf,
 +	}, {
-+		.compatible = "rockchip,rk3566-pipegrf",
++		.compatible = "rockchip,rk3566-pipe-grf",
 +		.data = (void *)&rk3566_pipegrf,
  	},
  	{ /* sentinel */ },

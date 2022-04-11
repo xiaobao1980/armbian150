@@ -22,23 +22,23 @@
  
  	pipe_phy_grf0: syscon@fdc70000 {
  		compatible = "rockchip,rk3568-pipe-phy-grf", "syscon";
-@@ -101,6 +116,10 @@
+@@ -99,6 +114,10 @@
  	};
  };
  
 +&pipegrf {
-+	compatible = "rockchip,rk3568-pipegrf", "syscon";
++	compatible = "rockchip,rk3568-pipe-grf", "syscon";
 +};
 +
  &power {
  	power-domain@RK3568_PD_PIPE {
  		reg = <RK3568_PD_PIPE>;
-@@ -117,6 +136,11 @@
+@@ -115,6 +134,11 @@
  	};
  };
  
-+&usbdrd30 {
-+	phys = <&u2phy0_otg>, <&combphy0 PHY_TYPE_USB3>;
++&usb_host0_xhci {
++	phys = <&usb2phy0_otg>, <&combphy0 PHY_TYPE_USB3>;
 +	phy-names = "usb2-phy", "usb3-phy";
 +};
 +

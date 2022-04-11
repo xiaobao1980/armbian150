@@ -2,7 +2,7 @@ new file mode 100644
 index 000000000..fac2db500
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
-@@ -0,0 +1,1003 @@
+@@ -0,0 +1,1000 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
@@ -131,7 +131,7 @@ index 000000000..fac2db500
 +		vin-supply = <&dc_12v>;
 +	};
 +
-+	vcc5v0_sys: vcc5v0-sys {
++	vcc5v0_sys: vcc5v0_sys {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc5v0_sys";
 +		regulator-always-on;
@@ -213,7 +213,6 @@ index 000000000..fac2db500
 +	firefly_leds: leds {
 +		status = "okay";
 +		compatible = "gpio-leds";
-+
 +		power_led: power {
 +			label = "firefly:blue:power";
 +			linux,default-trigger = "ir-power-click";
@@ -234,17 +233,12 @@ index 000000000..fac2db500
 +	};
 +
 +	sdio_pwrseq: sdio-pwrseq {
++		status = "okay";
 +		compatible = "mmc-pwrseq-simple";
 +		clocks = <&rk809 1>;
 +		clock-names = "ext_clock";
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&wifi_enable_h>;
-+		/*
-+			* On the module itself this is one of these (depending
-+			* on the actual card populated):
-+			* - SDIO_RESET_L_WL_REG_ON
-+			* - PDN (power down when low)
-+		*/
 +		reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
 +	};
 +
@@ -697,6 +691,10 @@ index 000000000..fac2db500
 +				};
 +			};
 +		};
++
++		codec {
++			mic-in-differential;
++		};
 +	};
 +};
 +
@@ -766,6 +764,23 @@ index 000000000..fac2db500
 +		};
 +	};
 +
++	pmic {
++		pmic_int: pmic_int {
++			rockchip,pins =
++				<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		vcc5v0_otg_en: vcc5v0-otg-en {
++			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
 +	usb {
 +		vcc_hub_power_en: vcc-hub-power-en {
 +			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
@@ -788,31 +803,14 @@ index 000000000..fac2db500
 +		};
 +	};
 +
-+	pmic {
-+		pmic_int: pmic_int {
-+			rockchip,pins =
-+				<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
-+		};
-+	};
-+
-+	usb {
-+		vcc5v0_host_en: vcc5v0-host-en {
-+			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+
-+		vcc5v0_otg_en: vcc5v0-otg-en {
-+			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
 +	leds {
-+	    led_power: led-power {
-+			rockchip,pins = <1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
-+	    };
++		led_power: led-power {
++			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
 +
-+	    led_user: led-user {
-+			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
-+	    };
++		led_user: led-user {
++			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
 +	};
 +
 +	headphone {
@@ -916,6 +914,35 @@ index 000000000..fac2db500
 +	status = "okay";
 +};
 +
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host0_xhci {
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
++};
++
++
++&usb_host1_xhci {
++	status = "okay";
++};
++
++&usb2phy0 {
++	status = "okay";
++};
++
 +&usb2phy0_host {
 +	phy-supply = <&vcc5v0_host>;
 +	status = "okay";
@@ -923,6 +950,10 @@ index 000000000..fac2db500
 +
 +&usb2phy0_otg {
 +	vbus-supply = <&vcc5v0_otg>;
++	status = "okay";
++};
++
++&usb2phy1 {
 +	status = "okay";
 +};
 +
@@ -936,47 +967,13 @@ index 000000000..fac2db500
 +	status = "okay";
 +};
 +
-+&usb2phy0 {
-+	status = "okay";
-+};
-+
-+&usb2phy1 {
-+	status = "okay";
-+};
-+
-+&usb_host0_ehci {
-+	status = "okay";
-+};
-+
-+&usb_host0_ohci {
-+	status = "okay";
-+};
-+
-+&usb_host1_ehci {
-+	status = "okay";
-+};
-+
-+&usb_host1_ohci {
-+	status = "okay";
-+};
-+
-+//&usbdrd_dwc3 {
-+//	dr_mode = "otg";
-+//	extcon = <&usb2phy0>;
++//&usbdrd30 {
 +//	status = "okay";
 +//};
 +
-+&usbdrd30 {
-+	status = "okay";
-+};
-+
-+//&usbhost_dwc3 {
++//&usbhost30 {
 +//	status = "okay";
 +//};
-+
-+&usbhost30 {
-+	status = "okay";
-+};
 +
 +&pwm4 {
 +	status = "okay";

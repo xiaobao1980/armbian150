@@ -207,60 +207,21 @@
  };
  
  &gmac1 {
-@@ -239,27 +388,21 @@
- 	status = "okay";
+@@ -257,6 +406,10 @@
+ 	};
  };
  
-+&gpu {
-+	mali-supply = <&vdd_gpu>;
++&hdmi_sound {
 +	status = "okay";
 +};
 +
- &hdmi {
- 	avdd-0v9-supply = <&vdda_0v9>;
- 	avdd-1v8-supply = <&vcc_1v8>;
+ &gpu {
+ 	mali-supply = <&vdd_gpu>;
  	status = "okay";
- };
- 
--&hdmi_in {
--	hdmi_in_vp0: endpoint {
--		remote-endpoint = <&vp0_out_hdmi>;
--	};
--};
--
- &hdmi_out {
- 	hdmi_out_con: endpoint {
- 		remote-endpoint = <&hdmi_con_in>;
- 	};
--};
--
--&gpu {
--	mali-supply = <&vdd_gpu>;
--	status = "okay";
- };
- 
- &i2c0 {
-@@ -408,7 +551,6 @@
- 			};
- 
- 			vccio_sd: LDO_REG5 {
--				regulator-always-on;
- 				regulator-boot-on;
- 				regulator-min-microvolt = <1800000>;
- 				regulator-max-microvolt = <3300000>;
-@@ -481,15 +623,59 @@
+@@ -481,6 +634,58 @@
  				};
  			};
  		};
--	};
--};
--
--/* i2c3 is exposed on con40
-- * pin 3 - i2c3_sda_m0, pullup to vcc_3v3
-- * pin 5 - i2c3_scl_m0, pullup to vcc_3v3
-- */
--&i2c3 {
--	status = "okay";
 +
 +		rk817_battery: battery {
 +			monitored-battery = <&battery_cell>;
@@ -313,11 +274,10 @@
 +				regulator-max-microvolt = <15000000>;
 +			};
 +		};
-+	};
+ 	};
  };
  
- &i2s1_8ch {
-@@ -509,6 +695,14 @@
+@@ -509,6 +714,14 @@
  	};
  };
  
@@ -332,7 +292,7 @@
  &pinctrl {
  	bt {
  		bt_enable_h: bt-enable-h {
-@@ -524,6 +718,27 @@
+@@ -524,6 +737,27 @@
  		};
  	};
  
@@ -360,7 +320,7 @@
  	leds {
  		work_led_enable_h: work-led-enable-h {
  			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
-@@ -534,21 +749,49 @@
+@@ -534,21 +768,49 @@
  		};
  	};
  
@@ -410,7 +370,7 @@
  		};
  	};
  };
-@@ -566,10 +809,23 @@
+@@ -566,10 +828,23 @@
  	status = "okay";
  };
  
@@ -434,7 +394,7 @@
  	vmmc-supply = <&vcc_3v3>;
  	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
-@@ -582,6 +838,7 @@
+@@ -582,6 +857,7 @@
  	disable-wp;
  	pinctrl-names = "default";
  	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
@@ -442,7 +402,7 @@
  	vmmc-supply = <&vcc3v3_sd>;
  	vqmmc-supply = <&vccio_sd>;
  	status = "okay";
-@@ -591,6 +848,7 @@
+@@ -591,6 +867,7 @@
  	bus-width = <4>;
  	cap-sd-highspeed;
  	cap-sdio-irq;
@@ -450,11 +410,12 @@
  	keep-power-in-suspend;
  	mmc-pwrseq = <&sdio_pwrseq>;
  	non-removable;
-@@ -602,17 +860,25 @@
+@@ -600,6 +877,21 @@
+ 	vmmc-supply = <&vcc_wl>;
+ 	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
- };
- 
--/* spdif is exposed on con40 pin 18 */
++};
++
 +&sfc {
 +	pinctrl-0 = <&fspi_pins>;
 +	pinctrl-names = "default";
@@ -468,44 +429,13 @@
 +		spi-rx-bus-width = <1>;
 +		spi-tx-bus-width = <1>;
 +	};
-+};
-+
- &spdif {
+ };
+ 
+ /* spdif is exposed on con40 pin 18 */
+@@ -664,6 +956,59 @@
  	status = "okay";
  };
  
--/* spi1 is exposed on con40
-- * pin 11 - spi1_mosi_m1
-- * pin 13 - spi1_miso_m1
-- * pin 15 - spi1_clk_m1
-- * pin 17 - spi1_cs0_m1
-- */
- &spi1 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&spi1m1_cs0 &spi1m1_pins>;
-@@ -626,10 +892,6 @@
- 	status = "okay";
- };
- 
--/* uart0 is exposed on con40
-- * pin 12 - uart0_tx
-- * pin 14 - uart0_rx
-- */
- &uart0 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&uart0_xfer>;
-@@ -656,11 +918,60 @@
- 	};
- };
- 
--/* uart2 is exposed on con40
-- * pin 8 - uart2_tx_m0_debug
-- * pin 10 - uart2_rx_m0_debug
-- */
- &uart2 {
-+	status = "okay";
-+};
-+
 +&usb_host0_ehci {
 +	status = "okay";
 +};
@@ -556,28 +486,16 @@
 +
 +&usb2phy1_otg {
 +	phy-supply = <&vcc5v0_usb20_host>;
- 	status = "okay";
- };
- 
-@@ -672,6 +983,13 @@
- 
- &vop_mmu {
- 	status = "okay";
++	status = "okay";
 +};
 +
-+&hdmi_in {
-+	hdmi_in_vp0: endpoint@0 {
-+		reg = <0>;
-+		remote-endpoint = <&vp0_out_hdmi>;
-+	};
- };
- 
- &vp0 {
-@@ -680,3 +998,65 @@
+ &vop {
+ 	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
+ 	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
+@@ -680,3 +1025,64 @@
  		remote-endpoint = <&hdmi_in_vp0>;
  	};
  };
-+
 +
 +&dsi0 {
 +	status = "disabled";

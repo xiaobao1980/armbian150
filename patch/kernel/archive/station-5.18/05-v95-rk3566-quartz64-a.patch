@@ -34,74 +34,7 @@
  		#cooling-cells = <2>;
  	};
  
-@@ -85,33 +105,52 @@
- 		};
- 	};
- 
-+	spdif_dit: spdif-dit {
-+		compatible = "linux,spdif-dit";
-+		#sound-dai-cells = <0>;
-+	};
-+
-+	spdif_sound: spdif-sound {
-+		compatible = "simple-audio-card";
-+		simple-audio-card,name = "SPDIF";
-+
-+		simple-audio-card,cpu {
-+			sound-dai = <&spdif>;
-+		};
-+
-+		simple-audio-card,codec {
-+			sound-dai = <&spdif_dit>;
-+		};
-+	};
-+
- 	sdio_pwrseq: sdio-pwrseq {
-+		status = "okay";
- 		compatible = "mmc-pwrseq-simple";
- 		clocks = <&rk817 1>;
- 		clock-names = "ext_clock";
- 		pinctrl-names = "default";
- 		pinctrl-0 = <&wifi_enable_h>;
-+		reset-gpios = <&gpio2 RK_PC2 GPIO_ACTIVE_LOW>;
- 		post-power-on-delay-ms = <100>;
- 		power-off-delay-us = <5000000>;
--		reset-gpios = <&gpio2 RK_PC2 GPIO_ACTIVE_LOW>;
-+	};
-+
-+	spdif_sound: spdif-sound {
-+		compatible = "simple-audio-card";
-+		simple-audio-card,name = "SPDIF";
-+
-+		simple-audio-card,cpu {
-+			sound-dai = <&spdif>;
-+		};
-+
-+		simple-audio-card,codec {
-+			sound-dai = <&spdif_dit>;
-+		};
- 	};
- 
- 	spdif_dit: spdif-dit {
- 		compatible = "linux,spdif-dit";
- 		#sound-dai-cells = <0>;
--	};
--
--	spdif_sound: spdif-sound {
--		compatible = "simple-audio-card";
--		simple-audio-card,name = "SPDIF";
--
--		simple-audio-card,cpu {
--			sound-dai = <&spdif>;
--		};
--
--		simple-audio-card,codec {
--			sound-dai = <&spdif_dit>;
--		};
- 	};
- 
- 	vcc12v_dcin: vcc12v_dcin {
-@@ -163,6 +202,28 @@
+@@ -163,6 +183,28 @@
  		vin-supply = <&vcc5v0_usb>;
  	};
  
@@ -130,7 +63,7 @@
  	vcc3v3_sd: vcc3v3_sd {
  		compatible = "regulator-fixed";
  		enable-active-low;
-@@ -187,6 +248,19 @@
+@@ -187,6 +229,19 @@
  		vin-supply = <&vbus>;
  	};
  
@@ -150,7 +83,7 @@
  	/* sourced from vcc_sys, sdio module operates internally at 3.3v */
  	vcc_wl: vcc_wl {
  		compatible = "regulator-fixed";
-@@ -197,6 +271,32 @@
+@@ -197,6 +252,32 @@
  		regulator-max-microvolt = <3300000>;
  		vin-supply = <&vcc_sys>;
  	};
@@ -183,7 +116,7 @@
  };
  
  &cpu0 {
-@@ -230,6 +330,39 @@
+@@ -230,6 +311,39 @@
  			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
  		};
  	};
@@ -223,40 +156,21 @@
  };
  
  &gmac1 {
-@@ -266,12 +399,6 @@
- 	status = "okay";
+@@ -278,6 +392,10 @@
+ 	};
  };
  
--&hdmi_in {
--	hdmi_in_vp0: endpoint {
--		remote-endpoint = <&vp0_out_hdmi>;
--	};
--};
--
- &hdmi_out {
- 	hdmi_out_con: endpoint {
- 		remote-endpoint = <&hdmi_con_in>;
-@@ -424,7 +551,6 @@
- 			};
++&hdmi_sound {
++	status = "okay";
++};
++
+ &i2c0 {
+ 	status = "okay";
  
- 			vccio_sd: LDO_REG5 {
--				regulator-always-on;
- 				regulator-boot-on;
- 				regulator-min-microvolt = <1800000>;
- 				regulator-max-microvolt = <3300000>;
-@@ -497,15 +623,59 @@
+@@ -497,6 +615,58 @@
  				};
  			};
  		};
--	};
--};
--
--/* i2c3 is exposed on con40
-- * pin 3 - i2c3_sda_m0, pullup to vcc_3v3
-- * pin 5 - i2c3_scl_m0, pullup to vcc_3v3
-- */
--&i2c3 {
--	status = "okay";
 +
 +		rk817_battery: battery {
 +			monitored-battery = <&battery_cell>;
@@ -309,10 +223,9 @@
 +				regulator-max-microvolt = <15000000>;
 +			};
 +		};
-+	};
+ 	};
  };
  
- &i2s1_8ch {
 @@ -525,6 +695,14 @@
  	};
  };
@@ -435,11 +348,12 @@
  	keep-power-in-suspend;
  	mmc-pwrseq = <&sdio_pwrseq>;
  	non-removable;
-@@ -624,17 +860,25 @@
+@@ -622,6 +858,21 @@
+ 	vmmc-supply = <&vcc_wl>;
+ 	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
- };
- 
--/* spdif is exposed on con40 pin 18 */
++};
++
 +&sfc {
 +	pinctrl-0 = <&fspi_pins>;
 +	pinctrl-names = "default";
@@ -453,50 +367,13 @@
 +		spi-rx-bus-width = <1>;
 +		spi-tx-bus-width = <1>;
 +	};
-+};
-+
- &spdif {
+ };
+ 
+ /* spdif is exposed on con40 pin 18 */
+@@ -702,6 +953,29 @@
  	status = "okay";
  };
  
--/* spi1 is exposed on con40
-- * pin 11 - spi1_mosi_m1
-- * pin 13 - spi1_miso_m1
-- * pin 15 - spi1_clk_m1
-- * pin 17 - spi1_cs0_m1
-- */
- &spi1 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&spi1m1_cs0 &spi1m1_pins>;
-@@ -648,10 +892,6 @@
- 	status = "okay";
- };
- 
--/* uart0 is exposed on con40
-- * pin 12 - uart0_tx
-- * pin 14 - uart0_rx
-- */
- &uart0 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&uart0_xfer>;
-@@ -678,10 +918,6 @@
- 	};
- };
- 
--/* uart2 is exposed on con40
-- * pin 8 - uart2_tx_m0_debug
-- * pin 10 - uart2_rx_m0_debug
-- */
- &uart2 {
- 	status = "okay";
- };
-@@ -699,6 +935,29 @@
- };
- 
- &usb_host1_ohci {
-+	status = "okay";
-+};
-+
 +&usb_host0_xhci {
 +	status = "okay";
 +};
@@ -517,24 +394,13 @@
 +
 +&usb2phy0_otg {
 +	phy-supply = <&vcc5v0_usb20_otg>;
- 	status = "okay";
- };
- 
-@@ -724,6 +983,13 @@
- 
- &vop_mmu {
- 	status = "okay";
++	status = "okay";
 +};
 +
-+&hdmi_in {
-+	hdmi_in_vp0: endpoint@0 {
-+		reg = <0>;
-+		remote-endpoint = <&vp0_out_hdmi>;
-+	};
+ &usb2phy1 {
+ 	status = "okay";
  };
- 
- &vp0 {
-@@ -732,3 +998,65 @@
+@@ -732,3 +1006,65 @@
  		remote-endpoint = <&hdmi_in_vp0>;
  	};
  };

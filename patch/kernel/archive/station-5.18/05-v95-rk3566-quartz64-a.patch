@@ -34,8 +34,8 @@
  		#cooling-cells = <2>;
  	};
  
-@@ -163,6 +183,28 @@
- 		vin-supply = <&vcc5v0_usb>;
+@@ -173,6 +193,28 @@
+ 		vin-supply = <&dcdc_boost>;
  	};
  
 +	vcc3v3_pcie_p: vcc3v3_pcie_p {
@@ -63,7 +63,7 @@
  	vcc3v3_sd: vcc3v3_sd {
  		compatible = "regulator-fixed";
  		enable-active-low;
-@@ -187,6 +229,19 @@
+@@ -197,6 +239,19 @@
  		vin-supply = <&vbus>;
  	};
  
@@ -83,7 +83,7 @@
  	/* sourced from vcc_sys, sdio module operates internally at 3.3v */
  	vcc_wl: vcc_wl {
  		compatible = "regulator-fixed";
-@@ -197,6 +252,32 @@
+@@ -207,9 +262,30 @@
  		regulator-max-microvolt = <3300000>;
  		vin-supply = <&vcc_sys>;
  	};
@@ -104,19 +104,17 @@
 +		brightness-levels = <0 4 8 16 32 64 128 255>;
 +		default-brightness-level = <6>;
 +	};
-+};
-+
-+&combphy1 {
+ };
+ 
+ &combphy1 {
 +	status = "okay";
-+	rockchip,enable-ssc;
 +};
 +
 +&combphy2 {
-+	status = "okay";
+ 	status = "okay";
  };
  
- &cpu0 {
-@@ -230,6 +311,39 @@
+@@ -244,6 +320,39 @@
  			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
  		};
  	};
@@ -156,7 +154,7 @@
  };
  
  &gmac1 {
-@@ -278,6 +392,10 @@
+@@ -292,6 +401,10 @@
  	};
  };
  
@@ -167,7 +165,7 @@
  &i2c0 {
  	status = "okay";
  
-@@ -497,6 +615,58 @@
+@@ -511,6 +624,58 @@
  				};
  			};
  		};
@@ -226,7 +224,18 @@
  	};
  };
  
-@@ -525,6 +695,14 @@
+@@ -519,6 +684,10 @@
+  * pin 5 - i2c3_scl_m0, pullup to vcc_3v3
+  */
+ &i2c3 {
++	status = "okay";
++};
++
++&i2s0_8ch {
+ 	status = "okay";
+ };
+ 
+@@ -539,6 +708,14 @@
  	};
  };
  
@@ -241,7 +250,7 @@
  &pinctrl {
  	bt {
  		bt_enable_h: bt-enable-h {
-@@ -540,6 +718,27 @@
+@@ -554,6 +731,27 @@
  		};
  	};
  
@@ -269,7 +278,7 @@
  	leds {
  		work_led_enable_h: work-led-enable-h {
  			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
-@@ -550,6 +749,16 @@
+@@ -564,6 +762,16 @@
  		};
  	};
  
@@ -286,7 +295,7 @@
  	pmic {
  		pmic_int_l: pmic-int-l {
  			rockchip,pins = <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
-@@ -568,9 +777,21 @@
+@@ -582,9 +790,21 @@
  		};
  	};
  
@@ -308,7 +317,7 @@
  		};
  	};
  };
-@@ -588,10 +809,23 @@
+@@ -602,10 +822,23 @@
  	status = "okay";
  };
  
@@ -332,7 +341,7 @@
  	vmmc-supply = <&vcc_3v3>;
  	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
-@@ -604,6 +838,7 @@
+@@ -618,6 +851,7 @@
  	disable-wp;
  	pinctrl-names = "default";
  	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
@@ -340,7 +349,7 @@
  	vmmc-supply = <&vcc3v3_sd>;
  	vqmmc-supply = <&vccio_sd>;
  	status = "okay";
-@@ -613,6 +848,7 @@
+@@ -627,6 +861,7 @@
  	bus-width = <4>;
  	cap-sd-highspeed;
  	cap-sdio-irq;
@@ -348,7 +357,7 @@
  	keep-power-in-suspend;
  	mmc-pwrseq = <&sdio_pwrseq>;
  	non-removable;
-@@ -622,6 +858,21 @@
+@@ -636,6 +871,21 @@
  	vmmc-supply = <&vcc_wl>;
  	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
@@ -370,7 +379,7 @@
  };
  
  /* spdif is exposed on con40 pin 18 */
-@@ -702,6 +953,29 @@
+@@ -739,6 +989,29 @@
  	status = "okay";
  };
  
@@ -400,7 +409,7 @@
  &usb2phy1 {
  	status = "okay";
  };
-@@ -732,3 +1006,65 @@
+@@ -769,3 +1042,65 @@
  		remote-endpoint = <&hdmi_in_vp0>;
  	};
  };

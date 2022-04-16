@@ -234,7 +234,7 @@ index 000000000..fac2db500
 +
 +&hdmi_in {
 +	hdmi_in_vp0: endpoint@0 {
-+		reg = <0>;
++//		reg = <0>;
 +		remote-endpoint = <&vp0_out_hdmi>;
 +	};
 +};

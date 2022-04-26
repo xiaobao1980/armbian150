@@ -3,6 +3,7 @@ bzip2
 ca-certificates
 console-setup
 cpio
+crda
 cron
 dbus
 dbus-user-session

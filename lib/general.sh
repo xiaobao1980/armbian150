@@ -484,6 +484,9 @@ fetch_from_repo()
 		local workdir=$dir
 	fi
 
+	# Declare folders we use as safe
+	git config --global --add safe.directory "${SRC}/cache/sources/$workdir"
+
 	mkdir -p "${SRC}/cache/sources/${workdir}" 2>/dev/null || \
 		exit_with_error "No path or no write permission" "${SRC}/cache/sources/${workdir}"
 
@@ -660,6 +663,7 @@ fingerprint_image()
 	Title:			${VENDOR} $REVISION ${BOARD^} $BRANCH
 	Kernel:			Linux $VER
 	Build date:		$(date +'%d.%m.%Y')
+	Builder rev:	$(git rev-parse HEAD)
 	Maintainer:		$MAINTAINER <$MAINTAINERMAIL>
 	Authors:		https://www.armbian.com/authors
 	Sources: 		https://github.com/armbian/
@@ -1523,7 +1527,7 @@ prepare_host()
 				"${ARMBIAN_MIRROR}/_toolchains/gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz"
 				"${ARMBIAN_MIRROR}/_toolchain/gcc-arm-9.2-2019.12-x86_64-arm-none-linux-gnueabihf.tar.xz"
 				"${ARMBIAN_MIRROR}/_toolchain/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz"
-				"${ARMBIAN_MIRROR}/_toolchain/gcc-arm-11.2-2022.02-x86_64-arm-none-eabi.tar.xz"
+				"${ARMBIAN_MIRROR}/_toolchain/gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf.tar.xz"
 				"${ARMBIAN_MIRROR}/_toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz"
 				)
 

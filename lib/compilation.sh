@@ -503,6 +503,7 @@ CUSTOM_KERNEL_CONFIG
 		${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 	if [[ ${PIPESTATUS[0]} -ne 0 || ! -f arch/$ARCHITECTURE/boot/$KERNEL_IMAGE_TYPE ]]; then
+		grep -i error $DEST/${LOG_SUBPATH}/compilation.log
 		exit_with_error "Kernel was not built" "@host"
 	fi
 
@@ -569,13 +570,15 @@ CUSTOM_KERNEL_CONFIG
 	# hash origin
 	echo "${hash}" > "${HASHTARGET}.githash"
 
-	# hash_patches=
-	git -C $SRC log --format="%H" -1 -- \
-		$(realpath --relative-base="$SRC" "${SRC}/patch/kernel/${KERNELPATCHDIR}") >> "${HASHTARGET}.githash"
+	# hash_patches
+	CALC_PATCHES=$(git -C $SRC log --format="%H" -1 -- $(realpath --relative-base="$SRC" "${SRC}/patch/kernel/${KERNELPATCHDIR}"))
+	[[ -z "$CALC_PATCHES" ]] && CALC_PATCHES="null"
+	echo "$CALC_PATCHES" >> "${HASHTARGET}.githash"
 
-	# hash_kernel_config=
-	git -C $SRC log --format="%H" -1 -- \
-		$(realpath --relative-base="$SRC" "${SRC}/config/kernel/${LINUXCONFIG}.config")	>> "${HASHTARGET}.githash"
+	# hash_kernel_config
+	CALC_CONFIG=$(git -C $SRC log --format="%H" -1 -- $(realpath --relative-base="$SRC" "${SRC}/config/kernel/${LINUXCONFIG}.config"))
+	[[ -z "$CALC_CONFIG" ]] && CALC_CONFIG="null"
+	echo "$CALC_CONFIG" >> "${HASHTARGET}.githash"
 
 }
 

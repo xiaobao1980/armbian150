@@ -4,6 +4,7 @@ bridge-utils
 build-essential
 ca-certificates
 console-setup
+crda
 emacs-nox
 expect
 fbset

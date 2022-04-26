@@ -173,17 +173,23 @@ install_common()
 	# create extlinux config file
 	if [[ $SRC_EXTLINUX == yes ]]; then
 		mkdir -p $SDCARD/boot/extlinux
+		local bootpart_prefix
+		if [[ -n $BOOTFS_TYPE ]]; then
+			bootpart_prefix=/
+		else
+			bootpart_prefix=/boot/
+		fi
 		cat <<-EOF > "$SDCARD/boot/extlinux/extlinux.conf"
 		label ${VENDOR}
-		  kernel /boot/$NAME_KERNEL
-		  initrd /boot/$NAME_INITRD
-	EOF
+		  kernel ${bootpart_prefix}$NAME_KERNEL
+		  initrd ${bootpart_prefix}$NAME_INITRD
+		EOF
 		if [[ -n $BOOT_FDT_FILE ]]; then
 			if [[ $BOOT_FDT_FILE != "none" ]]; then
-				echo "  fdt /boot/dtb/$BOOT_FDT_FILE" >> "$SDCARD/boot/extlinux/extlinux.conf"
+				echo "  fdt ${bootpart_prefix}dtb/$BOOT_FDT_FILE" >> "$SDCARD/boot/extlinux/extlinux.conf"
 			fi
 		else
-			echo "  fdtdir /boot/dtb/" >> "$SDCARD/boot/extlinux/extlinux.conf"
+			echo "  fdtdir ${bootpart_prefix}dtb/" >> "$SDCARD/boot/extlinux/extlinux.conf"
 		fi
 	else
 
@@ -265,7 +271,7 @@ install_common()
 	# install board packages
 	if [[ -n ${PACKAGE_LIST_BOARD} ]]; then
 		display_alert "Installing PACKAGE_LIST_BOARD packages" "${PACKAGE_LIST_BOARD}"
-		chroot "${SDCARD}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive  apt-get ${APT_EXTRA_DIST_PARAMS} -yqq --no-install-recommends install $PACKAGE_LIST_BOARD" >> "${DEST}"/${LOG_SUBPATH}/install.log || { display_alert "Failed to install PACKAGE_LIST_BOARD" "${PACKAGE_LIST_BOARD}" "err"; exit 2; } 
+		chroot "${SDCARD}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive  apt-get ${APT_EXTRA_DIST_PARAMS} -yqq --no-install-recommends install $PACKAGE_LIST_BOARD" >> "${DEST}"/${LOG_SUBPATH}/install.log || { display_alert "Failed to install PACKAGE_LIST_BOARD" "${PACKAGE_LIST_BOARD}" "err"; exit 2; }
 	fi
 
 	# remove family packages
@@ -429,6 +435,7 @@ FAMILY_TWEAKS
 	chroot "${SDCARD}" /bin/bash -c "systemctl --no-reload enable armbian-ramlog.service >/dev/null 2>&1"
 	chroot "${SDCARD}" /bin/bash -c "systemctl --no-reload enable armbian-resize-filesystem.service >/dev/null 2>&1"
 	chroot "${SDCARD}" /bin/bash -c "systemctl --no-reload enable armbian-hardware-monitor.service >/dev/null 2>&1"
+	chroot "${SDCARD}" /bin/bash -c "systemctl --no-reload enable armbian-led-state.service >/dev/null 2>&1"
 
 	# copy "first run automated config, optional user configured"
  	cp "${SRC}"/packages/bsp/armbian_first_run.txt.template "${SDCARD}"/boot/armbian_first_run.txt.template
@@ -463,6 +470,7 @@ FAMILY_TWEAKS
 	sed '/daemon\.\*\;mail.*/,/xconsole/ s/.*/#&/' -i "${SDCARD}"/etc/rsyslog.d/50-default.conf
 
 	# disable deprecated parameter
+	[[ -f "${SDCARD}"/etc/rsyslog.conf ]] && \
 	sed '/.*$KLogPermitNonKernelFacility.*/,// s/.*/#&/' -i "${SDCARD}"/etc/rsyslog.conf
 
 	# enable getty on multiple serial consoles

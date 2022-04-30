@@ -688,12 +688,12 @@ compilation_prepare()
 		# attach to specifics tag or branch
 		display_alert "Adding" "Wireless drivers for Realtek 8822BS chipsets ${rtl8822bsver}" "info"
 
-		local rtl8822bsver="branch:master"
-		fetch_from_repo "$GITHUB_SOURCE/RinCat/RTL88x2BU-Linux-Driver" "rtl8822bs" "${rtl8822bsver}" "yes"
+		local rtl8822bsver="branch:local_rtl8822bs"
+		fetch_from_repo "$GITHUB_SOURCE/150balbes/wifi" "rtl8822bs" "${rtl8822bsver}" "yes"
 		cd "$kerneldir" || exit
 		rm -rf "$kerneldir/drivers/net/wireless/rtl8822bs"
 		mkdir -p $kerneldir/drivers/net/wireless/rtl8822bs/
-		cp -R "${SRC}/cache/sources/rtl8822bs/${rtl8822bsver#*:}"/{core,hal,include,os_dep,platform,rtl8822b.mk} \
+		cp -R "${SRC}/cache/sources/rtl8822bs/${rtl8822bsver#*:}"/{core,hal,include,os_dep,platform,bluetooth,getAP,rtl8822b.mk} \
 		$kerneldir/drivers/net/wireless/rtl8822bs
 
 		# Makefile

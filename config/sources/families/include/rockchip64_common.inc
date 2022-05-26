@@ -278,7 +278,6 @@ family_tweaks() {
 
 		cp -R $SRC/packages/blobs/rtl8723bt_fw/* $SDCARD/lib/firmware/rtl_bt/
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
-
 		if [[ $BRANCH == legacy && ($BOARD == station-m1) ]]; then
 			install -m 755 $SRC/packages/bsp/rk3328/m1/rtk_hciattach $SDCARD/usr/bin/rtk_hciattach
 			sed -e 's/exit 0//g' -i $SDCARD/etc/rc.local

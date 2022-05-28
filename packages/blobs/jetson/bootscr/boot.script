@@ -1,5 +1,0 @@
-echo "start update u-boot"
-setenv kernel_addr_r "0x85000000"
-saveenv
-sleep 5
-printenv

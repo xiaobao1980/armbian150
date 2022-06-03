@@ -45,7 +45,7 @@ compile_atf()
 	display_alert "Compiling ATF" "" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]]; then
+  if [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
 
 	local toolchain
 	toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
@@ -138,7 +138,7 @@ compile_uboot()
 	display_alert "Compiling u-boot" "$version" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]]; then
+  if [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
 
 	local toolchain
 	toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
@@ -416,12 +416,12 @@ compile_kernel()
 	# if it matches we use the system compiler
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
-	elif [[ $(dpkg --print-architecture) == amd64 ]]; then
+	elif [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
 		local toolchain
 		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
 		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
-	else
-		exit_with_error "Architecture [$ARCH] is not supported"
+#	else
+#		exit_with_error "Architecture [$ARCH] is not supported"
 	fi
 
 	display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"

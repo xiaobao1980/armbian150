@@ -1,6 +1,6 @@
 bc
 chrony
-cpufrequtils
+#cpufrequtils
 debconf-utils
 device-tree-compiler
 dialog
@@ -8,7 +8,7 @@ fake-hwclock
 figlet
 fping
 ncurses-term
-nocache
+#nocache
 openssh-server
 parted
 psmisc

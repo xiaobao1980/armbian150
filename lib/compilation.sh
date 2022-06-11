@@ -416,7 +416,7 @@ compile_kernel()
 	# if it matches we use the system compiler
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
-	elif [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
+	elif [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv64" ]]; then 
 		local toolchain
 		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
 		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"

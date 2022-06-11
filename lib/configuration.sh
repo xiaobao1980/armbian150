@@ -177,7 +177,8 @@ if [[ -f $USERPATCHES_PATH/sources/families/$LINUXFAMILY.conf ]]; then
 fi
 
 # load architecture defaults
-source "${SRC}/config/sources/${ARCH}.conf"
+#source "${SRC}/config/sources/${ARCH}.conf"
+source "${SRC}/config/sources/riscv64.conf"
 
 ## Extensions: at this point we've sourced all the config files that will be used,
 ##             and (hopefully) not yet invoked any extension methods. So this is the perfect

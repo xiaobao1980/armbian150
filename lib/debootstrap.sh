@@ -706,7 +706,7 @@ PREPARE_IMAGE_SIZE
 			echo "rootdev=$rootfs" >> $SDCARD/boot/armbianEnv.txt
 		fi
 		echo "rootfstype=$ROOTFS_TYPE" >> $SDCARD/boot/armbianEnv.txt
-	elif [[ $rootpart != 1 ]]; then
+	elif [[ $rootpart != 1 ]] && [[ -f $SDCARD/boot/$bootscript_dst ]]; then
 		local bootscript_dst=${BOOTSCRIPT##*:}
 		sed -i 's/mmcblk0p1/mmcblk0p2/' $SDCARD/boot/$bootscript_dst
 		sed -i -e "s/rootfstype=ext4/rootfstype=$ROOTFS_TYPE/" \

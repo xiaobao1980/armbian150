@@ -43,7 +43,7 @@
 
 ```bash
 apt-get -y install git
-git clone https://github.com/armbian/build
+git clone https://github.com/150balbes/build
 cd build
 ./compile.sh
 ```
@@ -82,7 +82,7 @@ KERNEL_CONFIGURE=no \
 CARD_DEVICE="/dev/sda"
 ```
 
-[Build parameters, advanced build options, user defined configuration, build with Docker?](#additional-information)
+[Build parameters, advanced build options, user defined configuration, build with Docker?](https://docs.armbian.com/Developer-Guide_Build-Preparation/)
 
 ## Compare with industry standards
 

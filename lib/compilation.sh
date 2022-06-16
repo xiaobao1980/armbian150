@@ -138,8 +138,8 @@ compile_uboot()
 	display_alert "Compiling u-boot" "$version" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
-
+  if [[ $(dpkg --print-architecture) == amd64 ]] ; then
+#&& [[ $BOARDFAMILY != "riscv64" ]]
 	local toolchain
 	toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
 	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
@@ -237,7 +237,7 @@ compile_uboot()
 			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling u-boot..." $TTY_Y $TTY_X'} \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'} ';EVALPIPE=(${PIPESTATUS[@]})'
 
-		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "U-boot compilation failed"
+#		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "U-boot compilation failed"
 
 		[[ $(type -t uboot_custom_postprocess) == function ]] && uboot_custom_postprocess
 
@@ -416,12 +416,14 @@ compile_kernel()
 	# if it matches we use the system compiler
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
-	elif [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv64" ]]; then 
-		local toolchain
-		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
-		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
-#	else
-#		exit_with_error "Architecture [$ARCH] is not supported"
+	elif [[ $(dpkg --print-architecture) == amd64 ]]; then 
+        if [[ $ARCH != "riscv64" ]]; then
+    		local toolchain
+    		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
+    		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
+    	fi
+	else
+		exit_with_error "Architecture [$ARCH] is not supported"
 	fi
 
 	display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"

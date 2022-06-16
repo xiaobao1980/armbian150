@@ -177,8 +177,7 @@ if [[ -f $USERPATCHES_PATH/sources/families/$LINUXFAMILY.conf ]]; then
 fi
 
 # load architecture defaults
-#source "${SRC}/config/sources/${ARCH}.conf"
-source "${SRC}/config/sources/riscv64.conf"
+source "${SRC}/config/sources/${ARCH}.conf"
 
 ## Extensions: at this point we've sourced all the config files that will be used,
 ##             and (hopefully) not yet invoked any extension methods. So this is the perfect
@@ -596,6 +595,11 @@ if [[ "${ARCH}" == "amd64" ]]; then
 		if [[ -n ${CUSTOM_UBUNTU_MIRROR} ]]; then # ubuntu redirector doesn't work well on amd64
 			UBUNTU_MIRROR="${CUSTOM_UBUNTU_MIRROR}"
 		fi
+fi
+
+if [[ "${ARCH}" == "riscv64" ]]; then
+	DEBIAN_MIRROR='deb.debian.org/debian-ports'
+	DEBOOTSTRAP_OPTION="--keyring /usr/share/keyrings/debian-ports-archive-keyring.gpg"
 fi
 
 # don't use mirrors that throws garbage on 404

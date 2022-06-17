@@ -45,8 +45,8 @@ compile_atf()
 	display_alert "Compiling ATF" "" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]] && [[ $BOARDFAMILY != "riscv" ]]; then
-
+  if [[ $(dpkg --print-architecture) == amd64 ]]; then
+#&& [[ $BOARDFAMILY != "riscv" ]]
 	local toolchain
 	toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
 	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${ATF_COMPILER}gcc $ATF_USE_GCC"
@@ -139,11 +139,15 @@ compile_uboot()
 
 # build aarch64
   if [[ $(dpkg --print-architecture) == amd64 ]] ; then
-#&& [[ $BOARDFAMILY != "riscv64" ]]
-	local toolchain
-	toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
-	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
 
+	local toolchain
+	if [[ $ARCH = "riscv64" ]]; then
+		toolchain=$UBOOT_COMPILER
+    	else
+    		toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
+    		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
+	fi
+    
 	if [[ -n $UBOOT_TOOLCHAIN2 ]]; then
 		local toolchain2_type toolchain2_ver toolchain2
 		toolchain2_type=$(cut -d':' -f1 <<< "${UBOOT_TOOLCHAIN2}")
@@ -222,11 +226,11 @@ compile_uboot()
 		touch .scmversion
 
 		# $BOOTDELAY can be set in board family config, ensure autoboot can be stopped even if set to 0
-		[[ $BOOTDELAY == 0 ]] && echo -e "CONFIG_ZERO_BOOTDELAY_CHECK=y" >> .config
-		[[ -n $BOOTDELAY ]] && sed -i "s/^CONFIG_BOOTDELAY=.*/CONFIG_BOOTDELAY=${BOOTDELAY}/" .config || [[ -f .config ]] && echo "CONFIG_BOOTDELAY=${BOOTDELAY}" >> .config
+#		[[ $BOOTDELAY == 0 ]] && echo -e "CONFIG_ZERO_BOOTDELAY_CHECK=y" >> .config
+#		[[ -n $BOOTDELAY ]] && sed -i "s/^CONFIG_BOOTDELAY=.*/CONFIG_BOOTDELAY=${BOOTDELAY}/" .config || [[ -f .config ]] && echo "CONFIG_BOOTDELAY=${BOOTDELAY}" >> .config
 
 		# workaround when two compilers are needed
-		cross_compile="CROSS_COMPILE=$CCACHE $UBOOT_COMPILER";
+		cross_compile="CROSS_COMPILE=$UBOOT_COMPILER";
 		[[ -n $UBOOT_TOOLCHAIN2 ]] && cross_compile="ARMBIAN=foe"; # empty parameter is not allowed
 
 		echo -e "\n\t== u-boot make $target_make ==\n" >> "${DEST}"/${LOG_SUBPATH}/compilation.log
@@ -237,7 +241,7 @@ compile_uboot()
 			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling u-boot..." $TTY_Y $TTY_X'} \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'} ';EVALPIPE=(${PIPESTATUS[@]})'
 
-#		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "U-boot compilation failed"
+		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "U-boot compilation failed"
 
 		[[ $(type -t uboot_custom_postprocess) == function ]] && uboot_custom_postprocess
 

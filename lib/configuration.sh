@@ -599,7 +599,7 @@ fi
 
 if [[ "${ARCH}" == "riscv64" ]]; then
 	DEBIAN_MIRROR='deb.debian.org/debian-ports'
-	DEBOOTSTRAP_OPTION="--keyring /usr/share/keyrings/debian-ports-archive-keyring.gpg"
+	DEBOOTSTRAP_OPTION="--keyring /usr/share/keyrings/debian-ports-archive-keyring.gpg --include=debian-ports-archive-keyring"
 fi
 
 # don't use mirrors that throws garbage on 404

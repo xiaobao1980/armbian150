@@ -203,10 +203,9 @@ create_sources_list()
 
 	sid) # sid is permanent unstable development and has no such thing as updates or security
 	cat <<-EOF > "${basedir}"/etc/apt/sources.list
-	deb http://${DEBIAN_MIRROR} $release main contrib non-free
-	#deb-src http://${DEBIAN_MIRROR} $release main contrib non-free
-#	deb http://${DEBIAN_MIRROR} unstable main
-#	deb http://deb.debian.org/debian-ports unstable
+	deb http://${DEBIAN_MIRROR} $release main
+    deb http://${DEBIAN_MIRROR} unreleased main
+	#deb-src http://${DEBIAN_MIRROR} $release main
 	EOF
 	;;
 
@@ -1399,7 +1398,7 @@ prepare_host()
     if [[ $BOARDFAMILY == "riscv" ]]; then
     
         hostdeps+="gcc-riscv64-linux-gnu libncurses5-dev \
-        qtbase5-dev schedtool zstd"
+        qtbase5-dev schedtool zstd debian-ports-archive-keyring"
 
     fi
 

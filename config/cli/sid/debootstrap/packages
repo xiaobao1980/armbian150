@@ -13,12 +13,14 @@ haveged
 ifupdown
 init
 initramfs-tools
+inetutils-ping
 iputils-ping
 isc-dhcp-client
 kmod
 less
 libpam-systemd
 linux-base
+libc-l10n
 locales
 logrotate
 netbase

@@ -10,7 +10,7 @@ OVERLAY_PREFIX='rockchip'
 SERIALCON=${SERIALCON:=$([ $BRANCH == "legacy" ] && echo "ttyFIQ0:1500000" || echo "ttyS2:1500000")}
 GOVERNOR="ondemand"
 ATFPATCHDIR='atf-rockchip64'
-BOOTBRANCH="tag:v2021.07"
+BOOTBRANCH="tag:v2022.04"
 BOOTPATCHDIR="u-boot-rockchip64"
 PACKAGE_LIST_FAMILY="ethtool"
 
@@ -152,6 +152,8 @@ prepare_boot_configuration() {
 
 		if [[ $BOARD != "rock-3a" ]]; then
 			UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB tpl/u-boot-tpl.bin spl/u-boot-spl.bin u-boot.itb ${UBOOT_TARGET_MAP} rkspi_loader.img"
+		else
+			UBOOT_TARGET_MAP="${UBOOT_TARGET_MAP} rkspi_loader.img"
 		fi
 
 	fi
@@ -273,6 +275,12 @@ family_tweaks() {
 		chroot $SDCARD /bin/bash -c "apt-get -y -qq install rfkill bluetooth bluez bluez-tools"
 		chroot $SDCARD /bin/bash -c "systemctl --no-reload enable rk3399-bluetooth.service >/dev/null 2>&1"
 
+	elif [[ -f $SDCARD/lib/systemd/system/sprd-bluetooth.service ]]; then
+
+		# install and enable Bluetooth
+		chroot $SDCARD /bin/bash -c "apt-get -y -qq install rfkill bluetooth bluez bluez-tools"
+		chroot $SDCARD /bin/bash -c "systemctl --no-reload enable sprd-bluetooth.service >/dev/null 2>&1"
+
 	fi
 
 	if [[ $BOARD == nanopim4* ]]; then
@@ -366,6 +374,15 @@ family_tweaks_bsp() {
 		if [[ $BOARD == nanop*4* || $BOARD == firefly* || $BOARD == orangepi-rk3399 ]]; then
 			sed -i s%BCM4345C5%BCM4356A2%g $destination/lib/systemd/system/rk3399-bluetooth.service
 		fi
+	fi
+
+	if [[ $BOARD == orangepi4-lts ]]; then
+		
+		# Bluetooth on orangepi 4 LTS board is handled by a Spreadtrum (sprd) chip and requires
+		# a custom hciattach_opi binary, plus a systemd service to run it at boot time
+		install -m 755 $SRC/packages/bsp/rk3399/hciattach_opi $destination/usr/bin
+		cp $SRC/packages/bsp/rk3399/sprd-bluetooth.service $destination/lib/systemd/system/
+
 	fi
 
 	if [[ $BOARD == nanopim4* ]]; then

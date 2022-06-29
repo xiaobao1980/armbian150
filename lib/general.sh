@@ -1395,16 +1395,16 @@ prepare_host()
 	hostdeps+=" distcc lib32ncurses-dev lib32stdc++6 libc6-i386"
 	grep -q i386 <(dpkg --print-foreign-architectures) || dpkg --add-architecture i386
 
-    if [[ $BOARDFAMILY == "riscv" ]]; then
+    if [[ $ARCH == "riscv64" ]]; then
     
-        hostdeps+="gcc-riscv64-linux-gnu libncurses5-dev \
+        hostdeps+=" gcc-riscv64-linux-gnu libncurses5-dev \
         qtbase5-dev schedtool zstd debian-ports-archive-keyring"
 
     fi
 
   elif [[ $(dpkg --print-architecture) == arm64 ]]; then
 
-	hostdeps+="gcc-arm-none-eabi libc6 libc6-amd64-cross qemu"
+	hostdeps+=" gcc-arm-none-eabi libc6 libc6-amd64-cross qemu"
 
   else
 

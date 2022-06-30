@@ -6,7 +6,6 @@ dialog
 fake-hwclock
 figlet
 fping
-locales
 ncurses-term
 nocache
 openssh-server
@@ -22,3 +21,4 @@ inetutils-ping
 locales
 libc-l10n
 ntpdate
+fdisk

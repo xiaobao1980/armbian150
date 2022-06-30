@@ -46,7 +46,7 @@ compile_atf()
 
 # build aarch64
   if [[ $(dpkg --print-architecture) == amd64 ]]; then
-#&& [[ $BOARDFAMILY != "riscv" ]]
+
 	local toolchain
 	toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
 	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${ATF_COMPILER}gcc $ATF_USE_GCC"
@@ -420,7 +420,7 @@ compile_kernel()
 	# if it matches we use the system compiler
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
-	elif [[ $(dpkg --print-architecture) == amd64 ]]; then 
+	elif [[ $(dpkg --print-architecture) == amd64 ]]; then
         if [[ $ARCH != "riscv64" ]]; then
     		local toolchain
     		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")

@@ -1,1 +1,3 @@
-../../../../focal/environments/cinnamon/config_base/packages.uninstall
+gdm3
+gnome-software
+gnome-keyring

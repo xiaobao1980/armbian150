@@ -6,6 +6,7 @@ cpio
 cron
 dbus
 dbus-user-session
+debsums
 dmsetup
 fdisk
 gnupg
@@ -14,14 +15,12 @@ ifupdown
 init
 initramfs-tools
 iputils-ping
-inetutils-ping
 isc-dhcp-client
 kmod
 less
 libpam-systemd
 linux-base
 locales
-libc-l10n
 logrotate
 netbase
 netcat-openbsd

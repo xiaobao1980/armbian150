@@ -1,43 +1,60 @@
 # install lightdm greeter
-cp -R "${SRC}"/packages/blobs/desktop/lightdm "${destination}"/etc/armbian
+mkdir -p "${destination}"/etc/riscv
+cp -R "${SRC}"/packages/blobs/desktop/lightdm "${destination}"/etc/riscv
 
 # install default desktop settings
 mkdir -p "${destination}"/etc/skel
 cp -R "${SRC}"/packages/blobs/desktop/skel/. "${destination}"/etc/skel
 
-# install logo for login screen
-mkdir -p "${destination}"/usr/share/pixmaps/armbian
-cp "${SRC}"/packages/blobs/desktop/icons/armbian.png "${destination}"/usr/share/pixmaps/armbian
+#install cinnamon desktop bar icons
+mkdir -p "${destination}"/usr/share/icons/riscv
+cp "${SRC}"/packages/blobs/desktop/desktop-icons/*.png "${destination}"/usr/share/icons/riscv
 
 # install wallpapers
-mkdir -p "${destination}"/usr/share/backgrounds/armbian/
-cp "${SRC}"/packages/blobs/desktop/wallpapers/armbian*.jpg "${destination}"/usr/share/backgrounds/armbian/
+mkdir -p "${destination}"/usr/share/backgrounds/riscv/
+cp "${SRC}"/packages/blobs/desktop/desktop-wallpapers/*.jpg "${destination}"/usr/share/backgrounds/riscv
 
+# install wallpapers
+mkdir -p "${destination}"/usr/share/backgrounds/lightdm/
+cp "${SRC}"/packages/blobs/desktop/lightdm-wallpapers/*.jpg "${destination}"/usr/share/backgrounds/lightdm
+
+# install logo for login screen
+mkdir -p "${destination}"/usr/share/pixmaps/riscv
+cp "${SRC}"/packages/blobs/desktop/icons/riscv-chip-logo.png "${destination}"/usr/share/pixmaps/riscv
+
+#generate wallpaper list for background changer
 mkdir -p "${destination}"/usr/share/mate-background-properties
-cat <<-EOF > "${destination}"/usr/share/mate-background-properties/armbian.xml
+cat <<EOF > "${destination}"/usr/share/mate-background-properties/armbian.xml
 <?xml version="1.0"?>
-<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<!DOCTYPE wallpapers SYSTEM "mate-wp-list.dtd">
 <wallpapers>
   <wallpaper deleted="false">
-    <name>Armbian light</name>
-    <filename>/usr/share/backgrounds/armbian/armbian18-Dre0x-Minum-light-3840x2160.jpg</filename>
+    <name>Armbian logo0</name>
+    <filename>/usr/share/backgrounds/riscv/Riscv-0-logo.jpg</filename>
     <options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
   </wallpaper>
   <wallpaper deleted="false">
-    <name>Armbian dark</name>
-    <filename>/usr/share/backgrounds/armbian/armbian03-Dre0x-Minum-dark-3840x2160.jpg</filename>
+    <name>Armbian bluie-circle</name>
+    <filename>/usr/share/backgrounds/riscv/Riscv-1-logo.jpg</filename>
+    <options>zoom</options>
+    <pcolor>#ffffff</pcolor>
+    <scolor>#000000</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Armbian blue-monday</name>
+    <filename>/usr/share/backgrounds/riscv/Riscv-3-logo.jpg</filename>
+    <options>zoom</options>
+    <pcolor>#ffffff</pcolor>
+    <scolor>#000000</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Armbian blue-penguin</name>
+    <filename>/usr/share/backgrounds/riscv/Riscv-4-logo.jpg/filename>
     <options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
   </wallpaper>
 </wallpapers>
-EOF
-
-mkdir -p "${destination}"/usr/share/glib-2.0/schemas
-cat <<-EOF > "${destination}"/usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override
-[org.gnome.desktop.background]
-picture-uri='file:///usr/share/backgrounds/armbian/armbian03-Dre0x-Minum-dark-3840x2160.jpg'
-show-desktop-icons=true
 EOF

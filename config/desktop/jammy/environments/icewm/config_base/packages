@@ -62,6 +62,8 @@ gvfs-backends
 hplip
 hunspell-en-us
 icewm
+icewm-common
+icewm-experimental
 inputattach
 inxi
 keyutils
@@ -118,6 +120,7 @@ rox-filer
 samba
 slick-greeter
 smbclient
+snap
 software-properties-gtk
 speech-dispatcher
 spice-vdagent

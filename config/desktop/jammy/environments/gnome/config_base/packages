@@ -96,7 +96,6 @@ libxtst6
 libxxf86dga1
 libyelp0
 lightdm
-lightdm-settings
 linux-sound-base
 mutter
 mutter-common
@@ -121,8 +120,8 @@ python3-distupgrade
 python3-update-manager
 python3-xkit
 python3-yaml
-qalculate-gtk
 slick-greeter
+snap
 software-properties-gtk
 spice-vdagent
 system-config-printer

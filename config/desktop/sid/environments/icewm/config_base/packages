@@ -1,5 +1,6 @@
 anacron
 apt-config-auto-update
+apt-utils
 apt-xapian-index
 arandr
 blueman
@@ -40,6 +41,7 @@ fonts-nanum
 fonts-opensymbol
 fonts-stix
 fonts-symbola
+fonts-ubuntu-console
 foomatic-db-compressed-ppds
 fspanel
 gdebi
@@ -137,6 +139,7 @@ wmctrl
 x11-apps
 x11-utils
 x11-xserver-utils
+xapp
 xapps-common
 xarchiver
 xbacklight

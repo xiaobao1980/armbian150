@@ -334,6 +334,14 @@ create_rootfs_cache()
 			[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "Installation of Armbian desktop packages for ${BRANCH} ${BOARD} ${RELEASE} ${DESKTOP_APPGROUPS_SELECTED} ${DESKTOP_ENVIRONMENT} ${BUILD_MINIMAL} failed"
 		fi
 
+		# stage: check md5 sum of installed packages. Just in case.
+		display_alert "Check MD5 sum of installed packages" "info"
+		eval 'LC_ALL=C LANG=C sudo chroot $SDCARD /bin/bash -e -c "dpkg-query -f ${binary:Package} -W | xargs debsums"' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/${LOG_SUBPATH}/debootstrap.log'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'} ';EVALPIPE=(${PIPESTATUS[@]})'
+
+		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "MD5 sums check of installed packages failed"
+
 		# Remove packages from packages.uninstall
 
 		display_alert "Uninstall packages" "$PACKAGE_LIST_UNINSTALL" "info"
@@ -508,15 +516,9 @@ PRE_PREPARE_PARTITIONS
 		local rootpart=2
 		[[ -z $BOOTSIZE || $BOOTSIZE -le 8 ]] && BOOTSIZE=${DEFAULT_BOOTSIZE}
 	elif [[ $UEFISIZE -gt 0 ]]; then
-		if [[ "${IMAGE_PARTITION_TABLE}" == "gpt" ]]; then
-			# efi partition and ext4 root. some juggling is done by parted/sgdisk
-			local uefipart=15
-			local rootpart=1
-		else
-			# efi partition and ext4 root.
-			local uefipart=1
-			local rootpart=2
-		fi
+		# efi partition and ext4 root.
+		local uefipart=1
+		local rootpart=2
 	else
 		# single partition ext4 root
 		local rootpart=1
@@ -606,10 +608,8 @@ PREPARE_IMAGE_SIZE
 				parted -s ${SDCARD}.raw -- mkpart efi fat32 ${bootstart}s ${bootend}s
 				parted -s ${SDCARD}.raw -- mkpart rootfs ${parttype[$ROOTFS_TYPE]} ${rootstart}s "100%"
 				# transpose so EFI is in sda15 and root in sda1; requires sgdisk, parted cant do numbers
-				sgdisk --transpose 1:15 ${SDCARD}.raw &> /dev/null || echo "*** TRANSPOSE 1:15 FAILED"
-				sgdisk --transpose 2:1 ${SDCARD}.raw &> /dev/null || echo "*** TRANSPOSE 2:1 FAILED"
 				# set the ESP (efi) flag on 15
-				parted -s ${SDCARD}.raw -- set 15 esp on || echo "*** SETTING ESP ON 15 FAILED"
+				parted -s ${SDCARD}.raw -- set 1 esp on || echo "*** SETTING ESP ON 15 FAILED"
 			fi
 		else
 			parted -s ${SDCARD}.raw -- mkpart primary fat32 ${bootstart}s ${bootend}s
@@ -711,9 +711,9 @@ PREPARE_IMAGE_SIZE
 		echo "rootfstype=$ROOTFS_TYPE" >> $SDCARD/boot/armbianEnv.txt
 	elif [[ $rootpart != 1 ]]; then
 		local bootscript_dst=${BOOTSCRIPT##*:}
-		sed -i 's/mmcblk0p1/mmcblk0p2/' $SDCARD/boot/$bootscript_dst
-		sed -i -e "s/rootfstype=ext4/rootfstype=$ROOTFS_TYPE/" \
-			-e "s/rootfstype \"ext4\"/rootfstype \"$ROOTFS_TYPE\"/" $SDCARD/boot/$bootscript_dst
+#		sed -i 's/mmcblk0p1/mmcblk0p2/' $SDCARD/boot/$bootscript_dst
+#		sed -i -e "s/rootfstype=ext4/rootfstype=$ROOTFS_TYPE/" \
+#			-e "s/rootfstype \"ext4\"/rootfstype \"$ROOTFS_TYPE\"/" $SDCARD/boot/$bootscript_dst
 	fi
 
 	# if we have boot.ini = remove armbianEnv.txt and add UUID there if enabled

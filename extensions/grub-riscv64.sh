@@ -1,5 +1,5 @@
 # This runs *after* user_config. Don't change anything not coming from other variables or meant to be configured by the user.
-function extension_prepare_config__prepare_flash_kernel() {
+function extension_prepare_config__prepare_grub-riscv64() {
 	display_alert "Prepare config" "${EXTENSION}" "info"
 	# Extension configuration defaults.
 	export DISTRO_GENERIC_KERNEL=${DISTRO_GENERIC_KERNEL:-no}                    # if yes, does not build our own kernel, instead, uses generic one from distro
@@ -7,41 +7,28 @@ function extension_prepare_config__prepare_flash_kernel() {
 	export UEFI_GRUB_DISABLE_OS_PROBER="${UEFI_GRUB_DISABLE_OS_PROBER:-}"        # 'true' will disable os-probing, useful for SD cards.
 	export UEFI_GRUB_DISTRO_NAME="${UEFI_GRUB_DISTRO_NAME:-Armbian}"             # Will be used on grub menu display
 	export UEFI_GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT:-0}                             # Small timeout by default
-	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-yes}"               # Enable BIOS too if target is amd64
+	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-no}"               # Enable BIOS too if target is amd64
 	export UEFI_EXPORT_KERNEL_INITRD="${UEFI_EXPORT_KERNEL_INITRD:-no}"          # Export kernel and initrd for direct kernel boot "kexec"
 	# User config overrides.
-	export BOOTCONFIG="${BOTCONFIG:-none}"                                                     # To try and convince lib/ to not build or install u-boot.
-	export BOOTSOURCE="${BOOTSOURCE:-}"                                                             # To try and convince lib/ to not build or install u-boot.
+	export BOOTCONFIG="none"                                                     # To try and convince lib/ to not build or install u-boot.
+	unset BOOTSOURCE                                                             # To try and convince lib/ to not build or install u-boot.
 	export IMAGE_PARTITION_TABLE="gpt"                                           # GPT partition table is essential for many UEFI-like implementations, eg Apple+Intel stuff.
 	export UEFISIZE=256                                                          # in MiB - grub EFI is tiny - but some EFI BIOSes ignore small too small EFI partitions
 	export BOOTSIZE=0                                                            # No separate /boot when using UEFI.
 	export CLOUD_INIT_CONFIG_LOCATION="${CLOUD_INIT_CONFIG_LOCATION:-/boot/efi}" # use /boot/efi for cloud-init as default when using Grub.
 	export EXTRA_BSP_NAME="${EXTRA_BSP_NAME}-grub"                               # Unique bsp name.
 	export UEFI_GRUB_TARGET_BIOS=""                                              # Target for BIOS GRUB install, set to i386-pc when UEFI_ENABLE_BIOS_AMD64=yes and target is amd64
-	local uefi_packages="efibootmgr efivar cloud-initramfs-growroot"             # Use growroot, add some efi-related packages
-	uefi_packages="os-prober grub-efi-${ARCH}-bin ${uefi_packages}"              # This works for Ubuntu and Debian, by sheer luck; common for EFI and BIOS
-
-	# BIOS-compatibility for amd64
-	if [[ "${ARCH}" == "amd64" ]]; then
-		export UEFI_GRUB_TARGET="x86_64-efi" # Default for x86_64
-		if [[ "${UEFI_ENABLE_BIOS_AMD64}" == "yes" ]]; then
-			export uefi_packages="${uefi_packages} grub-pc-bin grub-pc"
-			export UEFI_GRUB_TARGET_BIOS="i386-pc"
-			export BIOSSIZE=4 # 4 MiB BIOS partition
-		else
-			export uefi_packages="${uefi_packages} grub-efi-${ARCH}"
-		fi
-	fi
-
-	[[ "${ARCH}" == "arm64" ]] && export uefi_packages="${uefi_packages} grub-efi-${ARCH}"
-	[[ "${ARCH}" == "arm64" ]] && export UEFI_GRUB_TARGET="arm64-efi" # Default for arm64-efi
 
 	if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
-		DISTRO_KERNEL_PACKAGES="linux-image-generic"
-		DISTRO_FIRMWARE_PACKAGES="linux-firmware"
+	display_alert "Prepare config Ubuntu" "${EXTENSION}" "info"
+
+	local uefi_packages="efibootmgr efivar cloud-initramfs-growroot os-prober grub-efi-${ARCH}-bin grub-efi-${ARCH}"
+
 	elif [[ "${DISTRIBUTION}" == "Debian" ]]; then
-		DISTRO_KERNEL_PACKAGES="linux-image-${ARCH}"
-		DISTRO_FIRMWARE_PACKAGES="firmware-linux-free"
+	display_alert "Prepare Debian" "${EXTENSION}" "info"
+
+	local uefi_packages=""
+
 		# Debian's prebuilt kernels dont support hvc0, hack.
 		if [[ "${SERIALCON}" == "hvc0" ]]; then
 			display_alert "Debian's kernels don't support hvc0, changing to ttyS0" "${DISTRIBUTION}" "wrn"
@@ -49,44 +36,21 @@ function extension_prepare_config__prepare_flash_kernel() {
 		fi
 	fi
 
-	if [[ "${DISTRO_GENERIC_KERNEL}" == "yes" ]]; then
-		export VER="generic"
-		unset KERNELSOURCE                 # This should make Armbian skip most stuff. At least, I hacked it to.
-		export INSTALL_ARMBIAN_FIRMWARE=no # Should skip build and install of Armbian-firmware.
-	else
-#		export KERNELDIR="linux-uefi-${LINUXFAMILY}" # Avoid sharing a source tree with others, until we know it's safe.
-		# Don't install anything. Armbian handles everything.
-		DISTRO_KERNEL_PACKAGES=""
-		DISTRO_FIRMWARE_PACKAGES=""
-	fi
+	DISTRO_KERNEL_PACKAGES=""
+	DISTRO_FIRMWARE_PACKAGES=""
 
-	export PACKAGE_LIST_BOARD="${PACKAGE_LIST_BOARD} ${DISTRO_FIRMWARE_PACKAGES} ${DISTRO_KERNEL_PACKAGES}  ${uefi_packages}"
+	export PACKAGE_LIST_BOARD="${PACKAGE_LIST_BOARD} ${DISTRO_FIRMWARE_PACKAGES} ${DISTRO_KERNEL_PACKAGES} ${uefi_packages}"
 
 	display_alert "Activating" "GRUB with SERIALCON=${SERIALCON}; timeout ${UEFI_GRUB_TIMEOUT}; BIOS=${UEFI_GRUB_TARGET_BIOS}" ""
 }
 
-# @TODO: extract u-boot into an extension, so that core bsps don't have this stuff in there to begin with.
-# @TODO: this code is duplicated in flash-kernel.sh extension, so another reason to refactor the root of the evil
-#post_family_tweaks_bsp__remove_uboot_grub() {
-#	display_alert "Removing uboot from BSP" "${EXTENSION}" "info"
-	# Simply remove everything with 'uboot' or 'u-boot' in their filenames from the BSP package.
-	# shellcheck disable=SC2154 # $destination is the target dir of the bsp building function
-#	find "$destination" -type f | grep -e "uboot" -e "u-boot" | xargs rm
-#}
-
-#pre_umount_final_image__remove_uboot_initramfs_hook_grub() {
-	# even if BSP still contained this (cached .deb), make sure by removing from ${MOUNT}
-#	[[ -f "$MOUNT"/etc/initramfs/post-update.d/99-uboot ]] && rm -v "$MOUNT"/etc/initramfs/post-update.d/99-uboot
-#}
-
 pre_umount_final_image__install_grub() {
+
+	if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
+
 	configure_grub
 	local chroot_target=$MOUNT
 	display_alert "Installing bootloader" "GRUB" "info"
-
-	# getting rid of the dtb package, if installed, is hard. for now just zap it, otherwise update-grub goes bananas
-#	rm -rf "$MOUNT"/boot/dtb* || true
-	cp -r "$MOUNT"/boot/dtb/rockchip "$MOUNT"/boot/efi/
 
 	# add config to disable os-prober, otherwise image will have the host's other OSes boot entries.
 	cat <<-grubCfgFragHostSide >>"${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
@@ -96,14 +60,9 @@ pre_umount_final_image__install_grub() {
 	# Mount the chroot...
 	mount_chroot "$chroot_target/" # this already handles /boot/efi which is required for it to work.
 
-	if [[ "${UEFI_GRUB_TARGET_BIOS}" != "" ]]; then
-		display_alert "Installing GRUB BIOS..." "${UEFI_GRUB_TARGET_BIOS} device ${LOOP}" ""
-		chroot "$chroot_target" /bin/bash -c "grub-install --verbose --target=${UEFI_GRUB_TARGET_BIOS} ${LOOP}" >>"$DEST"/"${LOG_SUBPATH}"/install.log 2>&1 || {
-			exit_with_error "${install_grub_cmdline} failed!"
-		}
-	fi
+#	local install_grub_cmdline="update-initramfs -c -k all && update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable" # nvram is global to the host, even across chroot. take care.
 
-	local install_grub_cmdline="update-initramfs -c -k all && update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable" # nvram is global to the host, even across chroot. take care.
+	local install_grub_cmdline="update-initramfs -c -k all && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable" # nvram is global to the host, even across chroot. take care.
 	display_alert "Installing GRUB EFI..." "${UEFI_GRUB_TARGET}" ""
 	chroot "$chroot_target" /bin/bash -c "$install_grub_cmdline" >>"$DEST"/"${LOG_SUBPATH}"/install.log 2>&1 || {
 		exit_with_error "${install_grub_cmdline} failed!"
@@ -116,13 +75,106 @@ pre_umount_final_image__install_grub() {
 	root_uuid=$(blkid -s UUID -o value "${LOOP}p2") # get the uuid of the root partition, this has been transposed
 
 	# Create /boot/efi/EFI/BOOT/grub.cfg (EFI/ESP) which will load /boot/grub/grub.cfg (in the rootfs, generated by update-grub)
-	cat <<-grubEfiCfg >"${MOUNT}"/boot/efi/EFI/BOOT/grub.cfg
-		search.fs_uuid ${root_uuid} root
-		set prefix=(\$root)'/boot/grub'
-		configfile \$prefix/grub.cfg
+	cat <<-grubEfiCfg >"${MOUNT}"/boot/grub/grub.cfg
+#search.fs_uuid ${root_uuid} root
+#set prefix=(\$root)'/boot/grub'
+#configfile \$prefix/grub.cfg
+if [ -s $prefix/grubenv ]; then
+  load_env
+fi
+if [ "${next_entry}" ] ; then
+   set default="${next_entry}"
+   set next_entry=
+   save_env next_entry
+   set boot_once=true
+else
+   set default="${saved_entry}"
+fi
+
+if [ x"${feature_menuentry_id}" = xy ]; then
+  menuentry_id_option="--id"
+else
+  menuentry_id_option=""
+fi
+
+export menuentry_id_option
+
+if [ "${prev_saved_entry}" ]; then
+  set saved_entry="${prev_saved_entry}"
+  save_env saved_entry
+  set prev_saved_entry=
+  save_env prev_saved_entry
+  set boot_once=true
+fi
+
+function savedefault {
+  if [ -z "${boot_once}" ]; then
+    saved_entry="${chosen}"
+    save_env saved_entry
+  fi
+}
+
+function load_video {
+  if [ x$feature_all_video_module = xy ]; then
+    insmod all_video
+  else
+    insmod efi_gop
+#    insmod efi_uga
+#    insmod ieee1275_fb
+#    insmod vbe
+#    insmod vga
+#    insmod video_bochs
+#    insmod video_cirrus
+  fi
+}
+
+terminal_output console
+if [ x$feature_timeout_style = xy ] ; then
+  set timeout_style=menu
+  set timeout=2
+# Fallback normal timeout code in case the timeout_style feature is
+# unavailable.
+else
+  set timeout=2
+fi
+# interrupt grub booting process if shift key pressed
+if keystatus --shift;then
+  set timeout=-1
+fi
+
+set menu_color_normal=white/black
+set menu_color_highlight=black/light-gray
+
+menuentry 'Armbian' --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-${root_uuid}' {
+	savedefault
+	load_video
+	insmod gzio
+	insmod part_gpt
+	insmod ext2
+	search --no-floppy --fs-uuid --set=root ${root_uuid}
+	echo	'Loading Linux Image ...'
+	linux	/boot/Image root=UUID=${root_uuid} ro console=ttyS0,115200n8 console=tty1
+	echo	'Loading initial ramdisk ...'
+	initrd	/boot/uInitrd
+}
+submenu 'Advanced options for Armbian' $menuentry_id_option 'gnulinux-advanced-${root_uuid}' {
+	menuentry 'Armbian, vmlinuz (recovery mode)' --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-vmlinuz-recovery-${root_uuid}' {
+		load_video
+		insmod gzio
+		insmod part_gpt
+		insmod ext2
+		search --no-floppy --fs-uuid --set=root ${root_uuid}
+		echo	'Loading Linux Image ...'
+		linux	/boot/vmlinuz root=UUID=${root_uuid} ro failsafe vga=normal
+		echo	'Loading initial ramdisk ...'
+		initrd	/boot/initrd.img
+	}
+}
 	grubEfiCfg
 
 	umount_chroot "$chroot_target/"
+
+fi
 
 }
 

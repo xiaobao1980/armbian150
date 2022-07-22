@@ -41,7 +41,6 @@ fonts-nanum
 fonts-opensymbol
 fonts-stix
 fonts-symbola
-fonts-ubuntu-console
 foomatic-db-compressed-ppds
 fspanel
 gdebi
@@ -56,9 +55,6 @@ gnome-system-tools
 gromit
 grun
 gsetroot
-gstreamer1.0-packagekit
-gstreamer1.0-plugins-base-apps
-gstreamer1.0-pulseaudio
 gvfs-backends
 hplip
 hunspell-en-us

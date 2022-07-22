@@ -1,5 +1,6 @@
 # This runs *after* user_config. Don't change anything not coming from other variables or meant to be configured by the user.
 function extension_prepare_config__prepare_flash_kernel() {
+	display_alert "Prepare config" "${EXTENSION}" "info"
 	# Extension configuration defaults.
 	export DISTRO_GENERIC_KERNEL=${DISTRO_GENERIC_KERNEL:-no}                    # if yes, does not build our own kernel, instead, uses generic one from distro
 	export UEFI_GRUB_TERMINAL="${UEFI_GRUB_TERMINAL:-serial console}"            # 'serial' forces grub menu on serial console. empty to not include
@@ -9,8 +10,8 @@ function extension_prepare_config__prepare_flash_kernel() {
 	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-yes}"               # Enable BIOS too if target is amd64
 	export UEFI_EXPORT_KERNEL_INITRD="${UEFI_EXPORT_KERNEL_INITRD:-no}"          # Export kernel and initrd for direct kernel boot "kexec"
 	# User config overrides.
-	export BOOTCONFIG="none"                                                     # To try and convince lib/ to not build or install u-boot.
-	unset BOOTSOURCE                                                             # To try and convince lib/ to not build or install u-boot.
+#	export BOOTCONFIG="${BOTCONFIG:-none}"                                                     # To try and convince lib/ to not build or install u-boot.
+#	export BOOTSOURCE="${BOOTSOURCE:-}"                                                             # To try and convince lib/ to not build or install u-boot.
 	export IMAGE_PARTITION_TABLE="gpt"                                           # GPT partition table is essential for many UEFI-like implementations, eg Apple+Intel stuff.
 	export UEFISIZE=256                                                          # in MiB - grub EFI is tiny - but some EFI BIOSes ignore small too small EFI partitions
 	export BOOTSIZE=0                                                            # No separate /boot when using UEFI.
@@ -53,7 +54,7 @@ function extension_prepare_config__prepare_flash_kernel() {
 		unset KERNELSOURCE                 # This should make Armbian skip most stuff. At least, I hacked it to.
 		export INSTALL_ARMBIAN_FIRMWARE=no # Should skip build and install of Armbian-firmware.
 	else
-		export KERNELDIR="linux-uefi-${LINUXFAMILY}" # Avoid sharing a source tree with others, until we know it's safe.
+#		export KERNELDIR="linux-uefi-${LINUXFAMILY}" # Avoid sharing a source tree with others, until we know it's safe.
 		# Don't install anything. Armbian handles everything.
 		DISTRO_KERNEL_PACKAGES=""
 		DISTRO_FIRMWARE_PACKAGES=""
@@ -66,17 +67,17 @@ function extension_prepare_config__prepare_flash_kernel() {
 
 # @TODO: extract u-boot into an extension, so that core bsps don't have this stuff in there to begin with.
 # @TODO: this code is duplicated in flash-kernel.sh extension, so another reason to refactor the root of the evil
-post_family_tweaks_bsp__remove_uboot_grub() {
-	display_alert "Removing uboot from BSP" "${EXTENSION}" "info"
+#post_family_tweaks_bsp__remove_uboot_grub() {
+#	display_alert "Removing uboot from BSP" "${EXTENSION}" "info"
 	# Simply remove everything with 'uboot' or 'u-boot' in their filenames from the BSP package.
 	# shellcheck disable=SC2154 # $destination is the target dir of the bsp building function
-	find "$destination" -type f | grep -e "uboot" -e "u-boot" | xargs rm
-}
+#	find "$destination" -type f | grep -e "uboot" -e "u-boot" | xargs rm
+#}
 
-pre_umount_final_image__remove_uboot_initramfs_hook_grub() {
+#pre_umount_final_image__remove_uboot_initramfs_hook_grub() {
 	# even if BSP still contained this (cached .deb), make sure by removing from ${MOUNT}
-	[[ -f "$MOUNT"/etc/initramfs/post-update.d/99-uboot ]] && rm -v "$MOUNT"/etc/initramfs/post-update.d/99-uboot
-}
+#	[[ -f "$MOUNT"/etc/initramfs/post-update.d/99-uboot ]] && rm -v "$MOUNT"/etc/initramfs/post-update.d/99-uboot
+#}
 
 pre_umount_final_image__install_grub() {
 	configure_grub
@@ -84,7 +85,9 @@ pre_umount_final_image__install_grub() {
 	display_alert "Installing bootloader" "GRUB" "info"
 
 	# getting rid of the dtb package, if installed, is hard. for now just zap it, otherwise update-grub goes bananas
-	rm -rf "$MOUNT"/boot/dtb* || true
+#	rm -rf "$MOUNT"/boot/dtb* || true
+	cp -r "$MOUNT"/boot/dtb/rockchip "$MOUNT"/boot/efi/
+	cp -r "$MOUNT"/boot/dtb/nvidia "$MOUNT"/boot/efi/
 
 	# add config to disable os-prober, otherwise image will have the host's other OSes boot entries.
 	cat <<-grubCfgFragHostSide >>"${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
@@ -111,7 +114,7 @@ pre_umount_final_image__install_grub() {
 	rm -f "${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
 
 	local root_uuid
-	root_uuid=$(blkid -s UUID -o value "${LOOP}p1") # get the uuid of the root partition, this has been transposed
+	root_uuid=$(blkid -s UUID -o value "${LOOP}p2") # get the uuid of the root partition, this has been transposed
 
 	# Create /boot/efi/EFI/BOOT/grub.cfg (EFI/ESP) which will load /boot/grub/grub.cfg (in the rootfs, generated by update-grub)
 	cat <<-grubEfiCfg >"${MOUNT}"/boot/efi/EFI/BOOT/grub.cfg

@@ -334,6 +334,14 @@ create_rootfs_cache()
 			[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "Installation of Armbian desktop packages for ${BRANCH} ${BOARD} ${RELEASE} ${DESKTOP_APPGROUPS_SELECTED} ${DESKTOP_ENVIRONMENT} ${BUILD_MINIMAL} failed"
 		fi
 
+		# stage: check md5 sum of installed packages. Just in case.
+		display_alert "Check MD5 sum of installed packages" "info"
+		eval 'LC_ALL=C LANG=C sudo chroot $SDCARD /bin/bash -e -c "dpkg-query -f ${binary:Package} -W | xargs debsums"' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/${LOG_SUBPATH}/debootstrap.log'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'} ';EVALPIPE=(${PIPESTATUS[@]})'
+
+		[[ ${EVALPIPE[0]} -ne 0 ]] && exit_with_error "MD5 sums check of installed packages failed"
+
 		# Remove packages from packages.uninstall
 
 		display_alert "Uninstall packages" "$PACKAGE_LIST_UNINSTALL" "info"
@@ -508,15 +516,9 @@ PRE_PREPARE_PARTITIONS
 		local rootpart=2
 		[[ -z $BOOTSIZE || $BOOTSIZE -le 8 ]] && BOOTSIZE=${DEFAULT_BOOTSIZE}
 	elif [[ $UEFISIZE -gt 0 ]]; then
-		if [[ "${IMAGE_PARTITION_TABLE}" == "gpt" ]]; then
-			# efi partition and ext4 root. some juggling is done by parted/sgdisk
-			local uefipart=1
-			local rootpart=2
-		else
-			# efi partition and ext4 root.
-			local uefipart=1
-			local rootpart=2
-		fi
+		# efi partition and ext4 root.
+		local uefipart=1
+		local rootpart=2
 	else
 		# single partition ext4 root
 		local rootpart=1
@@ -606,8 +608,6 @@ PREPARE_IMAGE_SIZE
 				parted -s ${SDCARD}.raw -- mkpart efi fat32 ${bootstart}s ${bootend}s
 				parted -s ${SDCARD}.raw -- mkpart rootfs ${parttype[$ROOTFS_TYPE]} ${rootstart}s "100%"
 				# transpose so EFI is in sda15 and root in sda1; requires sgdisk, parted cant do numbers
-#				sgdisk --transpose 1:15 ${SDCARD}.raw &> /dev/null || echo "*** TRANSPOSE 1:15 FAILED"
-#				sgdisk --transpose 2:1 ${SDCARD}.raw &> /dev/null || echo "*** TRANSPOSE 2:1 FAILED"
 				# set the ESP (efi) flag on 15
 				parted -s ${SDCARD}.raw -- set 1 esp on || echo "*** SETTING ESP ON 15 FAILED"
 			fi
@@ -924,16 +924,9 @@ POST_UMOUNT_FINAL_IMAGE
 			display_alert "Compressing" "${DESTIMG}/${version}.img.xz" "info"
 			# compressing consumes a lot of memory we don't have. Waiting for previous packing job to finish helps to run a lot more builds in parallel
 			available_cpu=$(grep -c 'processor' /proc/cpuinfo)
-			#[[ ${BUILD_ALL} == yes ]] && available_cpu=$(( $available_cpu * 30 / 100 )) # lets use 20% of resources in case of build-all
 			[[ ${available_cpu} -gt 16 ]] && available_cpu=16 # using more cpu cores for compressing is pointless
 			available_mem=$(LC_ALL=c free | grep Mem | awk '{print $4/$2 * 100.0}' | awk '{print int($1)}') # in percentage
 			# build optimisations when memory drops below 5%
-			if [[ ${BUILD_ALL} == yes && ( ${available_mem} -lt 15 || $(ps -uax | grep "pixz" | wc -l) -gt 4 )]]; then
-				while [[ $(ps -uax | grep "pixz" | wc -l) -gt 2 ]]
-					do echo -en "#"
-					sleep 20
-				done
-			fi
 			pixz -7 -p ${available_cpu} -f $(expr ${available_cpu} + 2) < $DESTIMG/${version}.img > ${DESTIMG}/${version}.img.xz
 			compression_type=".xz"
 		fi

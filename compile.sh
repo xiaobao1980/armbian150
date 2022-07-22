@@ -30,7 +30,7 @@ fi
 if [[ -f "${SRC}"/lib/general.sh ]]; then
 
 	# Declare this folder as safe
-	if [[ -z $(cat ${HOME}/.gitconfig | grep "directory = \*") ]]; then
+	if ! grep -q 2>/dev/null "directory = \*" "$HOME/.gitconfig"; then
 		git config --global --add safe.directory "*"
 	fi
 
@@ -97,7 +97,7 @@ update_src() {
 				fi
 			done
 		elif [[ $(git branch | grep "*" | awk '{print $2}') != "${LIB_TAG}" && -n "${LIB_TAG}" ]]; then
-			git checkout "${LIB_TAG:-armbian-tv}"
+			git checkout "${LIB_TAG:-risc-v}"
 			git pull
 		fi
 	fi

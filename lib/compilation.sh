@@ -421,11 +421,11 @@ compile_kernel()
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
 	elif [[ $(dpkg --print-architecture) == amd64 ]]; then
-        if [[ $ARCH != "riscv64" ]]; then
-    		local toolchain
-    		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
-    		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
-    	fi
+	        if [[ $ARCH != "riscv64" ]]; then
+    			local toolchain
+    			toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
+    			[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
+    		fi
 	else
 		exit_with_error "Architecture [$ARCH] is not supported"
 	fi

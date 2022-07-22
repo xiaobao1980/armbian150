@@ -340,8 +340,8 @@ family_tweaks() {
 			echo "exit 0" >> $SDCARD/etc/rc.local
 		else
 			cp -R $SRC/packages/blobs/jetson/firmware/* $SDCARD/lib/firmware/
-	fi
-    fi
+		fi
+    	fi
 }
 
 family_tweaks_bsp() {

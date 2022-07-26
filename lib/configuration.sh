@@ -603,6 +603,11 @@ if [[ "${ARCH}" == "amd64" ]]; then
 		fi
 fi
 
+if [[ "${ARCH}" == "riscv64" ]] && [[ $DISTRIBUTION == Debian ]]; then
+	DEBIAN_MIRROR='deb.debian.org/debian-ports'
+	DEBOOTSTRAP_OPTION="--keyring /usr/share/keyrings/debian-ports-archive-keyring.gpg --include=debian-ports-archive-keyring"
+fi
+
 # don't use mirrors that throws garbage on 404
 if [[ -z ${ARMBIAN_MIRROR} ]]; then
 	while true; do

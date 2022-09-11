@@ -35,8 +35,8 @@ pre_umount_final_image__install_grub() {
 	display_alert "Installing bootloader" "GRUB" "info"
 
 	# getting rid of the dtb package, if installed, is hard. for now just zap it, otherwise update-grub goes bananas
-#	mkdir -p "$MOUNT"/boot/efi/dtb
-#	cp -r "$MOUNT"/boot/dtb/* "$MOUNT"/boot/efi/dtb/
+	mkdir -p "$MOUNT"/boot/efi/dtb
+	cp -r "$MOUNT"/boot/dtb/* "$MOUNT"/boot/efi/dtb/
 
 
 	# add config to disable os-prober, otherwise image will have the host's other OSes boot entries.

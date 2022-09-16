@@ -37,7 +37,7 @@ pre_umount_final_image__install_grub() {
 	# getting rid of the dtb package, if installed, is hard. for now just zap it, otherwise update-grub goes bananas
 	mkdir -p "$MOUNT"/boot/efi/dtb
 	cp -r "$MOUNT"/boot/dtb/* "$MOUNT"/boot/efi/dtb/
-
+	cp -r $SRC/packages/blobs/jetson/boot.png "$MOUNT"/boot/grub
 
 	# add config to disable os-prober, otherwise image will have the host's other OSes boot entries.
 	cat <<-grubCfgFragHostSide >>"${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
@@ -48,7 +48,6 @@ pre_umount_final_image__install_grub() {
 	mount_chroot "$chroot_target/" # this already handles /boot/efi which is required for it to work.
 
 	sed -i '/devicetree/c devicetree    /boot\/dtb\/'"$BOOT_FDT_FILE" "$MOUNT"/etc/grub.d/10_linux >>"${DEST}"/"${LOG_SUBPATH}"/grub-n.log 2>&1
-	cp -r $SRC/packages/blobs/jetson/boot.png "$MOUNT"/boot/grub
 
 	local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
 	display_alert "Installing GRUB EFI..." "${UEFI_GRUB_TARGET}" ""

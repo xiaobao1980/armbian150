@@ -6,6 +6,7 @@ function extension_prepare_config__prepare_grub-n() {
 	export UEFI_GRUB_DISABLE_OS_PROBER="${UEFI_GRUB_DISABLE_OS_PROBER:-}"        # 'true' will disable os-probing, useful for SD cards.
 	export UEFI_GRUB_DISTRO_NAME="${UEFI_GRUB_DISTRO_NAME:-Armbian}"             # Will be used on grub menu display
 	export UEFI_GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT:-0}                             # Small timeout by default
+	export GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:-}"          # Cmdline by default
 	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-no}"               # Enable BIOS too if target is amd64
 	export UEFI_EXPORT_KERNEL_INITRD="${UEFI_EXPORT_KERNEL_INITRD:-no}"          # Export kernel and initrd for direct kernel boot "kexec"
 	# User config overrides.
@@ -37,19 +38,23 @@ pre_umount_final_image__install_grub() {
 	# getting rid of the dtb package, if installed, is hard. for now just zap it, otherwise update-grub goes bananas
 	mkdir -p "$MOUNT"/boot/efi/dtb
 	cp -r "$MOUNT"/boot/dtb/* "$MOUNT"/boot/efi/dtb/
-	cp -r $SRC/packages/blobs/jetson/boot.png "$MOUNT"/boot/grub
+#	cp -r $SRC/packages/blobs/jetson/boot.png "$MOUNT"/boot/grub
 
 	# add config to disable os-prober, otherwise image will have the host's other OSes boot entries.
 	cat <<-grubCfgFragHostSide >>"${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
 		GRUB_DISABLE_OS_PROBER=true
 	grubCfgFragHostSide
 
+	# copy Armbian GRUB wallpaper
+	mkdir -p "${MOUNT}"/usr/share/images/grub/
+	cp "${SRC}"/packages/blobs/splash/grub.png "${MOUNT}"/usr/share/images/grub/wallpaper.png
+
 	# Mount the chroot...
 	mount_chroot "$chroot_target/" # this already handles /boot/efi which is required for it to work.
 
 	sed -i '/devicetree/c devicetree    /boot\/dtb\/'"$BOOT_FDT_FILE" "$MOUNT"/etc/grub.d/10_linux >>"${DEST}"/"${LOG_SUBPATH}"/grub-n.log 2>&1
 
-	local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
+	local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable" # nvram is global to the host, even across chroot. take care.
 	display_alert "Installing GRUB EFI..." "${UEFI_GRUB_TARGET}" ""
 	chroot "$chroot_target" /bin/bash -c "$install_grub_cmdline" >>"$DEST"/"${LOG_SUBPATH}"/install.log 2>&1 || {
 		exit_with_error "${install_grub_cmdline} failed!"
@@ -59,7 +64,7 @@ pre_umount_final_image__install_grub() {
 	rm -f "${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
 
 	local root_uuid
-	root_uuid=$(blkid -s UUID -o value "${LOOP}p2") # get the uuid of the root partition, this has been transposed
+	root_uuid=$(blkid -s UUID -o value "${LOOP}p${uefipart}") # get the uuid of the root partition, this has been transposed
 
 	if [[ $BOARD == jetson-nano ]]; then
 		cp -R $SRC/packages/blobs/jetson/boot.scr "${MOUNT}"/boot/efi/boot.scr
@@ -80,19 +85,31 @@ pre_umount_final_image__900_export_kernel_and_initramfs() {
 }
 
 configure_grub() {
-	display_alert "GRUB EFI kernel cmdline" "console=${SERIALCON} distro=${UEFI_GRUB_DISTRO_NAME} timeout=${UEFI_GRUB_TIMEOUT}" ""
+	[[ -n "$SERIALCON" ]] \
+		&& GRUB_CMDLINE_LINUX_DEFAULT+=" console=${SERIALCON}"
 
-	if [[ "_${SERIALCON}_" != "__" ]]; then
-		cat <<-grubCfgFrag >>"${MOUNT}"/etc/default/grub.d/98-armbian.cfg
-			GRUB_CMDLINE_LINUX_DEFAULT="console=${SERIALCON}"        # extra Kernel cmdline is configured here
-		grubCfgFrag
+	[[ "$BOOT_LOGO" == "yes" || "$BOOT_LOGO" == "desktop" && "$BUILD_DESKTOP" == "yes" ]] \
+		&& GRUB_CMDLINE_LINUX_DEFAULT+=" quiet splash plymouth.ignore-serial-consoles i915.force_probe=* loglevel=3" \
+		|| GRUB_CMDLINE_LINUX_DEFAULT+=" splash=verbose i915.force_probe=*"
+
+	# Enable Armbian Wallpaper on GRUB
+	if [[ "${VENDOR}" == Armbian ]]; then
+		mkdir -p "${MOUNT}"/usr/share/desktop-base/
+		cat <<-grubWallpaper >>"${MOUNT}"/usr/share/desktop-base/grub_background.sh
+			WALLPAPER=/usr/share/images/grub/wallpaper.png
+			COLOR_NORMAL=white/black
+			COLOR_HIGHLIGHT=black/white
+		grubWallpaper
 	fi
 
+	display_alert "GRUB EFI kernel cmdline" "${GRUB_CMDLINE_LINUX_DEFAULT} distro=${UEFI_GRUB_DISTRO_NAME} timeout=${UEFI_GRUB_TIMEOUT}" ""
 	cat <<-grubCfgFrag >>"${MOUNT}"/etc/default/grub.d/98-armbian.cfg
+		GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT}"
 		GRUB_TIMEOUT_STYLE=menu                                  # Show the menu with Kernel options (Armbian or -generic)...
 		GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT}                        # ... for ${UEFI_GRUB_TIMEOUT} seconds, then boot the Armbian default.
 		GRUB_DISTRIBUTOR="${UEFI_GRUB_DISTRO_NAME}"              # On GRUB menu will show up as "Armbian GNU/Linux" (will show up in some UEFI BIOS boot menu (F8?) as "armbian", not on others)
-		GRUB_BACKGROUND="/boot/grub/boot.png"
+		GRUB_GFXMODE=1024x768
+		GRUB_GFXPAYLOAD=keep
 	grubCfgFrag
 
 	if [[ "a${UEFI_GRUB_DISABLE_OS_PROBER}" != "a" ]]; then

@@ -610,6 +610,8 @@ compile_firmware()
 		fetch_from_repo "$MAINLINE_FIRMWARE_SOURCE" "linux-firmware-git" "branch:main"
 		# cp : create hardlinks
 		cp -af --reflink=auto "${SRC}"/cache/sources/linux-firmware-git/* "${firmwaretempdir}/${plugin_dir}/lib/firmware/"
+		# cp : create hardlinks for ath11k WCN685x hw2.1 firmware since they are using the same firmware with hw2.0
+		cp -af --reflink=auto "${firmwaretempdir}/${plugin_dir}/lib/firmware/ath11k/WCN6855/hw2.0/" "${firmwaretempdir}/${plugin_dir}/lib/firmware/ath11k/WCN6855/hw2.1/"
 	fi
 	# overlay our firmware
 	# cp : create hardlinks
@@ -735,7 +737,7 @@ compile_armbian-config()
 
 	fetch_from_repo "$GITHUB_SOURCE/armbian/config" "armbian-config" "branch:master"
 	fetch_from_repo "$GITHUB_SOURCE/dylanaraps/neofetch" "neofetch" "tag:7.1.0"
-	fetch_from_repo "$GITHUB_SOURCE/complexorganizations/wireguard-manager" "wireguard-manager" "tag:v1.0.0.10-26-2021"
+	fetch_from_repo "$GITHUB_SOURCE/complexorganizations/wireguard-manager" "wireguard-manager" "branch:main"
 
 	mkdir -p "${tmp_dir}/${armbian_config_dir}"/{DEBIAN,usr/bin/,usr/sbin/,usr/lib/armbian-config/}
 
@@ -776,6 +778,62 @@ compile_armbian-config()
 	rm -rf "${tmp_dir}"
 }
 
+
+
+
+compile_plymouth-theme-armbian()
+{
+
+	local tmp_dir work_dir
+	tmp_dir=$(mktemp -d)
+	chmod 700 ${tmp_dir}
+	trap "ret=\$?; rm -rf \"${tmp_dir}\" ; exit \$ret" 0 1 2 3 15
+	plymouth_theme_armbian_dir=armbian-plymouth-theme_${REVISION}_all
+	display_alert "Building deb" "armbian-plymouth-theme" "info"
+
+	mkdir -p "${tmp_dir}/${plymouth_theme_armbian_dir}"/{DEBIAN,usr/share/plymouth/themes/armbian}
+
+	# set up control file
+	cat <<-END > "${tmp_dir}/${plymouth_theme_armbian_dir}"/DEBIAN/control
+	Package: armbian-plymouth-theme
+	Version: $REVISION
+	Architecture: all
+	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+	Depends: plymouth, plymouth-themes
+	Section: universe/x11
+	Priority: optional
+	Description: boot animation, logger and I/O multiplexer - armbian theme
+	END
+
+	cp "${SRC}"/packages/plymouth-theme-armbian/debian/{postinst,prerm,postrm} \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/DEBIAN/
+	chmod 755 "${tmp_dir}/${plymouth_theme_armbian_dir}"/DEBIAN/{postinst,prerm,postrm}
+
+	convert -resize 256x256 \
+		"${SRC}"/packages/plymouth-theme-armbian/armbian-logo.png \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/bgrt-fallback.png
+
+	# convert -resize 52x52 \
+	# 	"${SRC}"/packages/plymouth-theme-armbian/spinner.gif \
+	# 	"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/animation-%04d.png
+
+	convert -resize 52x52 \
+		"${SRC}"/packages/plymouth-theme-armbian/spinner.gif \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/throbber-%04d.png
+
+	cp "${SRC}"/packages/plymouth-theme-armbian/watermark.png \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/
+
+	cp "${SRC}"/packages/plymouth-theme-armbian/{bullet,capslock,entry,keyboard,keymap-render,lock}.png \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/
+
+	cp "${SRC}"/packages/plymouth-theme-armbian/armbian.plymouth \
+		"${tmp_dir}/${plymouth_theme_armbian_dir}"/usr/share/plymouth/themes/armbian/
+
+	fakeroot dpkg-deb -b -Z${DEB_COMPRESS} "${tmp_dir}/${plymouth_theme_armbian_dir}" >/dev/null
+	rsync --remove-source-files -rq "${tmp_dir}/${plymouth_theme_armbian_dir}.deb" "${DEB_STORAGE}/"
+	rm -rf "${tmp_dir}"
+}
 
 
 

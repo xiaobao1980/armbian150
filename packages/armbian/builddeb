@@ -202,7 +202,7 @@ fi
 # XXX: have each arch Makefile export a variable of the canonical image install
 # path instead
 case $ARCH in
-	++aarch64|arm64|riscv)
+	++aarch64|arm64)
 		image_name=Image
 		installed_image_path="boot/vmlinuz-$version"
 		;;

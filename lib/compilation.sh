@@ -24,9 +24,6 @@
 # userpatch_create
 # overlayfs_wrapper
 
-
-
-
 compile_atf()
 {
 	if [[ $CLEAN_LEVEL == *make* ]]; then
@@ -45,7 +42,7 @@ compile_atf()
 	display_alert "Compiling ATF" "" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]]; then
+  if [[ $(dpkg --print-architecture) == amd64 ]] | [[ $(dpkg --print-architecture) == arm64 ]] ; then
 
 	local toolchain
 	toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
@@ -111,9 +108,6 @@ compile_atf()
 	[[ -f license.md ]] && cp license.md "${atftempdir}"/
 }
 
-
-
-
 compile_uboot()
 {
 	# not optimal, but extra cleaning before overlayfs_wrapper should keep sources directory clean
@@ -138,7 +132,7 @@ compile_uboot()
 	display_alert "Compiling u-boot" "$version" "info"
 
 # build aarch64
-  if [[ $(dpkg --print-architecture) == amd64 ]]; then
+  if [[ $(dpkg --print-architecture) == amd64 ]] | [[ $(dpkg --print-architecture) == arm64 ]]; then
 
 	local toolchain
 	if [[ $ARCH = "riscv64" ]]; then
@@ -147,7 +141,7 @@ compile_uboot()
     		toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
     		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
 	fi
-    
+
 	if [[ -n $UBOOT_TOOLCHAIN2 ]]; then
 		local toolchain2_type toolchain2_ver toolchain2
 		toolchain2_type=$(cut -d':' -f1 <<< "${UBOOT_TOOLCHAIN2}")
@@ -420,7 +414,7 @@ compile_kernel()
 	# if it matches we use the system compiler
 	if $(dpkg-architecture -e "${ARCH}"); then
 		display_alert "Native compilation"
-	elif [[ $(dpkg --print-architecture) == amd64 ]]; then
+	elif [[ $(dpkg --print-architecture) == amd64 ]] || [[ $(dpkg --print-architecture) == arm64 ]]; then
 	        if [[ $ARCH != "riscv64" ]]; then
     			local toolchain
     			toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
@@ -452,13 +446,6 @@ Called after ${LINUXCONFIG}.config is put in place (.config).
 Before any olddefconfig any Kconfig make is called.
 A good place to customize the .config directly.
 CUSTOM_KERNEL_CONFIG
-
-
-	# hack for OdroidXU4. Copy firmare files
-	if [[ $BOARD == odroidxu4 ]]; then
-		mkdir -p "${kerneldir}/firmware/edid"
-		cp "${SRC}"/packages/blobs/odroidxu4/*.bin "${kerneldir}/firmware/edid"
-	fi
 
 	# hack for deb builder. To pack what's missing in headers pack.
 	cp "${SRC}"/patch/misc/headers-debian-byteshift.patch /tmp
@@ -589,9 +576,6 @@ CUSTOM_KERNEL_CONFIG
 
 }
 
-
-
-
 compile_firmware()
 {
 	display_alert "Merging and packaging linux firmware" "@host" "info"
@@ -642,9 +626,6 @@ compile_firmware()
 	# remove temp directory
 	rm -rf "${firmwaretempdir}"
 }
-
-
-
 
 compile_armbian-zsh()
 {
@@ -719,9 +700,6 @@ compile_armbian-zsh()
 
 }
 
-
-
-
 compile_armbian-config()
 {
 
@@ -733,8 +711,6 @@ compile_armbian-config()
 	display_alert "Building deb" "armbian-config" "info"
 
 	fetch_from_repo "$GITHUB_SOURCE/armbian/config" "armbian-config" "branch:master"
-	fetch_from_repo "$GITHUB_SOURCE/dylanaraps/neofetch" "neofetch" "tag:7.1.0"
-	fetch_from_repo "$GITHUB_SOURCE/complexorganizations/wireguard-manager" "wireguard-manager" "tag:v1.0.0.10-26-2021"
 
 	mkdir -p "${tmp_dir}/${armbian_config_dir}"/{DEBIAN,usr/bin/,usr/sbin/,usr/lib/armbian-config/}
 
@@ -744,7 +720,7 @@ compile_armbian-config()
 	Version: $REVISION
 	Architecture: all
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-	Replaces: armbian-bsp, neofetch
+	Replaces: armbian-bsp
 	Depends: bash, iperf3, psmisc, curl, bc, expect, dialog, pv, zip, \
 	debconf-utils, unzip, build-essential, html2text, html2text, dirmngr, software-properties-common, debconf, jq
 	Recommends: armbian-bsp
@@ -754,11 +730,6 @@ compile_armbian-config()
 	Description: Armbian configuration utility
 	END
 
-	install -m 755 "${SRC}"/cache/sources/neofetch/neofetch "${tmp_dir}/${armbian_config_dir}"/usr/bin/neofetch
-	cd "${tmp_dir}/${armbian_config_dir}"/usr/bin/
-	process_patch_file "${SRC}/patch/misc/add-armbian-neofetch.patch" "applying"
-
-	install -m 755 "${SRC}"/cache/sources/wireguard-manager/wireguard-manager.sh "${tmp_dir}/${armbian_config_dir}"/usr/bin/wireguard-manager
 	install -m 755 "${SRC}"/cache/sources/armbian-config/scripts/tv_grab_file "${tmp_dir}/${armbian_config_dir}"/usr/bin/tv_grab_file
 	install -m 755 "${SRC}"/cache/sources/armbian-config/debian-config "${tmp_dir}/${armbian_config_dir}"/usr/sbin/armbian-config
 	install -m 644 "${SRC}"/cache/sources/armbian-config/debian-config-jobs "${tmp_dir}/${armbian_config_dir}"/usr/lib/armbian-config/jobs.sh
@@ -774,10 +745,6 @@ compile_armbian-config()
 	rsync --remove-source-files -rq "${tmp_dir}/${armbian_config_dir}.deb" "${DEB_STORAGE}/"
 	rm -rf "${tmp_dir}"
 }
-
-
-
-
 
 compile_xilinx_bootgen()
 {

@@ -2,7 +2,7 @@ new file mode 100644
 index 00000000000..e0490aaa7ba
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3399-orangepi-800.dts
-@@ -0,0 +1,977 @@
+@@ -0,0 +1,973 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2019 Akash Gajjar <Akash_Gajjar@mentor.com>
@@ -15,6 +15,7 @@ index 00000000000..e0490aaa7ba
 +#include <dt-bindings/pwm/pwm.h>
 +#include <dt-bindings/input/input.h>
 +#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/leds/common.h>
 +#include <dt-bindings/usb/pd.h>
 +#include "rk3399.dtsi"
 +#include "rk3399-opp.dtsi"
@@ -24,9 +25,8 @@ index 00000000000..e0490aaa7ba
 +	compatible = "rockchip,rk3399-orangepi-800", "rockchip,rk3399";
 +
 +	aliases {
-+		mmc0 = &sdio0;
-+		mmc1 = &sdmmc;
-+		mmc2 = &sdhci;
++		mmc0 = &sdmmc;
++		mmc1 = &sdhci;
 +	};
 +
 +	cpuinfo {
@@ -56,7 +56,7 @@ index 00000000000..e0490aaa7ba
 +		clock-names = "ext_clock";
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&wifi_reg_on_h>;
-+		reset-gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 +	};
 +
 +	usb_vbus: usb-vbus {
@@ -185,17 +185,6 @@ index 00000000000..e0490aaa7ba
 +		};
 +	};
 +
-+	hdmi_sound: hdmi-sound {
-+		status = "okay";
-+	};
-+
-+        hdmi_dp_sound: hdmi-dp-sound {
-+                status = "okay";
-+                compatible = "rockchip,rk3399-hdmi-dp";
-+                rockchip,cpu = <&i2s2>;
-+                rockchip,codec = <&hdmi>, <&cdn_dp>;
-+        };
-+
 +	adc-keys {
 +		compatible = "adc-keys";
 +		io-channels = <&saradc 1>;
@@ -272,17 +261,20 @@ index 00000000000..e0490aaa7ba
 +
 +	unisoc_uwe_bsp: uwe-bsp {
 +		compatible = "unisoc,uwe_bsp";
-+		wl-reg-on = <&gpio0 RK_PB2 GPIO_ACTIVE_HIGH>;
-+		bt-reg-on = <&gpio0 RK_PB1 GPIO_ACTIVE_HIGH>;
-+		wl-wake-host-gpio = <&gpio0 RK_PA3 GPIO_ACTIVE_HIGH>;
-+		bt-wake-host-gpio = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
-+		sdio-ext-int-gpio = <&gpio2 RK_PD4 GPIO_ACTIVE_HIGH>;
-+		unisoc,btwf-file-name = "/lib/firmware/wcnmodem.bin";
-+		//adma-tx;
-+		//adma-rx;
++		//wl-reg-on = <&gpio0 10 GPIO_ACTIVE_HIGH>;  // handled by sdio-pwrseq
++		bt-reg-on = <&gpio0 9 GPIO_ACTIVE_HIGH>;
++		wl-wake-host-gpio = <&gpio0 3 GPIO_ACTIVE_HIGH>;
++		bt-wake-host-gpio = <&gpio0 4 GPIO_ACTIVE_HIGH>;
++		sdio-ext-int-gpio = <&gpio3 30 GPIO_ACTIVE_HIGH>;
++		unisoc,btwf-file-name = "/lib/firmware/uwe5622/wcnmodem-38222.bin";
 +		data-irq;
 +		blksz-512;
 +		keep-power-on;
++		status = "okay";
++	};
++
++	sprd-wlan {
++		compatible = "sprd,uwe5622-wifi";
 +		status = "okay";
 +	};
 +
@@ -607,15 +599,15 @@ index 00000000000..e0490aaa7ba
 +};
 +
 +&i2c2 {
-+	status = "disabled";
++	status = "okay";
 +};
 +
 +&i2c3 {
-+	status = "disabled";
++	status = "okay";
 +};
 +
 +&i2c4 {
-+	status = "disabled";
++	status = "okay";
 +};
 +
 +&spdif {
@@ -780,6 +772,8 @@ index 00000000000..e0490aaa7ba
 +
 +&pwm2 {
 +	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm2_pin_pull_down>;
 +};
 +
 +&saradc {
@@ -882,17 +876,19 @@ index 00000000000..e0490aaa7ba
 +	pinctrl-0 = <&uart0_xfer &uart0_cts &uart0_rts>;
 +	status = "okay";
 +
-+//	bluetooth {
-+//		compatible = "brcm,bcm4345c5";
-+//		clocks = <&rk808 1>;
-+//		clock-names = "lpo";
-+//		device-wakeup-gpios = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
-+//		host-wakeup-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
-+//		shutdown-gpios = <&gpio0 RK_PB1 GPIO_ACTIVE_HIGH>;
-+//		max-speed = <1500000>;
-+//		pinctrl-names = "default";
-+//		pinctrl-0 = <&bt_host_wake_l &bt_wake_l &bt_reg_on_h>;
-+//	};
++	/*
++	bluetooth {
++		compatible = "brcm,bcm4345c5";
++		clocks = <&rk808 1>;
++		clock-names = "lpo";
++		device-wakeup-gpios = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
++		host-wakeup-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
++		shutdown-gpios = <&gpio0 RK_PB1 GPIO_ACTIVE_HIGH>;
++		max-speed = <1500000>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&bt_host_wake &bt_wake &bt_reset>;
++	};
++	*/
 +
 +};
 +
@@ -969,15 +965,15 @@ index 00000000000..e0490aaa7ba
 +//        enable-gpios = <&gpio4 RK_PC1 GPIO_ACTIVE_HIGH>;
 +//};
 +
-+//&edp_hpd {
-+//	rockchip,pins = <4 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
-+//};
++&edp_hpd {
++	rockchip,pins = <4 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
++};
 +
-+//&edp_in_vopb {
-+//	status = "disabled";
-+//};
++&edp_in_vopb {
++	status = "disabled";
++};
 +
-+//&hdmi_in_vopb {
-+//        status = "okay";
-+//};
++&hdmi_in_vopb {
++        status = "okay";
++};
 

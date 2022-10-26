@@ -54,19 +54,13 @@ efi_partition=$(LC_ALL=C fdisk -l "/dev/$diskcheck" 2>/dev/null | grep "EFI" | a
 declare -A mkopts mountopts
 # for ARMv7 remove 64bit feature from default mke2fs format features
 if [[ $LINUXFAMILY == mvebu ]]; then
-	mkopts[ext2]='-O ^64bit -qF'
-	mkopts[ext3]='-O ^64bit -qF'
 	mkopts[ext4]='-O ^64bit -qF'
 else
-	mkopts[ext2]='-qF'
-	mkopts[ext3]='-qF'
 	mkopts[ext4]='-qF'
 fi
 mkopts[btrfs]='-f'
 mkopts[f2fs]='-f'
 
-mountopts[ext2]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
-mountopts[ext3]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
 mountopts[ext4]='defaults,noatime,commit=600,errors=remount-ro,x-gvfs-hide	0	1'
 mountopts[btrfs]='defaults,noatime,commit=600,compress=lzo,x-gvfs-hide			0	2'
 mountopts[f2fs]='defaults,noatime,x-gvfs-hide	0	2'

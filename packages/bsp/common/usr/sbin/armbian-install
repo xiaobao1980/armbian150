@@ -74,7 +74,7 @@ mountopts[f2fs]='defaults,noatime,x-gvfs-hide	0	2'
 create_armbian()
 {
 
-#	[[ -n "$3" ]] && diskcheck=$3
+	[[ -n "$3" ]] && diskcheck=$3
 
 	# create mount points, mount and clean
 	TempDir=$(mktemp -d /mnt/${0##*/}.XXXXXX || exit 2)
@@ -253,7 +253,7 @@ create_armbian()
 
 	# Boot from eMMC, root = eMMC or SATA / USB
 	#
-	if [[ $2 == ${emmccheck}p* || $1 == ${emmccheck}p* ]]; then
+	if [[ ($2 == ${emmccheck}p* || $1 == ${emmccheck}p*) && $DEVICE_TYPE != uefi ]]; then
 
 		if [[ $2 == ${DISK_ROOT_PART} ]]; then
 			local targetuuid=$satauuid
@@ -304,7 +304,11 @@ create_armbian()
 			echo "$targetuuid	/		$choosen_fs	${mountopts[$choosen_fs]}" >> "${TempDir}"/rootfs/etc/fstab
 			# swap file not supported under btrfs but we might have made a partition
 			[[ -n ${emmcswapuuid} ]] && sed -e 's,/var/swap.*,'$emmcswapuuid' 	none		swap	sw								0	0,g' -i "${TempDir}"/rootfs/etc/fstab
-			[[ -f "${TempDir}"/bootfs/boot/armbianEnv.txt ]] && sed -e 's,rootfstype=.*,rootfstype='$eMMCFilesystemChoosen',g' -i "${TempDir}"/bootfs/boot/armbianEnv.txt
+			if [[ -f "${TempDir}"/bootfs/boot/armbianEnv.txt ]]; then
+			    sed -e 's,rootfstype=.*,rootfstype='$eMMCFilesystemChoosen',g' -i "${TempDir}"/bootfs/boot/armbianEnv.txt
+			else
+			    echo 'rootfstype='$eMMCFilesystemChoosen >>"${TempDir}"/bootfs/boot/armbianEnv.txt
+			fi
 		else
 			[[ -f "${TempDir}"/bootfs/boot/armbianEnv.txt ]] && sed -e 's,rootfstype=.*,rootfstype='$choosen_fs',g' -i "${TempDir}"/bootfs/boot/armbianEnv.txt
 			echo "$targetuuid	/		$choosen_fs	${mountopts[$choosen_fs]}" >> "${TempDir}"/rootfs/etc/fstab
@@ -352,7 +356,7 @@ create_armbian()
 		fi
 	fi
 
-	if [[ $2 == ${DISK_ROOT_PART} && -z $1 && $DEVICE_TYPE = uefi-stop ]]; then
+	if [[ $2 == ${DISK_ROOT_PART} && -z $1 && $DEVICE_TYPE = uefi ]]; then
 
 		# create swap file size of your memory so we can use it for S4
 		dd if=/dev/zero of="${TempDir}"/rootfs/swapfile bs=$(cat /proc/meminfo | awk '/MemTotal/ {print $2}') count=1024 conv=notrunc
@@ -489,8 +493,8 @@ format_emmc()
 	# choose and create fs
 	IFS=" "
 	BTRFS=$(grep -o btrfs /proc/filesystems)
-	FilesystemTargets="1 ext4 2 ext3 3 ext2 4 f2fs"
-	[[ -n $BTRFS && ! `uname -r | grep '^3.' ` ]] && FilesystemTargets=$FilesystemTargets" 5 $BTRFS"
+	FilesystemTargets="1 ext4 2 f2fs"
+	[[ -n $BTRFS && ! `uname -r | grep '^3.' ` ]] && FilesystemTargets=$FilesystemTargets" 3 $BTRFS"
 	FilesystemOptions=($FilesystemTargets)
 
 	FilesystemCmd=(dialog --title "Select filesystem type for eMMC $1" --backtitle "$backtitle" --menu "\n$infos" 10 60 16)
@@ -585,8 +589,8 @@ format_disk()
 			;;
 		*)
 			BTRFS=$(grep -o btrfs /proc/filesystems)
-			FilesystemTargets='1 ext4 2 ext3 3 ext2'
-			[[ -n $BTRFS && ! `uname -r | grep '^3.' ` && $choice != 6 ]] && FilesystemTargets=$FilesystemTargets" 4 $BTRFS"
+			FilesystemTargets='1 ext4'
+			[[ -n $BTRFS && ! `uname -r | grep '^3.' ` && $choice != 6 ]] && FilesystemTargets=$FilesystemTargets" 2 $BTRFS"
 			;;
 	esac
 	FilesystemOptions=($FilesystemTargets)
@@ -723,20 +727,10 @@ main()
 
 	if [[ -n $diskcheck && -d /sys/firmware/efi ]]; then
 
-#		while read line
-#		do
-#			options+=("$line" "Install UEFI system with Grub")
-#		done <<< "$diskcheck"
-
-		if [[ -n $emmccheck ]]; then
-			ichip='eMMC';
-			dest_efi=$emmccheck'p1'
-			dest_root=$emmccheck'p2'
-		fi
-
-		[[ -n $emmccheck ]] 						&& options+=(8 "EFI from $ichip - system on $ichip")
-		[[ -n $emmccheck && -n $diskcheck ]] 				&& options+=(9 "EFI $ichip - system on SATA, USB or NVMe")
-
+		while read line
+		do
+			options+=("$line" "Install UEFI system with Grub")
+		done <<< "$diskcheck"
 
 	else
 
@@ -840,40 +834,17 @@ main()
 				write_uboot_to_spi_flash $spicheck "$DIR"
 				return
 				;;
-			8)
-				title="$ichip install EFI"
-				command='Power off'
-				show_warning "This script will erase your $ichip. Continue?"
-				if [[ -n $emmccheck ]]; then
-					umount_device "$emmccheck"
-					format_emmc "$emmccheck"
-				fi
-				create_armbian "$dest_efi" "$dest_root"
-				;;
-			9)
-				title="$ichip EFI | USB/SATA/NVMe root install"
-				command='Power off'
-				check_partitions
-				show_warning "This script will erase your $ichip and $DISK_ROOT_PART. Continue?"
-				if [[ -n $emmccheck ]]; then
-					umount_device "$emmccheck"
-					format_emmc "$emmccheck"
-				fi
-				umount_device "${DISK_ROOT_PART//[0-9]*/}"
-				format_disk "$DISK_ROOT_PART"
-				create_armbian "$dest_efi" "$DISK_ROOT_PART"
-				;;
 
-#			*)
-#                                title='UEFI install to internal drive'
-#                                command='Reboot'
-#                                check_partitions "$root_partition_device_name" "$choice"
-#                                # we need to copy boot
-#                                sed -i '/boot/d' $EX_LIST
-#                                show_warning "This script will erase your device $DISK_ROOT_PART. Continue?"
-#                                format_disk "$DISK_ROOT_PART"
-#                                create_armbian "" "$DISK_ROOT_PART" "$choice"
-#                                ;;
+			*)
+                                title='UEFI install to internal drive'
+                                command='Reboot'
+                                check_partitions "$root_partition_device_name" "$choice"
+                                # we need to copy boot
+                                sed -i '/boot/d' $EX_LIST
+                                show_warning "This script will erase your device $DISK_ROOT_PART. Continue?"
+                                format_disk "$DISK_ROOT_PART"
+                                create_armbian "" "$DISK_ROOT_PART" "$choice"
+                                ;;
 		esac
 	done
 

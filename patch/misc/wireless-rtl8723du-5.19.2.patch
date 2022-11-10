@@ -31,3 +31,90 @@ index 9de45eddd..172f597e1 100644
  
  ########### COMMON  #################################
  HCI_NAME = usb
+
+--- a/drivers/net/wireless/rtl8723du/os_dep/osdep_service.c
++++ b/drivers/net/wireless/rtl8723du/os_dep/osdep_service.c
+@@ -902,7 +902,9 @@
+ 
+ inline u32 rtw_random32(void)
+ {
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0))
++	return get_random_u32();
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	return prandom_u32();
+ #elif (LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18))
+ 	u32 random_int;
+
+--- a/drivers/net/wireless/rtl8723du/os_dep/os_intfs.c
++++ b/drivers/net/wireless/rtl8723du/os_dep/os_intfs.c
+@@ -1146,7 +1146,11 @@
+ 	u8 rtnl_lock_needed = rtw_rtnl_lock_needed(dvobj);
+ 
+ #ifdef CONFIG_RTW_NAPI
+-	netif_napi_add(ndev, &adapter->napi, rtw_recv_napi_poll, RTL_NAPI_WEIGHT);
++	netif_napi_add(ndev, &adapter->napi, rtw_recv_napi_poll
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
++	, RTL_NAPI_WEIGHT
++#endif
++	);
+ #endif /* CONFIG_RTW_NAPI */
+ 
+ 	if (rtw_cfg80211_ndev_res_register(adapter) != _SUCCESS) {
+
+--- a/drivers/net/wireless/rtl8723du/os_dep/ioctl_cfg80211.c
++++ b/drivers/net/wireless/rtl8723du/os_dep/ioctl_cfg80211.c
+@@ -1237,6 +1237,9 @@
+ }
+ 
+ static int cfg80211_rtw_add_key(struct wiphy *wiphy, struct net_device *ndev
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	, int link_id
++#endif
+ 	, u8 key_index
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	, bool pairwise
+@@ -1351,6 +1354,9 @@
+ }
+ 
+ static int cfg80211_rtw_get_key(struct wiphy *wiphy, struct net_device *ndev
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	, int link_id
++#endif
+ 	, u8 keyid
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	, bool pairwise
+@@ -1502,6 +1508,9 @@
+ 
+ static int cfg80211_rtw_del_key(struct wiphy *wiphy, struct net_device *ndev,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++				int link_id,
++#endif
+ 				u8 key_index, bool pairwise, const u8 *mac_addr)
+ #else	/* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) */
+ 				u8 key_index, const u8 *mac_addr)
+@@ -1521,7 +1530,11 @@
+ }
+ 
+ static int cfg80211_rtw_set_default_key(struct wiphy *wiphy,
+-	struct net_device *ndev, u8 key_index
++	struct net_device *ndev,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	int link_id,
++#endif
++	 u8 key_index
+ 	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)) || defined(COMPAT_KERNEL_RELEASE)
+ 	, bool unicast, bool multicast
+ 	#endif
+@@ -5598,9 +5611,6 @@
+ 	.get_key = cfg80211_rtw_get_key,
+ 	.del_key = cfg80211_rtw_del_key,
+ 	.set_default_key = cfg80211_rtw_set_default_key,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
+-	.set_default_mgmt_key = cfg80211_rtw_set_default_mgmt_key,
+-#endif
+ #if defined(CONFIG_GTK_OL) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0))
+ 	.set_rekey_data = cfg80211_rtw_set_rekey_data,
+ #endif /*CONFIG_GTK_OL*/
+

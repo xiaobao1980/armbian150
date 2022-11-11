@@ -1,5 +1,5 @@
---- /home/user/build/cache/sources/linux-mainline/linux-6.0.y/arch/arm64/boot/dts/rockchip/rk3568.dtsi
-+++ /home/user/build/cache/sources/linux-mainline/v6.1-rc4/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
 @@ -40,6 +40,128 @@
  	qos_sata0: qos@fe190200 {
  		compatible = "rockchip,rk3568-qos", "syscon";

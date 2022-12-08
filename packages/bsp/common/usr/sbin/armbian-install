@@ -361,6 +361,13 @@ create_armbian()
 	if [[ $2 == ${DISK_ROOT_PART} && -z $1 && $DEVICE_TYPE = uefi ]]; then
 
 		# create swap file size of your memory so we can use it for S4
+		MEM_TOTAL=$(cat /proc/meminfo | awk '/MemTotal/ {print $2}')
+
+		# but no more then 16Gb
+		[[ ${MEM_TOTAL} -gt 16107868 ]] && MEM_TOTAL=16107868
+		dd if=/dev/zero of="${TempDir}"/rootfs/swapfile bs=${MEM_TOTAL} count=1024 conv=notrunc
+
+		# create swap file size of your memory so we can use it for S4
 		dd if=/dev/zero of="${TempDir}"/rootfs/swapfile bs=$(cat /proc/meminfo | awk '/MemTotal/ {print $2}') count=1024 conv=notrunc
 		mkswap "${TempDir}"/rootfs/swapfile
 		chmod 0600 "${TempDir}"/rootfs/swapfile
@@ -620,7 +627,7 @@ check_partitions()
 	IFS=" "
 	[[ -n "$1" ]] && EXCLUDE=" | grep -v $1"
 	[[ -n "$2" ]] && INCLUDE=" | grep $2" && diskcheck=$2
-	CMD="lsblk -io KNAME,FSTYPE,SIZE,TYPE,MOUNTPOINTS | grep \"btrfs\|ext4\|f2fs\" $INCLUDE $EXCLUDE | grep -E '^sd|^nvme|^md|^mmc' | awk -F\" \" '/ part | raid..? / {print \$1}'"
+	CMD="lsblk -io KNAME,FSTYPE,SIZE,TYPE,MOUNTPOINT | grep \"btrfs\|ext4\|f2fs\" $INCLUDE $EXCLUDE | grep -E '^sd|^nvme|^md|^mmc' | awk -F\" \" '/ part | raid..? / {print \$1}'"
 	AvailablePartitions=$(eval $CMD)
 	if [[ -z $AvailablePartitions ]]; then
 		FREE_SPACE=$(parted /dev/$diskcheck unit GB print free | awk '/Free Space/{c++; sum += $3; print sum}' | tail -1)
@@ -650,7 +657,7 @@ check_partitions()
 				exit 11
 			fi
 	fi
-	CMD="lsblk -io KNAME,FSTYPE,SIZE,TYPE,MOUNTPOINTS | grep \"btrfs\|ext4\|f2fs\" $INCLUDE $EXCLUDE | grep -E '^sd|^nvme|^md|^mmc' | awk -F\" \" '/ part | raid..? / {print \$1}' | uniq | sed 's|^|/dev/|' | nl | xargs echo -n"
+	CMD="lsblk -io KNAME,FSTYPE,SIZE,TYPE,MOUNTPOINT | grep \"btrfs\|ext4\|f2fs\" $INCLUDE $EXCLUDE | grep -E '^sd|^nvme|^md|^mmc' | awk -F\" \" '/ part | raid..? / {print \$1}' | uniq | sed 's|^|/dev/|' | nl | xargs echo -n"
 	partprobe
 	AvailablePartitions=$(eval $CMD)
 	PartitionOptions=($AvailablePartitions)

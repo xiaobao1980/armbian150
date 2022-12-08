@@ -2,7 +2,7 @@ enable_extension "sunxi-tools"
 ARCH=armhf
 BOOTDELAY=1
 BOOTPATCHDIR='u-boot-sunxi'
-UBOOT_TARGET_MAP=';;u-boot-sunxi-with-spl.bin'
+UBOOT_TARGET_MAP="${UBOOT_TARGET_MAP:-;;u-boot-sunxi-with-spl.bin}"
 BOOTSCRIPT="boot-sunxi.cmd:boot.cmd"
 BOOTENV_FILE='sunxi.txt'
 LINUXFAMILY=sunxi
@@ -18,11 +18,11 @@ case $BRANCH in
 		;;
 	current)
 		KERNEL_VERSION_LEVEL="5.15"
-		KERNELSWITCHOBJ="tag=v5.15.79"
+		KERNELSWITCHOBJ="tag=v5.15.81"
 		;;
 	edge)
 		KERNEL_VERSION_LEVEL=${KERNEL_VERSION_LEVEL:-6.0}
-		KERNELSWITCHOBJ=${KERNELSWITCHOBJ:-'tag=v6.0.9'}
+		KERNELSWITCHOBJ=${KERNELSWITCHOBJ:-'tag=v6.0.11'}
 		;;
 
 esac

@@ -3,9 +3,13 @@ ATF_COMPILE="no"
 INITRD_ARCH="riscv"
 GOVERNOR="ondemand"
 NAME_KERNEL="Image"
-NAME_INITRD="uInitrd"
-MAIN_CMDLINE="rootflags=data=writeback rw no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 bootsplash.bootfile=bootsplash.armbian"
+NAME_INITRD="Initrd"
+MAIN_CMDLINE="rw no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0"
 KERNEL_IMAGE_TYPE=Image
+SKIP_BOOTSPLASH="yes"
+KERNELDIR="linux-riscv"
+OFFSET=32
+UEFI_GRUB_TARGET="riscv64-efi"
 
 family_tweaks() {
 

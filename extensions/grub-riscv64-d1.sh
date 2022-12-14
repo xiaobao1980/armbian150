@@ -1,5 +1,5 @@
 # This runs *after* user_config. Don't change anything not coming from other variables or meant to be configured by the user.
-function extension_prepare_config__prepare_grub-riscv64() {
+function extension_prepare_config__prepare_grub-riscv64-d1() {
 	display_alert "Prepare config" "${EXTENSION}" "info"
 	# Extension configuration defaults.
 	export DISTRO_GENERIC_KERNEL=${DISTRO_GENERIC_KERNEL:-no}                    # if yes, does not build our own kernel, instead, uses generic one from distro
@@ -10,8 +10,8 @@ function extension_prepare_config__prepare_grub-riscv64() {
 	export GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:-}"          # Cmdline by default
 	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-no}"               # Enable BIOS too if target is amd64
 	# User config overrides.
-	export BOOTCONFIG="none"                                                     # To try and convince lib/ to not build or install u-boot.
-	unset BOOTSOURCE                                                             # To try and convince lib/ to not build or install u-boot.
+#	export BOOTCONFIG="${BOTCONFIG:-none}"                                                     # To try and convince lib/ to not build or install u-boot.
+#	export BOOTSOURCE="${BOOTSOURCE:-}"                                                             # To try and convince lib/ to not build or install u-boot.
 	export IMAGE_PARTITION_TABLE="gpt"                                           # GPT partition table is essential for many UEFI-like implementations, eg Apple+Intel stuff.
 	export UEFISIZE=256                                                          # in MiB - grub EFI is tiny - but some EFI BIOSes ignore small too small EFI partitions
 	export BOOTSIZE=0                                                            # No separate /boot when using UEFI.
@@ -27,8 +27,8 @@ function extension_prepare_config__prepare_grub-riscv64() {
 	elif [[ "${DISTRIBUTION}" == "Debian" ]]; then
 	display_alert "Prepare Debian" "${EXTENSION}" "info"
 
-#	local uefi_packages="efibootmgr efivar cloud-initramfs-growroot os-prober grub-efi-${ARCH}-bin grub-efi-${ARCH}"
-	local uefi_packages=""
+	local uefi_packages="efivar cloud-initramfs-growroot os-prober"
+#	local uefi_packages=""
 
 	fi
 
@@ -41,7 +41,7 @@ function extension_prepare_config__prepare_grub-riscv64() {
 
 pre_umount_final_image__install_grub() {
 
-if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
+#if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
 
 	configure_grub
 	local chroot_target=$MOUNT
@@ -63,7 +63,7 @@ if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
 	sed -i '/devicetree/c devicetree    /boot\/dtb\/'"$BOOT_FDT_FILE" "$MOUNT"/etc/grub.d/10_linux >>"${DEST}"/"${LOG_SUBPATH}"/grub-n.log 2>&1
 #	cp -r $SRC/packages/blobs/jetson/boot.png "$MOUNT"/boot/grub
 
-	local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
+#	local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
 	display_alert "Installing GRUB EFI..." "${UEFI_GRUB_TARGET}" ""
 	chroot "$chroot_target" /bin/bash -c "$install_grub_cmdline" >> "$DEST"/"${LOG_SUBPATH}"/install.log 2>&1 || {
 		exit_with_error "${install_grub_cmdline} failed!"
@@ -77,7 +77,7 @@ if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
 
 	umount_chroot "$chroot_target/"
 
-fi
+#fi
 
 }
 

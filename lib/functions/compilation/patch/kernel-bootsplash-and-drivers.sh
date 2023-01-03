@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 compilation_prepare() {
-	
+
 	source ${SRC}/lib/functions/compilation/patch/drivers_network.sh
 
 	# Packaging patch for modern kernels should be one for all.
@@ -68,7 +68,7 @@ compilation_prepare() {
 	fi
 
 	if [[ "${version}" == "4.4."* ]] &&
-		[[ "$LINUXFAMILY" == rockchip64 || "$LINUXFAMILY" == media* || "$LINUXFAMILY" == renegade ]]; then
+		[[ "$LINUXFAMILY" == rockchip64 || "$LINUXFAMILY" == media* ]]; then
 		display_alert "Adjusting" "packaging" "info"
 		cd "$kerneldir" || exit
 		if [[ $BOARD == nanopct4 ]]; then
@@ -78,7 +78,7 @@ compilation_prepare() {
 		fi
 	fi
 
-	if [[ "${version}" == "4.4."* ]] && [[ "$LINUXFAMILY" == rockchip || "$LINUXFAMILY" == rk322x || "$LINUXFAMILY" == rk3288 ]]; then
+	if [[ "${version}" == "4.4."* ]] && [[ "$LINUXFAMILY" == rockchip || "$LINUXFAMILY" == rk322x ]]; then
 		display_alert "Adjusting" "packaging" "info"
 		cd "$kerneldir" || exit
 		process_patch_file "${SRC}/patch/misc/general-packaging-4.4.y.patch" "applying"
@@ -106,7 +106,7 @@ compilation_prepare() {
 	# since plymouth introduction, boot scripts are not supporting this method anymore.
 	# In order to enable it, you need to use this: setenv consoleargs "bootsplash.bootfile=bootsplash.armbian ${consoleargs}"
 
-	if linux-version compare "${version}" ge 5.15 && [ "${SKIP_BOOTSPLASH}" != yes ]; then
+	if linux-version compare "${version}" ge 5.15 && linux-version compare "${version}" lt 6.1 && [ "${SKIP_BOOTSPLASH}" != yes ]; then
 
 		display_alert "Adding" "Kernel splash file" "info"
 
@@ -183,6 +183,7 @@ compilation_prepare() {
 		if linux-version compare "${version}" ge 5.10.82 && linux-version compare "${version}" le 5.11; then aufstag="5.10.82"; fi
 		if linux-version compare "${version}" ge 5.15.41 && linux-version compare "${version}" le 5.16; then aufstag="5.15.41"; fi
 		if linux-version compare "${version}" ge 5.17.3 && linux-version compare "${version}" le 5.18; then aufstag="5.17.3"; fi
+
 
 		# check if Mr. Okajima already made a branch for this version
 		improved_git ls-remote --exit-code --heads $GITHUB_SOURCE/sfjro/aufs5-standalone "aufs${aufstag}" > /dev/null

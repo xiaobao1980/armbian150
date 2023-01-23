@@ -1,0 +1,12 @@
+# Rockchip RK3566 quad core 4GB-8GB GBE PCIe USB3
+BOARD_NAME="Pine SOQuartz"
+BOARDFAMILY="media"
+BOOT_SOC="rk3568"
+BOOTCONFIG="quartz64-a-rk3566_defconfig"
+KERNEL_TARGET="legacy,current,edge"
+FULL_DESKTOP="yes"
+BOOT_LOGO="desktop"
+BOOT_FDT_FILE="rockchip/rk3566-soquartz-model-a.dtb"
+SRC_EXTLINUX="yes"
+SRC_CMDLINE="console=ttyS02,1500000 console=tty0"
+IMAGE_PARTITION_TABLE="gpt"

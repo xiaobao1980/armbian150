@@ -7,7 +7,8 @@
 #	export UEFI_GRUB_TERMINAL="${UEFI_GRUB_TERMINAL:-serial console}"            # 'serial' forces grub menu on serial console. empty to not include
 	export UEFI_GRUB_DISABLE_OS_PROBER="${UEFI_GRUB_DISABLE_OS_PROBER:-}"        # 'true' will disable os-probing, useful for SD cards.
 	export UEFI_GRUB_DISTRO_NAME="${UEFI_GRUB_DISTRO_NAME:-Armbian}"             # Will be used on grub menu display
-	export UEFI_GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT:-5}                             # Small timeout by default
+	export UEFI_GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT:-3}                             # Small timeout by default
+	export UEFI_GRUB_RECORDFAIL_TIMEOUT=${UEFI_GRUB_RECORDFAIL_TIMEOUT:-3}
 	export GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:-}"          # Cmdline by default
 	export UEFI_ENABLE_BIOS_AMD64="${UEFI_ENABLE_BIOS_AMD64:-no}"               # Enable BIOS too if target is amd64
 	# User config overrides.
@@ -58,13 +59,17 @@ pre_umount_final_image__install_grub() {
 	# Mount the chroot...
 	mount_chroot "$chroot_target/" # this already handles /boot/efi which is required for it to work.
 
+	if [[ "${DISTRIBUTION}" == "Debian" ]]; then
+		cp "${SRC}"/packages/blobs/edk2/debian_10_linux "${MOUNT}"/etc/grub.d/10_linux
+	fi
+
 	sed -i '/devicetree/c devicetree    /boot\/dtb\/'"$BOOT_FDT_FILE" "$MOUNT"/etc/grub.d/10_linux >>"${DEST}"/"${LOG_SUBPATH}"/grub-n.log 2>&1
 #	sed -i '/devicetree/c echo' "$MOUNT"/etc/grub.d/10_linux >>"${DEST}"/"${LOG_SUBPATH}"/grub-n.log 2>&1
 
 #	if [[ -n $EDK_UBOOT ]]; then
-		local install_grub_cmdline="update-grub && grub-install --target=${UEFI_GRUB_TARGET} --no-nvram"
+##		local install_grub_cmdline="update-grub && grub-install --target=${UEFI_GRUB_TARGET} --no-nvram" # nvram is global to the host, even across chroot. take care.
 #	else
-#		local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
+		local install_grub_cmdline="update-grub && grub-install --verbose --target=${UEFI_GRUB_TARGET} --no-nvram --removable"
 #	fi
 	display_alert "Installing GRUB EFI..." "${UEFI_GRUB_TARGET}" ""
 	chroot "$chroot_target" /bin/bash -c "$install_grub_cmdline" >> "$DEST"/"${LOG_SUBPATH}"/install.log 2>&1 || {
@@ -82,7 +87,6 @@ pre_umount_final_image__install_grub() {
 	fi
 
 	umount_chroot "$chroot_target/"
-
 }
 
 configure_grub() {
@@ -96,6 +100,7 @@ configure_grub() {
 		GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT}"
 		GRUB_TIMEOUT_STYLE=menu                                  # Show the menu with Kernel options (Armbian or -generic)...
 		GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT}                        # ... for ${UEFI_GRUB_TIMEOUT} seconds, then boot the Armbian default.
+		GRUB_RECORDFAIL_TIMEOUT=${UEFI_GRUB_RECORDFAIL_TIMEOUT}
 		GRUB_DISTRIBUTOR="${UEFI_GRUB_DISTRO_NAME}"              # On GRUB menu will show up as "Armbian GNU/Linux" (will show up in some UEFI BIOS boot menu (F8?) as "armbian", not on others)
 		GRUB_BACKGROUND="/boot/grub/grub.png"
 	grubCfgFrag

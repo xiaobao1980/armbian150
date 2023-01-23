@@ -69,28 +69,3 @@ index a26b20c74ab..f5809ebc66f 100644
  #include <dt-bindings/power/rk3588-power.h>
  #include <dt-bindings/reset/rockchip,rk3588-cru.h>
  #include <dt-bindings/thermal/thermal.h>
-@@ -1551,6 +1554,21 @@ gmac1_mtl_tx_setup: tx-queues-config {
- 		};
- 	};
- 
-+	sdmmc: mmc@fe2c0000 {
-+		compatible = "rockchip,rk3588-dw-mshc", "rockchip,rk3288-dw-mshc";
-+		reg = <0x0 0xfe2c0000 0x0 0x4000>;
-+		interrupts = <GIC_SPI 203 IRQ_TYPE_LEVEL_HIGH 0>;
-+		clocks = <&scmi_clk SCMI_HCLK_SD>, <&scmi_clk SCMI_CCLK_SD>,
-+			 <&cru SCLK_SDMMC_DRV>, <&cru SCLK_SDMMC_SAMPLE>;
-+		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
-+		fifo-depth = <0x100>;
-+		max-frequency = <200000000>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_det &sdmmc_bus4>;
-+		power-domains = <&power RK3588_PD_SDMMC>;
-+		status = "disabled";
-+	};
-+
- 	sdhci: mmc@fe2e0000 {
- 		compatible = "rockchip,rk3588-dwcmshc";
- 		reg = <0x0 0xfe2e0000 0x0 0x10000>;
--- 
-Created with Armbian build tools https://github.com/armbian/build
-

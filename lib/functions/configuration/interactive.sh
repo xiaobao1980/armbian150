@@ -13,19 +13,20 @@ function interactive_config_prepare_terminal() {
 }
 
 function interactive_config_ask_kernel() {
-	interactive_config_ask_kernel_only
+	interactive_config_ask_build_only
 	interactive_config_ask_kernel_configure
 }
 
-function interactive_config_ask_kernel_only() {
-	if [[ -z $KERNEL_ONLY ]]; then
+function interactive_config_ask_build_only() {
+	if [[ -z $BUILD_ONLY ]]; then
 
-		options+=("yes" "U-boot and kernel packages")
-		options+=("no" "Full OS image for flashing")
-		KERNEL_ONLY=$(dialog --stdout --title "Choose an option" --backtitle "$backtitle" --no-tags \
+		options+=("$(build_only_value_for_kernel_only_build)" "Kernel and U-boot packages only")
+		options+=("u-boot" "U-boot package only")
+		options+=("default" "Full OS image for flashing")
+		BUILD_ONLY=$(dialog --stdout --title "Choose an option" --backtitle "$backtitle" --no-tags \
 			--menu "Select what to build" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
 		unset options
-		[[ -z $KERNEL_ONLY ]] && exit_with_error "No option selected"
+		[[ -z $BUILD_ONLY ]] && exit_with_error "No option selected"
 
 	fi
 }
@@ -152,7 +153,7 @@ function interactive_config_ask_branch() {
 }
 
 function interactive_config_ask_release() {
-	if [[ $KERNEL_ONLY != yes && -z $RELEASE ]]; then
+	if [[ -z "$RELEASE" ]]; then
 
 		options=()
 
@@ -170,7 +171,7 @@ function interactive_config_ask_desktop_build() {
 	# don't show desktop option if we choose minimal build
 	if [[ $HAS_VIDEO_OUTPUT == no || $BUILD_MINIMAL == yes ]]; then
 		BUILD_DESKTOP=no
-	elif [[ $KERNEL_ONLY != yes && -z $BUILD_DESKTOP ]]; then
+	elif [[ -z "$BUILD_DESKTOP" ]]; then
 
 		# read distribution support status which is written to the armbian-release file
 		set_distribution_status
@@ -191,7 +192,7 @@ function interactive_config_ask_desktop_build() {
 }
 
 function interactive_config_ask_standard_or_minimal() {
-	if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP == no && -z $BUILD_MINIMAL ]]; then
+	if [[ $BUILD_DESKTOP == no && -z $BUILD_MINIMAL ]]; then
 
 		options=()
 		options+=("no" "Standard image with console interface")

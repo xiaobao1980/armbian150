@@ -123,7 +123,7 @@ PREPARE_IMAGE_SIZE
 		if [[ $BUILD_DESKTOP == yes ]]; then
 			local sdsize=$(bc -l <<< "scale=0; ((($imagesize * 1.45) / 1 + 0) / 4 + 1) * 4")
 		else
-			local sdsize=$(bc -l <<< "scale=0; ((($imagesize * 1.35) / 1 + 0) / 4 + 1) * 4")
+			local sdsize=$(bc -l <<< "scale=0; ((($imagesize * 1.30) / 1 + 0) / 4 + 1) * 4")
 		fi
 	fi
 

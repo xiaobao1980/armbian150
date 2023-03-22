@@ -25,10 +25,19 @@ compile_kernel() {
 	# read kernel git hash
 	hash=$(improved_git --git-dir="$kerneldir"/.git rev-parse HEAD)
 
+	# Check the value of the suffix FLOW
+	[[ "$FLOW" == "-rt" ]] || [[ "$FLOW" == "-evl" ]] || FLOW=""
 	# Apply a series of patches if a series file exists
 	if test -f "${SRC}"/patch/kernel/${KERNELPATCHDIR}/series.conf; then
 		display_alert "series.conf file visible. Apply"
 		series_conf="${SRC}"/patch/kernel/${KERNELPATCHDIR}/series.conf
+
+		# apply_patch_series <target dir> <full path to series file>
+		apply_patch_series "${kerneldir}" "$series_conf"
+	fi
+	if test -f "${SRC}"/patch/kernel/${KERNELPATCHDIR}/series.${FLOW#*-}; then
+		display_alert "series.${FLOW#*-} file visible. Apply"
+		series_conf="${SRC}"/patch/kernel/${KERNELPATCHDIR}/series.${FLOW#*-}
 
 		# apply_patch_series <target dir> <full path to series file>
 		apply_patch_series "${kerneldir}" "$series_conf"
@@ -62,26 +71,26 @@ compile_kernel() {
 
 	display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"
 
+	# Add the ability to select target kernel configurations.
 	# copy kernel config
-	if [[ $KERNEL_KEEP_CONFIG == yes && -f "${DEST}"/config/$LINUXCONFIG.config ]]; then
-		display_alert "Using previous kernel config" "${DEST}/config/$LINUXCONFIG.config" "info"
-		cp -p "${DEST}/config/${LINUXCONFIG}.config" .config
+	if [[ $KERNEL_KEEP_CONFIG == yes && -f "${DEST}"/config/${LINUXCONFIG}${FLOW}.config ]]; then
+		display_alert "Using previous kernel config" "${DEST}/config/${LINUXCONFIG}${FLOW}.config" "info"
+		cp -p "${DEST}/config/${LINUXCONFIG}${FLOW}.config" .config
+	elif [ -f "$KERNEL_KEEP_CONFIG" ]; then
+		display_alert "Using previous kernel config" "$KERNEL_KEEP_CONFIG" "info"
+		cp -p "$KERNEL_KEEP_CONFIG" .config
 	else
-		if [[ -f $USERPATCHES_PATH/$LINUXCONFIG.config ]]; then
-			display_alert "Using kernel config provided by user" "userpatches/$LINUXCONFIG.config" "info"
-			cp -p "${USERPATCHES_PATH}/${LINUXCONFIG}.config" .config
+		if [[ -f $USERPATCHES_PATH/${LINUXCONFIG}${FLOW}.config ]]; then
+			display_alert "Using kernel config provided by user" "userpatches/${LINUXCONFIG}${FLOW}.config" "info"
+			cp -p "${USERPATCHES_PATH}/${LINUXCONFIG}${FLOW}.config" .config
+		elif [ -f "${SRC}/config/kernel/${LINUXCONFIG}${FLOW}.config" ]; then
+			display_alert "Using kernel config file" "config/kernel/${LINUXCONFIG}${FLOW}.config" "info"
+			cp -p "${SRC}/config/kernel/${LINUXCONFIG}${FLOW}.config" .config
 		else
-			display_alert "Using kernel config file" "config/kernel/$LINUXCONFIG.config" "info"
+			display_alert "Using kernel config file" "config/kernel/${LINUXCONFIG}.config" "info"
 			cp -p "${SRC}/config/kernel/${LINUXCONFIG}.config" .config
 		fi
 	fi
-
-	call_extension_method "custom_kernel_config" << 'CUSTOM_KERNEL_CONFIG'
-*Kernel .config is in place, still clean from git version*
-Called after ${LINUXCONFIG}.config is put in place (.config).
-Before any olddefconfig any Kconfig make is called.
-A good place to customize the .config directly.
-CUSTOM_KERNEL_CONFIG
 
 	# hack for OdroidXU4. Copy firmare files
 	if [[ $BOARD == odroidxu4 ]]; then
@@ -110,15 +119,29 @@ CUSTOM_KERNEL_CONFIG
 		[[ ${PIPESTATUS[0]} -ne 0 ]] && exit_with_error "Error kernel menuconfig failed"
 
 		# store kernel config in easily reachable place
-		display_alert "Exporting new kernel config" "$DEST/config/$LINUXCONFIG.config" "info"
-		cp .config "${DEST}/config/${LINUXCONFIG}.config"
+		if [ -f $KERNEL_KEEP_CONFIG ]; then
+			display_alert "Exporting new kernel config" "$KERNEL_KEEP_CONFIG" "info"
+			cp -p .config "$KERNEL_KEEP_CONFIG"
+		else
+			display_alert "Exporting new kernel config" "$DEST/config/${LINUXCONFIG}${FLOW}.config" "info"
+			cp .config "${DEST}/config/${LINUXCONFIG}${FLOW}.config"
+		fi
 		# export defconfig too if requested
 		if [[ $KERNEL_EXPORT_DEFCONFIG == yes ]]; then
 			eval CCACHE_BASEDIR="$(pwd)" env PATH="${toolchain}:${PATH}" \
 				'make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" savedefconfig'
-			[[ -f defconfig ]] && cp defconfig "${DEST}/config/${LINUXCONFIG}.defconfig"
+			[[ -f defconfig ]] && cp defconfig "${DEST}/config/${LINUXCONFIG}${FLOW}.defconfig"
 		fi
 	fi
+
+	# Uniquely define variables before building source and binary
+	# packages if required:
+	# kernel package name extension
+	NAME_EXTENSION="${NAME_EXTENSION:-${BRANCH}-$LINUXFAMILY}"
+	# Vendor package revision
+	VENDOR_PKG_REVISION=${VENDOR_PKG_REVISION:-"${VENDOR}.${REVISION%-*}"}
+	# local version
+	LOCALVERSION=${LOCALVERSION:-"-$LINUXFAMILY"}
 
 	# create linux-source package - with already patched sources
 	# We will build this package first and clear the memory.
@@ -131,7 +154,9 @@ CUSTOM_KERNEL_CONFIG
 		'make $CTHREADS ARCH=$ARCHITECTURE \
 		CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" \
 		$SRC_LOADADDR \
-		LOCALVERSION="-$LINUXFAMILY" \
+		LOCALVERSION=$LOCALVERSION \
+		VENDOR_PKG_REVISION=$VENDOR_PKG_REVISION \
+		NAME_EXTENSION=$NAME_EXTENSION \
 		$KERNEL_IMAGE_TYPE ${KERNEL_EXTRA_TARGETS:-modules dtbs} 2>>$DEST/${LOG_SUBPATH}/compilation.log' \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/${LOG_SUBPATH}/compilation.log'} \
 		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" \
@@ -156,10 +181,10 @@ CUSTOM_KERNEL_CONFIG
 	echo -e "\n\t== deb packages: image, headers, firmware, dtb ==\n" >> "${DEST}"/${LOG_SUBPATH}/compilation.log
 	eval CCACHE_BASEDIR="$(pwd)" env PATH="${toolchain}:${PATH}" \
 		'make $CTHREADS $kernel_packing \
-		KDEB_PKGVERSION=$REVISION \
+		LOCALVERSION=$LOCALVERSION \
+		VENDOR_PKG_REVISION=$VENDOR_PKG_REVISION \
 		KDEB_COMPRESS=${DEB_COMPRESS} \
-		BRANCH=$BRANCH \
-		LOCALVERSION="-${LINUXFAMILY}" \
+		NAME_EXTENSION=$NAME_EXTENSION \
 		KBUILD_DEBARCH=$ARCH \
 		ARCH=$ARCHITECTURE \
 		DEBFULLNAME="$MAINTAINER" \
@@ -173,7 +198,8 @@ CUSTOM_KERNEL_CONFIG
 	# remove firmare image packages here - easier than patching ~40 packaging scripts at once
 	rm -f linux-firmware-image-*.deb
 
-	rsync --remove-source-files -rq ./*.deb "${DEB_STORAGE}/" || exit_with_error "Failed moving kernel DEBs"
+	mkdir -p "${DEB_STORAGE}/${RELEASE}/linux-${BRANCH}"
+	rsync --remove-source-files -rq ./linux-* "${DEB_STORAGE}/${RELEASE}/linux-${BRANCH}/" || exit_with_error "Failed moving kernel DEBs"
 
 	# store git hash to the file and create a change log
 	HASHTARGET="${SRC}/cache/hash"$([[ ${BETA} == yes ]] && echo "-beta")"/linux-image-${BRANCH}-${LINUXFAMILY}"
@@ -212,7 +238,7 @@ CUSTOM_KERNEL_CONFIG
 	echo "$CALC_PATCHES" >> "${HASHTARGET}.githash"
 
 	# hash_kernel_config
-	CALC_CONFIG=$(git -C $SRC log --format="%H" -1 -- $(realpath --relative-base="$SRC" "${SRC}/config/kernel/${LINUXCONFIG}.config"))
+	CALC_CONFIG=$(git -C $SRC log --format="%H" -1 -- $(realpath --relative-base="$SRC" "${SRC}/config/kernel/${LINUXCONFIG}${FLOW}.config"))
 	[[ -z "$CALC_CONFIG" ]] && CALC_CONFIG="null"
 	echo "$CALC_CONFIG" >> "${HASHTARGET}.githash"
 

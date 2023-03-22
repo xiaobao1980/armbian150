@@ -46,7 +46,7 @@ update_src() {
 				fi
 			done
 		elif [[ $(git branch | grep "*" | awk '{print $2}') != "${LIB_TAG}" && -n "${LIB_TAG}" ]]; then
-			git checkout "${LIB_TAG:-master}"
+			git checkout "${LIB_TAG:-armbian-tv-ng}"
 			git pull
 		fi
 	fi

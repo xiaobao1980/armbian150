@@ -8,7 +8,7 @@ create_image() {
 	mkdir -p $DESTIMG
 
 	# stage: create file name
-	local version="${VENDOR}_${REVISION}_${BOARD^}_${RELEASE}_${BRANCH}_${VER/-$LINUXFAMILY/}${DESKTOP_ENVIRONMENT:+_$DESKTOP_ENVIRONMENT}"
+	local version="${VENDOR}_${REVISION}_${BOARD^}_${RELEASE}_${BRANCH}_${KERNEL_VERSION/-$LINUXFAMILY/}${DESKTOP_ENVIRONMENT:+_$DESKTOP_ENVIRONMENT}"
 	[[ $BUILD_DESKTOP == yes ]] && version=${version}_desktop
 	[[ $BUILD_MINIMAL == yes ]] && version=${version}_minimal
 	[[ $ROOTFS_TYPE == nfs ]] && version=${version}_nfsboot
@@ -26,8 +26,16 @@ create_image() {
 			--info=progress0,stats1 $SDCARD/ $MOUNT/ >> "${DEST}"/${LOG_SUBPATH}/install.log 2>&1
 	else
 		display_alert "Creating rootfs archive" "rootfs.tgz" "info"
-		tar cp --xattrs --directory=$SDCARD/ --exclude='./boot/*' --exclude='./dev/*' --exclude='./proc/*' --exclude='./run/*' --exclude='./tmp/*' \
-			--exclude='./sys/*' . | pv -p -b -r -s $(du -sb $SDCARD/ | cut -f1) -N "rootfs.tgz" | gzip -c > $DEST/images/${version}-rootfs.tgz
+		tar cp --xattrs \
+			   --directory=$SDCARD/ \
+			   --exclude='./boot/*' \
+			   --exclude='./dev/*' \
+			   --exclude='./proc/*' \
+			   --exclude='./run/*' \
+			   --exclude='./tmp/*' \
+			   --exclude='./sys/*' . | \
+			   pv -p -b -r -s $(du -sb $SDCARD/ | cut -f1) -N "rootfs.tgz" | \
+			   gzip -c > $DEST/images/${version}-rootfs.tgz
 	fi
 
 	# stage: rsync /boot
@@ -63,11 +71,7 @@ PRE_UPDATE_INITRAMFS
 
 	# stage: write u-boot, unless the deb is not there, which would happen if BOOTCONFIG=none
 	# exception: if we use the one from repository, install version which was downloaded from repo
-	if [[ -f "${DEB_STORAGE}"/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb ]]; then
-		write_uboot $LOOP
-	elif [[ "${UPSTREM_VER}" ]]; then
-		write_uboot $LOOP
-	fi
+	write_uboot $LOOP
 
 	# fix wrong / permissions
 	chmod 755 $MOUNT

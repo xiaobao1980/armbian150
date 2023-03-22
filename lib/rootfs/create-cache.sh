@@ -80,7 +80,7 @@ create_rootfs_cache() {
 	else
 
 		local ROOT_FS_CREATE_VERSION=${ROOT_FS_CREATE_VERSION:-$(date --utc +"%Y%m%d")}
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_CREATE_VERSION}.tar.zst
+		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${packages_hash}.tar.zst
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
 		display_alert "Creating new rootfs cache for" "$RELEASE" "info"

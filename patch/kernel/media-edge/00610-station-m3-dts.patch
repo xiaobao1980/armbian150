@@ -1,0 +1,119 @@
+From d229dba58d2dedc8d5bf899246e7ade67974622d Mon Sep 17 00:00:00 2001
+From: balbes150 <balbes-150@yandex.ru>
+Date: Tue, 3 Jan 2023 14:36:33 +0300
+Subject: [PATCH] station-m3.patch
+
+Signed-off-by: balbes150 <balbes-150@yandex.ru>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../boot/dts/rockchip/rk3588s-roc-pc.dts      | 86 +++++++++++++++++++
+ 2 files changed, 87 insertions(+)
+ mode change 100644 => 100755 arch/arm64/boot/dts/rockchip/Makefile
+ create mode 100755 arch/arm64/boot/dts/rockchip/rk3588s-roc-pc.dts
+
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+old mode 100644
+new mode 100755
+index 128599b5556..3c07a0c0a97
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -87,3 +87,4 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3a.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-evb1-v10.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-rock-5a.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-roc-pc.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s-roc-pc.dts b/arch/arm64/boot/dts/rockchip/rk3588s-roc-pc.dts
+new file mode 100755
+index 00000000000..eef1f53ef6f
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-roc-pc.dts
+@@ -0,0 +1,86 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/pinctrl/rockchip.h>
++#include "rk3588s.dtsi"
++
++/ {
++	model = "Firefly ROC-RK3588S-PC HDMI(Linux)";
++	compatible = "rockchip,roc-rk3588s-pc", "rockchip,rk3588s";
++
++	aliases {
++		mmc0 = &sdhci;
++		mmc1 = &sdmmc;
++		serial2 = &uart2;
++	};
++
++	chosen {
++		stdout-path = "serial2:1500000n8";
++	};
++};
++
++&gmac1 {
++	clock_in_out = "output";
++	phy-handle = <&rgmii_phy1>;
++	phy-mode = "rgmii-rxid";
++	pinctrl-0 = <&gmac1_miim
++		     &gmac1_tx_bus2
++		     &gmac1_rx_bus2
++		     &gmac1_rgmii_clk
++		     &gmac1_rgmii_bus>;
++	pinctrl-names = "default";
++	tx_delay = <0x43>;
++	status = "okay";
++};
++
++&mdio1 {
++	rgmii_phy1: ethernet-phy@1 {
++		/* RTL8211F */
++		compatible = "ethernet-phy-id001c.c916";
++		reg = <0x1>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rtl8211f_rst>;
++		reset-assert-us = <20000>;
++		reset-deassert-us = <100000>;
++		reset-gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
++	};
++};
++
++&pinctrl {
++	rtl8211f {
++		rtl8211f_rst: rtl8211f-rst {
++			rockchip,pins = <3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++	};
++};
++
++&sdhci {
++	bus-width = <8>;
++	no-sdio;
++	no-sd;
++	non-removable;
++	max-frequency = <200000000>;
++	mmc-hs400-1_8v;
++	mmc-hs400-enhanced-strobe;
++	status = "okay";
++};
++
++&sdmmc {
++	max-frequency = <140000000>;
++	no-sdio;
++	no-mmc;
++	bus-width = <4>;
++	cap-sd-highspeed;
++	disable-wp;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc_bus4 &sdmmc_clk &sdmmc_cmd &sdmmc_det>;
++	status = "okay";
++};
++
++&uart2 {
++	pinctrl-0 = <&uart2m0_xfer>;
++	status = "okay";
++};
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

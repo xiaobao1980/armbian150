@@ -54,12 +54,19 @@ elif [[ "${BOOT_SOC}" == rk3568 ]]; then
 
 fi
 
-if [[ $BOOT_SOC == rk3328 ]]; then
+if [[ $BOOT_SOC == rk3328-old ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
 	DDR_BLOB="${DDR_BLOB:=rk33/rk3328_ddr_333MHz_v1.16.bin}"
 	MINILOADER_BLOB='rk33/rk322xh_miniloader_v2.50.bin'
 	BL31_BLOB='rk33/rk322xh_bl31_v1.44.elf'
+
+elif [[ $BOOT_SOC == rk3328 ]]; then
+
+	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
+	DDR_BLOB="${DDR_BLOB:=rk33/rk3328_ddr_933MHz_v1.16.bin}"
+	MINILOADER_BLOB='rk33/rk3328_miniloader_v2.50.bin'
+	BL31_BLOB='rk33/rk3328_bl31_v1.42.elf'
 
 elif [[ $BOOT_SOC == rk3399 ]]; then
 
@@ -88,8 +95,8 @@ elif [[ $BOOT_SOC == rk3566 ]]; then
 elif [[ $BOOT_SOC == rk3568 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
-	DDR_BLOB="${DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.10.bin}"
-	BL31_BLOB='rk35/rk3568_bl31_v1.28.elf'
+	DDR_BLOB="${DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.13.bin}"
+	BL31_BLOB='rk35/rk3568_bl31_v1.32.elf'
 
 elif [[ $BOOT_SOC == rk3588 ]]; then
 
@@ -326,6 +333,7 @@ family_tweaks() {
 
 		cp -R $SRC/packages/blobs/rtl8723bt_fw/* $SDCARD/lib/firmware/rtl_bt/
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
+		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
 		if [[ $BRANCH == legacy && ($BOARD == station-m1) ]]; then
 			install -m 755 $SRC/packages/bsp/rk3328/m1/rtk_hciattach $SDCARD/usr/bin/rtk_hciattach
 			sed -e 's/exit 0//g' -i $SDCARD/etc/rc.local
@@ -341,10 +349,15 @@ family_tweaks() {
 
 	fi
 
-	if [[ $BOARD == khadas-edge2 ]]; then
-
+	if [[ $BOARD == rock-5b ]]; then
+		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
+	fi
 
+
+	if [[ $BOARD == khadas-edge2 ]]; then
+		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
+		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
 	fi
 
 	if [[ $BOARD == jetson-nano ]]; then

@@ -352,15 +352,9 @@ family_tweaks() {
 
 	fi
 
-	if [[ $BOARD == rock-5b ]]; then
-		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
+	if [[ $BOARD == rock-5b || $BOARD == khadas-edge2 || $BOARD == orangepi5 ]]; then
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
-	fi
-
-
-	if [[ $BOARD == khadas-edge2 ]]; then
 		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
-		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
 	fi
 
 	if [[ $BOARD == jetson-nano ]]; then

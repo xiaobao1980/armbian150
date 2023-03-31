@@ -222,7 +222,8 @@ driver_rtl8811CU_rtl8821C()
 {
 	# Wireless drivers for Realtek RTL8811CU and RTL8821C chipsets
 
-	if linux-version compare "${version}" ge 3.14 && [ "$EXTRAWIFI" == yes ]; then
+#	if linux-version compare "${version}" ge 3.14 && [ "$EXTRAWIFI" == yes ]; then
+	if linux-version compare "${version}" le 3.14 && [ "$EXTRAWIFI" == yes ]; then
 
 		# attach to specifics tag or branch
 		local rtl8811cuver="commit:7b8c45a270454f05e2dbf3beeb4afcf817db65da"

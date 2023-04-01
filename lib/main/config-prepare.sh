@@ -30,7 +30,7 @@ list_of_building_all_valid_in_chroot() {
 
 # Print the default task list
 default_task_list() {
-	echo "$(list_of_main_packages),host-tools,bootstrap"
+	echo "$(list_of_main_packages),bootstrap"
 }
 
 function prepare_and_config_main_build_single() {
@@ -99,8 +99,9 @@ function prepare_and_config_main_build_single() {
 
 	# if BUILD_ONLY, KERNEL_CONFIGURE, BOARD, BRANCH or RELEASE are not set,
 	# display selection menu
+	interactive_config_ask_task
 
-	backward_compatibility_build_only
+	build_validate_buildOnly
 
 	interactive_config_ask_kernel
 
@@ -126,9 +127,9 @@ function prepare_and_config_main_build_single() {
 
 	interactive_config_ask_branch
 
-	build_task_is_enabled "bootstrap" && {
+	interactive_config_ask_release
 
-		interactive_config_ask_release
+	build_task_is_enabled "bootstrap" && {
 
 		interactive_config_ask_desktop_build
 

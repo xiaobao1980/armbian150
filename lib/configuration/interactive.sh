@@ -13,35 +13,42 @@ function interactive_config_prepare_terminal() {
 }
 
 function interactive_config_ask_kernel() {
-	interactive_config_ask_build_only
+
 	interactive_config_ask_kernel_configure
 }
 
-function interactive_config_ask_build_only() {
-	if [[ -z $BUILD_ONLY ]]; then
-
-		options+=("$(build_only_value_for_kernel_only_build)" "Kernel and U-boot packages only")
-		options+=("u-boot" "U-boot package only")
-		options+=("default" "Full OS image for flashing")
-		BUILD_ONLY=$(dialog --stdout --title "Choose an option" --backtitle "$backtitle" --no-tags \
-			--menu "Select what to build" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
+function interactive_config_ask_task() {
+	if [ -z $BUILD_ONLY ]; then
+	#options+=("$(list_of_main_packages)" "Kernel and U-boot packages only")
+	options+=("u-boot" "U-boot package only" off)
+	options+=("kernel" "Kernel komplect packages" off)
+	options+=("default" "Full OS image for flashing" on)
+	options+=("bootstrap" "OS image for flashing only" off)
+	BUILD_ONLY=$(
+		dialog --stdout \
+			--title "Choose an option" \
+			--backtitle "$backtitle" \
+			--no-cancel \
+			--radiolist "Select what to build" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}"
+		)
 		unset options
-		[[ -z $BUILD_ONLY ]] && exit_with_error "No option selected"
-
 	fi
 }
 
 function interactive_config_ask_kernel_configure() {
-	if [[ -z $KERNEL_CONFIGURE ]]; then
+	if build_task_is_enabled "kernel" && [[ -z $KERNEL_CONFIGURE ]]; then
 
 		options+=("no" "Do not change the kernel configuration")
 		options+=("yes" "Show a kernel configuration menu before compilation")
-		options+=("prebuilt" "Use precompiled packages (maintained hardware only)")
-		KERNEL_CONFIGURE=$(dialog --stdout --title "Choose an option" --backtitle "$backtitle" --no-tags \
-			--menu "Select the kernel configuration" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
+		KERNEL_CONFIGURE=$(
+			dialog --stdout \
+				--title "Choose an option" \
+				--backtitle "$backtitle" \
+				--no-tags \
+				--no-cancel \
+				--menu "Select the kernel configuration" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}"
+			)
 		unset options
-		[[ -z $KERNEL_CONFIGURE ]] && exit_with_error "No option selected"
-
 	fi
 }
 
@@ -90,9 +97,19 @@ function interactive_config_ask_board_list() {
 			else
 				echo > "${temp_rc}"
 			fi
-			BOARD=$(DIALOGRC=$temp_rc dialog --stdout --title "Choose a board" --backtitle "$backtitle" --scrollbar \
-				--colors --extra-label "Show $WIP_BUTTON" --extra-button \
-				--menu "Select the target board. Displaying:\n$STATE_DESCRIPTION" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
+			BOARD=$(
+				DIALOGRC=$temp_rc dialog \
+					--stdout \
+					--title "Choose a board" \
+					--backtitle "$backtitle" \
+					--scrollbar \
+					--colors \
+					--extra-label "Show $WIP_BUTTON" \
+					--extra-button \
+					--no-cancel \
+					--menu "Select the target board. Displaying:\n$STATE_DESCRIPTION" \
+					$TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}"
+			)
 			STATUS=$?
 			if [[ $STATUS == 3 ]]; then
 				if [[ $WIP_STATE == supported ]]; then
@@ -128,25 +145,28 @@ function interactive_config_ask_branch() {
 		options=()
 		[[ $KERNEL_TARGET == *current* ]] && options+=("current" "Recommended. Come with best support")
 		[[ $KERNEL_TARGET == *legacy* ]] && options+=("legacy" "Old stable / Legacy")
-		[[ $KERNEL_TARGET == *edge* && $EXPERT = yes ]] && options+=("edge" "\Z1Bleeding edge from @kernel.org\Zn")
+		[[ $KERNEL_TARGET == *edge* ]] && options+=("edge" "\Z1Bleeding edge from @kernel.org\Zn")
 
 		# do not display selection dialog if only one kernel branch is available
 		if [[ "${#options[@]}" == 2 ]]; then
 			BRANCH="${options[0]}"
 		else
-			BRANCH=$(dialog --stdout --title "Choose a kernel" --backtitle "$backtitle" --colors \
+			BRANCH=$(
+				dialog --stdout \
+				--title "Choose a kernel" \
+				--backtitle "$backtitle" \
+				--colors \
+				--no-cancel \
 				--menu "Select the target kernel branch\nExact kernel versions depend on selected board" \
-				$TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
+				$TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}"
+			)
 		fi
 		unset options
-		[[ -z $BRANCH ]] && exit_with_error "No kernel branch selected"
+		[[ $BRANCH == edge ]] && EXPERT=yes
 		[[ $BRANCH == dev && $SHOW_WARNING == yes ]] && show_developer_warning
 
 	else
 
-		[[ $BRANCH == next ]] && KERNEL_TARGET="next"
-		# next = new legacy. Should stay for backward compatibility, but be removed from menu above
-		# or we left definitions in board configs and only remove menu
 		[[ $KERNEL_TARGET != *$BRANCH* ]] && exit_with_error "Kernel branch not defined for this board" "$BRANCH"
 
 	fi
@@ -159,10 +179,13 @@ function interactive_config_ask_release() {
 
 		distros_options
 
-		RELEASE=$(dialog --stdout --title "Choose a release package base" --backtitle "$backtitle" \
-			--menu "Select the target OS release package base" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}")
-		[[ -z $RELEASE ]] && exit_with_error "No release selected"
-
+		RELEASE=$(
+			dialog --stdout \
+				--title "Choose a release package base" \
+				--backtitle "$backtitle" \
+				--no-cancel \
+				--menu "Select the target OS release package base" $TTY_Y $TTY_X $((TTY_Y - 8)) "${options[@]}"
+		)
 		unset options
 	fi
 }

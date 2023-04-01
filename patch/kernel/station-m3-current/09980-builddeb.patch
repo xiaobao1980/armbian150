@@ -26,18 +26,18 @@
  
  	# Create postinst prerm script for headers
  	if [ "$3" = "headers" ]; then
-@@ -195,10 +176,8 @@
+@@ -194,10 +175,8 @@
  kernel_headers_dir="debian/hdrtmp"
  libc_headers_dir="debian/headertmp"
  dbg_dir="debian/dbgtmp"
 -dtb_dir="debian/dtbtmp"
- packagename=linux-image-"$NAME_EXTENSION"
- kernel_headers_packagename=linux-headers-"$NAME_EXTENSION"
--dtb_packagename=linux-dtb-"$NAME_EXTENSION"
+ packagename=linux-image-"$BRANCH$LOCALVERSION"
+ kernel_headers_packagename=linux-headers-"$BRANCH$LOCALVERSION"
+-dtb_packagename=linux-dtb-"$BRANCH$LOCALVERSION"
  libc_headers_packagename=linux-libc-dev
  dbg_packagename=$packagename-dbg
  
-@@ -233,11 +212,9 @@
+@@ -232,11 +211,9 @@
  BUILD_DEBUG=$(if_enabled_echo CONFIG_DEBUG_INFO Yes)
  
  # Setup the directory structure
@@ -50,7 +50,7 @@
  mkdir -m 755 -p "$kernel_headers_dir/lib/modules/$version/"
  mkdir -m 755 -p "$libc_headers_dir/DEBIAN"
  
-@@ -257,13 +234,8 @@
+@@ -256,13 +233,8 @@
  if is_enabled CONFIG_OF_EARLY_FLATTREE; then
  	# Only some architectures with OF support have this target
  	if [ -d "${srctree}/arch/$SRCARCH/boot/dts" ]; then
@@ -61,32 +61,32 @@
 -if grep -q '^CONFIG_OF=y' $KCONFIG_CONFIG; then
 -	#mkdir -p "$tmpdir/boot/dtb"
 -	INSTALL_DTBS_PATH="$dtb_dir/boot/dtb-$version" $MAKE KBUILD_SRC= dtbs_install
-+		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/dtb-$version" dtbs_install
++		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/linux-image-$version" dtbs_install
 +	fi
  fi
  
  if is_enabled CONFIG_MODULES; then
-@@ -326,6 +298,8 @@
+@@ -325,6 +297,8 @@
  sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/postinst
  cat >> $tmpdir/DEBIAN/postinst <<- EOT
  	ln -sf $(basename $installed_image_path) /boot/$image_name 2> /dev/null || cp /$installed_image_path /boot/$image_name
 +	cd /boot
-+	ln -sfT dtb-$version dtb 2> /dev/null || cp dtb-$version dtb
++	ln -sfT linux-image-$version dtb 2> /dev/null || cp linux-image-$version dtb
  	touch /boot/.next
  	exit 0
  EOT
-@@ -354,6 +328,10 @@
+@@ -353,6 +327,10 @@
  			rm -f /boot/System.map* /boot/config* /boot/vmlinuz* /boot/$image_name /boot/uImage
  		fi
  	}
 +#	if [ -d /boot/dtb ]; then
 +		rm -rf /boot/dtb
-+		rm -rf /boot/dtb-$version
++		rm -rf /boot/linux-image-$version
 +#	fi
  	mountpoint -q /boot && check_boot_dev
  	exit 0
  EOT
-@@ -361,11 +339,6 @@
+@@ -360,11 +338,6 @@
  create_package "$packagename" "$tmpdir"
  
  if [ "$ARCH" != "um" ]; then

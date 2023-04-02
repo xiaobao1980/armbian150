@@ -13,49 +13,6 @@ build_only_value_for_kernel_only_build() {
 	return 0
 }
 
-###############################################################################
-#
-# backward_compatibility_build_only()
-#
-# This function propagates the deprecated KERNEL_ONLY configuration
-# to the appropriate content of the BUILD_ONLY configuration.
-# If KERNEL_ONLY="yes" it actually meant to build only packages using cross
-# compilation.
-# If KERNEL_ONLY="no" it added an image assembly.
-# We are adding a collective target "default"
-#
-# It exists for backward compatibility only.
-#
-backward_compatibility_build_only() {
-	local _build_packages=$(list_of_main_packages)
-	# build default = "$_build_packages bootstrap"
-
-	# These checks are necessary for backward compatibility with logic
-	# https://github.com/armbian/scripts/tree/master/.github/workflows scripts.
-	# They need to be removed when the need disappears there.
-	[[ -n $KERNEL_ONLY ]] && {
-		display_alert "The KERNEL_ONLY key is no longer used." "KERNEL_ONLY=$KERNEL_ONLY" "wrn"
-		if [ "$KERNEL_ONLY" == "no" ]; then
-			display_alert "Use BUILD_ONLY variable instead" "default" "info"
-			[[ -n "${BUILD_ONLY}" ]] && {
-				display_alert "A contradiction. BUILD_ONLY contains a goal. Fix it." "${BUILD_ONLY}" "wrn"
-				BUILD_ONLY="default"
-				display_alert "Enforced BUILD_ONLY to default target." "$BUILD_ONLY" "info"
-			}
-			BUILD_ONLY="default"
-			display_alert "BUILD_ONLY enforced to:" "${BUILD_ONLY}" "info"
-		elif [ "$KERNEL_ONLY" == "yes" ]; then
-			display_alert "Instead, use BUILD_ONLY to select the build target." "$_build_packages" "wrn"
-			BUILD_ONLY="$_build_packages"
-			display_alert "BUILD_ONLY enforced to:" "${BUILD_ONLY}" "info"
-		fi
-	}
-
-	# Validate BUILD_ONLY for valid build task names
-	build_validate_buildOnly
-}
-
-
 build_get_boot_sources() {
 	if [[ -n $BOOTSOURCE ]]; then
 		fetch_from_repo "$BOOTSOURCE" "$BOOTDIR" "$BOOTBRANCH" "yes"
@@ -215,10 +172,8 @@ build_main() {
 
 	# ignore updates help on building all images - for internal purposes
 	if [[ $IGNORE_UPDATES != yes ]]; then
-		build_task_is_enabled "u-boot" && build_get_boot_sources
-		build_task_is_enabled "kernel" && build_get_kernel_sources
-
-		build_task_is_enabled "host-tools" && {
+		build_task_is_enabled "u-boot" && {
+			 build_get_boot_sources
 
 			call_extension_method "fetch_sources_tools" <<- 'FETCH_SOURCES_TOOLS'
 			*fetch host-side sources needed for tools and build*
@@ -230,6 +185,8 @@ build_main() {
 			After sources are fetched, build host-side tools needed for the build.
 			BUILD_HOST_TOOLS
 		}
+
+		build_task_is_enabled "kernel" && build_get_kernel_sources
 
 		for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
 			[[ $option != sources ]] && cleaning "$option"
@@ -267,9 +224,7 @@ build_main() {
 	build_task_is_enabled "bootstrap" && build_bootstrap
 
 	display_alert "Build done" "@host" "info"
-	display_alert "Target directory" "${DEB_STORAGE}/" "info"
-	build_task_is_enabled "u-boot" && display_alert "U-Boot file name" "${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb" "info"
-	build_task_is_enabled "kernel" && display_alert "Kernel file name" "${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" "info"
+	display_alert "Target directory" "${DEB_STORAGE}/${RELEASE}" "info"
 
 	call_extension_method "run_after_build" << 'RUN_AFTER_BUILD'
 *hook for function to run after build, i.e. to change owner of `$SRC`*
@@ -279,7 +234,7 @@ RUN_AFTER_BUILD
 
 	end=$(date +%s)
 	runtime_secs=$((end - start))
-	display_alert "Runtime" "$(printf "%d:%02d min" $((runtime_secs / 60)) $((runtime_secs % 60)))" "info"
+	display_alert "Runtime" "$(printf "%dm:%02ds" $((runtime_secs / 60)) $((runtime_secs % 60)))" "info"
 
 	# Make it easy to repeat build by displaying build options used
 	[ "$(systemd-detect-virt)" == 'docker' ] && BUILD_CONFIG='docker'

@@ -49,7 +49,7 @@
 
 ```bash
 apt-get -y install git
-git clone --depth=1 --branch=master https://github.com/150balbes/build
+git clone --depth=1 --branch=armbian-tv https://github.com/150balbes/build.git
 cd build
 ./compile.sh
 ```

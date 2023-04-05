@@ -1,0 +1,1256 @@
+From 92098bbf402e66ce9681ba17e71d8ba233908229 Mon Sep 17 00:00:00 2001
+From: balbes150 <balbes-150@yandex.ru>
+Date: Tue, 4 Apr 2023 14:45:09 +0300
+Subject: [PATCH] 3
+
+Signed-off-by: balbes150 <balbes-150@yandex.ru>
+---
+ .../boot/dts/rockchip/rk3588-evb1-v10.dts     |  76 ++++
+ .../boot/dts/rockchip/rk3588-rock-5b.dts      |  57 ++-
+ arch/arm64/boot/dts/rockchip/rk3588s.dtsi     | 104 +++++-
+ drivers/clk/rockchip/clk-rk3588.c             |  42 ++-
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 352 ++++++++++++++++--
+ drivers/soc/rockchip/pm_domains.c             | 160 ++++++--
+ drivers/usb/host/ohci-platform.c              |   2 +-
+ 7 files changed, 703 insertions(+), 90 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts b/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
+index c0770c0bc17..85f9c09575c 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
+@@ -47,6 +47,40 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+ 		regulator-max-microvolt = <5000000>;
+ 		vin-supply = <&vcc12v_dcin>;
+ 	};
++
++	vcc5v0_usbdcin: vcc5v0-usbdcin {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_usbdcin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc12v_dcin>;
++	};
++
++	vcc5v0_usb: vcc5v0-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_usb";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc5v0_usbdcin>;
++	};
++
++	vcc5v0_host: vcc5v0-host {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_host";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++		vin-supply = <&vcc5v0_usb>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_host_en>;
++	};
+ };
+ 
+ &cpu_l0 {
+@@ -64,6 +98,40 @@ &cpu_b2 {
+ 	mem-supply = <&vdd_cpu_big1_mem_s0>;
+ };
+ 
++&u2phy2 {
++	status = "okay";
++};
++
++&u2phy3 {
++	status = "okay";
++};
++
++&u2phy2_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&u2phy3_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
++};
++
+ &gmac0 {
+ 	clock_in_out = "output";
+ 	phy-handle = <&rgmii_phy>;
+@@ -886,3 +954,11 @@ &uart2 {
+ 	pinctrl-0 = <&uart2m0_xfer>;
+ 	status = "okay";
+ };
++
++&pinctrl {
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+index d50a0a97197..d136fcb6fce 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+@@ -29,7 +29,21 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 	};
+-	
++
++	vcc5v0_host: vcc5v0-host-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_host";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_host_en>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
+ 	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_1v1_nldo_s3";
+@@ -119,6 +133,41 @@ &uart2 {
+ 	status = "okay";
+ };
+ 
++&u2phy2_host {
++	/* connected to USB hub, which is powered by vcc5v0_sys */
++	phy-supply = <&vcc5v0_sys>;
++	status = "okay";
++};
++
++&u2phy3_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&u2phy2 {
++	status = "okay";
++};
++
++&u2phy3 {
++	status = "okay";
++};
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
++};
++
+ &sdmmc {
+ 	max-frequency = <200000000>;
+ 	no-sdio;
+@@ -141,6 +190,12 @@ hp_detect: hp-detect {
+ 			rockchip,pins = <1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
++
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
+ };
+ 
+ &combphy0_ps {
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s.dtsi b/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
+index 84d2c423ed9..340ee254422 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
+@@ -534,10 +534,12 @@ scmi: scmi {
+ 
+ 			scmi_clk: protocol@14 {
+ 				reg = <0x14>;
+-				assigned-clocks = <&scmi_clk SCMI_CLK_CPUB01>,
++				assigned-clocks = <&scmi_clk SCMI_CLK_CPUL>,
++						  <&scmi_clk SCMI_CLK_CPUB01>,
+ 						  <&scmi_clk SCMI_CLK_CPUB23>;
+-				assigned-clock-rates = <1200000000>,
+-						       <1200000000>;
++				assigned-clock-rates = <816000000>,
++						       <816000000>,
++						       <816000000>;
+ 				#clock-cells = <1>;
+ 			};
+ 
+@@ -831,11 +833,105 @@ scmi_shmem: sram@0 {
+ 		};
+ 	};
+ 
++	usb_host0_ehci: usb@fc800000 {
++		compatible = "generic-ehci";
++		reg = <0x0 0xfc800000 0x0 0x40000>;
++		interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST0>, <&cru HCLK_HOST_ARB0>, <&cru ACLK_USB>, <&u2phy2>;
++		phys = <&u2phy2_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host0_ohci: usb@fc840000 {
++		compatible = "generic-ohci";
++		reg = <0x0 0xfc840000 0x0 0x40000>;
++		interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST0>, <&cru HCLK_HOST_ARB0>, <&cru ACLK_USB>, <&u2phy2>;
++		phys = <&u2phy2_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host1_ehci: usb@fc880000 {
++		compatible = "generic-ehci";
++		reg = <0x0 0xfc880000 0x0 0x40000>;
++		interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST1>, <&cru HCLK_HOST_ARB1>, <&cru ACLK_USB>, <&u2phy3>;
++		phys = <&u2phy3_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host1_ohci: usb@fc8c0000 {
++		compatible = "generic-ohci";
++		reg = <0x0 0xfc8c0000 0x0 0x40000>;
++		interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST1>, <&cru HCLK_HOST_ARB1>, <&cru ACLK_USB>, <&u2phy3>;
++		phys = <&u2phy3_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
+ 	sys_grf: syscon@fd58c000 {
+ 		compatible = "rockchip,rk3588-sys-grf", "syscon";
+ 		reg = <0x0 0xfd58c000 0x0 0x1000>;
+ 	};
+ 
++	usb2phy2_grf: syscon@fd5d8000 {
++		compatible = "rockchip,rk3588-usb2phy-grf", "syscon", "simple-mfd";
++		reg = <0x0 0xfd5d8000 0x0 0x4000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		u2phy2: usb2-phy@8000 {
++			compatible = "rockchip,rk3588-usb2phy";
++			reg = <0x8000 0x10>;
++			interrupts = <GIC_SPI 391 IRQ_TYPE_LEVEL_HIGH 0>;
++			resets = <&cru SRST_OTGPHY_U2_0>, <&cru SRST_P_USB2PHY_U2_0_GRF0>;
++			reset-names = "phy", "apb";
++			clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>;
++			clock-names = "phyclk";
++			clock-output-names = "usb480m_phy2";
++			#clock-cells = <0>;
++			status = "disabled";
++
++			u2phy2_host: host-port {
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++	};
++
++	usb2phy3_grf: syscon@fd5dc000 {
++		compatible = "rockchip,rk3588-usb2phy-grf", "syscon", "simple-mfd";
++		reg = <0x0 0xfd5dc000 0x0 0x4000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		u2phy3: usb2-phy@c000 {
++			compatible = "rockchip,rk3588-usb2phy";
++			reg = <0xc000 0x10>;
++			interrupts = <GIC_SPI 392 IRQ_TYPE_LEVEL_HIGH 0>;
++			resets = <&cru SRST_OTGPHY_U2_1>, <&cru SRST_P_USB2PHY_U2_1_GRF0>;
++			reset-names = "phy", "apb";
++			clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>;
++			clock-names = "phyclk";
++			clock-output-names = "usb480m_phy3";
++			#clock-cells = <0>;
++			status = "disabled";
++
++			u2phy3_host: host-port {
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++	};
++
+ 	bigcore0_grf: syscon@fd590000 {
+ 		compatible = "rockchip,rk3588-bigcore0-grf", "syscon";
+ 		reg = <0x0 0xfd590000 0x0 0x100>;
+@@ -878,7 +974,7 @@ cru: clock-controller@fd7c0000 {
+ 			<&cru ACLK_BUS_ROOT>, <&cru CLK_150M_SRC>,
+ 			<&cru CLK_GPU>;
+ 		assigned-clock-rates =
+-			<100000000>, <786432000>,
++			<1100000000>, <786432000>,
+ 			<850000000>, <1188000000>,
+ 			<702000000>,
+ 			<400000000>, <500000000>,
+diff --git a/drivers/clk/rockchip/clk-rk3588.c b/drivers/clk/rockchip/clk-rk3588.c
+index b7ce3fbd6fa..6994165e039 100644
+--- a/drivers/clk/rockchip/clk-rk3588.c
++++ b/drivers/clk/rockchip/clk-rk3588.c
+@@ -13,15 +13,25 @@
+ #include "clk.h"
+ 
+ /*
+- * GATE with additional linked clock. Downstream enables the linked clock
+- * (via runtime PM) whenever the gate is enabled. The downstream implementation
+- * does this via separate clock nodes for each of the linked gate clocks,
+- * which leaks parts of the clock tree into DT. It is unclear why this is
+- * actually needed and things work without it for simple use cases. Thus
+- * the linked clock is ignored for now.
++ * Recent Rockchip SoCs have a new hardware block called Native Interface
++ * Unit (NIU), which gates clocks to devices behind them. These effectively
++ * need two parent clocks.
++ *
++ * Downstream enables the linked clock via runtime PM whenever the gate is
++ * enabled. This implementation uses separate clock nodes for each of the
++ * linked gate clocks, which leaks parts of the clock tree into DT.
++ *
++ * The GATE_LINK macro instead takes the second parent via 'linkname', but
++ * ignores the information. Once the clock framework is ready to handle it, the
++ * information should be passed on here. But since these clocks are required to
++ * access multiple relevant IP blocks, such as PCIe or USB, we mark all linked
++ * clocks critical until a better solution is available. This will waste some
++ * power, but avoids leaking implementation details into DT or hanging the
++ * system.
+  */
+ #define GATE_LINK(_id, cname, pname, linkname, f, o, b, gf) \
+ 	GATE(_id, cname, pname, f, o, b, gf)
++#define RK3588_LINKED_CLK		CLK_IS_CRITICAL
+ 
+ 
+ #define RK3588_GRF_SOC_STATUS0		0x600
+@@ -1446,7 +1456,7 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 	COMPOSITE_NODIV(HCLK_NVM_ROOT,  "hclk_nvm_root", mux_200m_100m_50m_24m_p, 0,
+ 			RK3588_CLKSEL_CON(77), 0, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(31), 0, GFLAGS),
+-	COMPOSITE(ACLK_NVM_ROOT, "aclk_nvm_root", gpll_cpll_p, 0,
++	COMPOSITE(ACLK_NVM_ROOT, "aclk_nvm_root", gpll_cpll_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(77), 7, 1, MFLAGS, 2, 5, DFLAGS,
+ 			RK3588_CLKGATE_CON(31), 1, GFLAGS),
+ 	GATE(ACLK_EMMC, "aclk_emmc", "aclk_nvm_root", 0,
+@@ -1675,13 +1685,13 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 			RK3588_CLKGATE_CON(42), 9, GFLAGS),
+ 
+ 	/* vdpu */
+-	COMPOSITE(ACLK_VDPU_ROOT, "aclk_vdpu_root", gpll_cpll_aupll_p, 0,
++	COMPOSITE(ACLK_VDPU_ROOT, "aclk_vdpu_root", gpll_cpll_aupll_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(98), 5, 2, MFLAGS, 0, 5, DFLAGS,
+ 			RK3588_CLKGATE_CON(44), 0, GFLAGS),
+ 	COMPOSITE_NODIV(ACLK_VDPU_LOW_ROOT, "aclk_vdpu_low_root", mux_400m_200m_100m_24m_p, 0,
+ 			RK3588_CLKSEL_CON(98), 7, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(44), 1, GFLAGS),
+-	COMPOSITE_NODIV(HCLK_VDPU_ROOT, "hclk_vdpu_root", mux_200m_100m_50m_24m_p, 0,
++	COMPOSITE_NODIV(HCLK_VDPU_ROOT, "hclk_vdpu_root", mux_200m_100m_50m_24m_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(98), 9, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(44), 2, GFLAGS),
+ 	COMPOSITE(ACLK_JPEG_DECODER_ROOT, "aclk_jpeg_decoder_root", gpll_cpll_aupll_spll_p, 0,
+@@ -1732,9 +1742,9 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 	COMPOSITE(ACLK_RKVENC0_ROOT, "aclk_rkvenc0_root", gpll_cpll_npll_p, 0,
+ 			RK3588_CLKSEL_CON(102), 7, 2, MFLAGS, 2, 5, DFLAGS,
+ 			RK3588_CLKGATE_CON(47), 1, GFLAGS),
+-	GATE(HCLK_RKVENC0, "hclk_rkvenc0", "hclk_rkvenc0_root", 0,
++	GATE(HCLK_RKVENC0, "hclk_rkvenc0", "hclk_rkvenc0_root", RK3588_LINKED_CLK,
+ 			RK3588_CLKGATE_CON(47), 4, GFLAGS),
+-	GATE(ACLK_RKVENC0, "aclk_rkvenc0", "aclk_rkvenc0_root", 0,
++	GATE(ACLK_RKVENC0, "aclk_rkvenc0", "aclk_rkvenc0_root", RK3588_LINKED_CLK,
+ 			RK3588_CLKGATE_CON(47), 5, GFLAGS),
+ 	COMPOSITE(CLK_RKVENC0_CORE, "clk_rkvenc0_core", gpll_cpll_aupll_npll_p, 0,
+ 			RK3588_CLKSEL_CON(102), 14, 2, MFLAGS, 9, 5, DFLAGS,
+@@ -1744,10 +1754,10 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 			RK3588_CLKGATE_CON(48), 6, GFLAGS),
+ 
+ 	/* vi */
+-	COMPOSITE(ACLK_VI_ROOT, "aclk_vi_root", gpll_cpll_npll_aupll_spll_p, 0,
++	COMPOSITE(ACLK_VI_ROOT, "aclk_vi_root", gpll_cpll_npll_aupll_spll_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(106), 5, 3, MFLAGS, 0, 5, DFLAGS,
+ 			RK3588_CLKGATE_CON(49), 0, GFLAGS),
+-	COMPOSITE_NODIV(HCLK_VI_ROOT, "hclk_vi_root", mux_200m_100m_50m_24m_p, 0,
++	COMPOSITE_NODIV(HCLK_VI_ROOT, "hclk_vi_root", mux_200m_100m_50m_24m_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(106), 8, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(49), 1, GFLAGS),
+ 	COMPOSITE_NODIV(PCLK_VI_ROOT, "pclk_vi_root", mux_100m_50m_24m_p, 0,
+@@ -1919,10 +1929,10 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 	COMPOSITE(ACLK_VOP_ROOT, "aclk_vop_root", gpll_cpll_dmyaupll_npll_spll_p, 0,
+ 			RK3588_CLKSEL_CON(110), 5, 3, MFLAGS, 0, 5, DFLAGS,
+ 			RK3588_CLKGATE_CON(52), 0, GFLAGS),
+-	COMPOSITE_NODIV(ACLK_VOP_LOW_ROOT, "aclk_vop_low_root", mux_400m_200m_100m_24m_p, 0,
++	COMPOSITE_NODIV(ACLK_VOP_LOW_ROOT, "aclk_vop_low_root", mux_400m_200m_100m_24m_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(110), 8, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(52), 1, GFLAGS),
+-	COMPOSITE_NODIV(HCLK_VOP_ROOT, "hclk_vop_root", mux_200m_100m_50m_24m_p, 0,
++	COMPOSITE_NODIV(HCLK_VOP_ROOT, "hclk_vop_root", mux_200m_100m_50m_24m_p, RK3588_LINKED_CLK,
+ 			RK3588_CLKSEL_CON(110), 10, 2, MFLAGS,
+ 			RK3588_CLKGATE_CON(52), 2, GFLAGS),
+ 	COMPOSITE_NODIV(PCLK_VOP_ROOT, "pclk_vop_root", mux_100m_50m_24m_p, 0,
+@@ -2425,7 +2435,7 @@ static struct rockchip_clk_branch rk3588_clk_branches[] __initdata = {
+ 
+ 	GATE_LINK(ACLK_ISP1_PRE, "aclk_isp1_pre", "aclk_isp1_root", "aclk_vi_root", 0, RK3588_CLKGATE_CON(26), 6, GFLAGS),
+ 	GATE_LINK(HCLK_ISP1_PRE, "hclk_isp1_pre", "hclk_isp1_root", "hclk_vi_root", 0, RK3588_CLKGATE_CON(26), 8, GFLAGS),
+-	GATE_LINK(HCLK_NVM, "hclk_nvm", "hclk_nvm_root", "aclk_nvm_root", 0, RK3588_CLKGATE_CON(31), 2, GFLAGS),
++	GATE_LINK(HCLK_NVM, "hclk_nvm", "hclk_nvm_root", "aclk_nvm_root", RK3588_LINKED_CLK, RK3588_CLKGATE_CON(31), 2, GFLAGS),
+ 	GATE_LINK(ACLK_USB, "aclk_usb", "aclk_usb_root", "aclk_vo1usb_top_root", 0, RK3588_CLKGATE_CON(42), 2, GFLAGS),
+ 	GATE_LINK(HCLK_USB, "hclk_usb", "hclk_usb_root", "hclk_vo1usb_top_root", 0, RK3588_CLKGATE_CON(42), 3, GFLAGS),
+ 	GATE_LINK(ACLK_JPEG_DECODER_PRE, "aclk_jpeg_decoder_pre", "aclk_jpeg_decoder_root", "aclk_vdpu_root", 0, RK3588_CLKGATE_CON(44), 7, GFLAGS),
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index a0bc10aa796..e978c73ba1e 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -24,6 +24,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/power_supply.h>
+ #include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/usb/of.h>
+ #include <linux/usb/otg.h>
+@@ -32,6 +33,8 @@
+ #define SCHEDULE_DELAY		(60 * HZ)
+ #define OTG_SCHEDULE_DELAY	(2 * HZ)
+ 
++struct rockchip_usb2phy;
++
+ enum rockchip_usb2phy_port_id {
+ 	USB2PHY_PORT_OTG,
+ 	USB2PHY_PORT_HOST,
+@@ -116,6 +119,12 @@ struct rockchip_chg_det_reg {
+  * @bvalid_det_en: vbus valid rise detection enable register.
+  * @bvalid_det_st: vbus valid rise detection status register.
+  * @bvalid_det_clr: vbus valid rise detection clear register.
++ * @disfall_en: host disconnect fall edge detection enable.
++ * @disfall_st: host disconnect fall edge detection state.
++ * @disfall_clr: host disconnect fall edge detection clear.
++ * @disrise_en: host disconnect rise edge detection enable.
++ * @disrise_st: host disconnect rise edge detection state.
++ * @disrise_clr: host disconnect rise edge detection clear.
+  * @id_det_en: id detection enable register.
+  * @id_det_st: id detection state register.
+  * @id_det_clr: id detection clear register.
+@@ -133,6 +142,12 @@ struct rockchip_usb2phy_port_cfg {
+ 	struct usb2phy_reg	bvalid_det_en;
+ 	struct usb2phy_reg	bvalid_det_st;
+ 	struct usb2phy_reg	bvalid_det_clr;
++	struct usb2phy_reg      disfall_en;
++	struct usb2phy_reg      disfall_st;
++	struct usb2phy_reg      disfall_clr;
++	struct usb2phy_reg      disrise_en;
++	struct usb2phy_reg      disrise_st;
++	struct usb2phy_reg      disrise_clr;
+ 	struct usb2phy_reg	id_det_en;
+ 	struct usb2phy_reg	id_det_st;
+ 	struct usb2phy_reg	id_det_clr;
+@@ -150,6 +165,7 @@ struct rockchip_usb2phy_port_cfg {
+  * struct rockchip_usb2phy_cfg - usb-phy configuration.
+  * @reg: the address offset of grf for usb-phy config.
+  * @num_ports: specify how many ports that the phy has.
++ * @phy_tuning: phy default parameters tuning.
+  * @clkout_ctl: keep on/turn off output clk of phy.
+  * @port_cfgs: usb-phy port configurations.
+  * @chg_det: charger detection registers.
+@@ -157,6 +173,7 @@ struct rockchip_usb2phy_port_cfg {
+ struct rockchip_usb2phy_cfg {
+ 	unsigned int	reg;
+ 	unsigned int	num_ports;
++	int (*phy_tuning)(struct rockchip_usb2phy *rphy);
+ 	struct usb2phy_reg	clkout_ctl;
+ 	const struct rockchip_usb2phy_port_cfg	port_cfgs[USB2PHY_NUM_PORTS];
+ 	const struct rockchip_chg_det_reg	chg_det;
+@@ -168,6 +185,7 @@ struct rockchip_usb2phy_cfg {
+  * @port_id: flag for otg port or host port.
+  * @suspended: phy suspended flag.
+  * @vbus_attached: otg device vbus status.
++ * @host_disconnect: usb host disconnect status.
+  * @bvalid_irq: IRQ number assigned for vbus valid rise detection.
+  * @id_irq: IRQ number assigned for ID pin detection.
+  * @ls_irq: IRQ number assigned for linestate detection.
+@@ -187,6 +205,7 @@ struct rockchip_usb2phy_port {
+ 	unsigned int	port_id;
+ 	bool		suspended;
+ 	bool		vbus_attached;
++	bool            host_disconnect;
+ 	int		bvalid_irq;
+ 	int		id_irq;
+ 	int		ls_irq;
+@@ -209,6 +228,7 @@ struct rockchip_usb2phy_port {
+  * @clk: clock struct of phy input clk.
+  * @clk480m: clock struct of phy output clk.
+  * @clk480m_hw: clock struct of phy output clk management.
++ * @phy_reset: phy reset control.
+  * @chg_state: states involved in USB charger detection.
+  * @chg_type: USB charger types.
+  * @dcd_retries: The retry count used to track Data contact
+@@ -225,6 +245,7 @@ struct rockchip_usb2phy {
+ 	struct clk	*clk;
+ 	struct clk	*clk480m;
+ 	struct clk_hw	clk480m_hw;
++	struct reset_control	*phy_reset;
+ 	enum usb_chg_state	chg_state;
+ 	enum power_supply_type	chg_type;
+ 	u8			dcd_retries;
+@@ -266,6 +287,25 @@ static inline bool property_enabled(struct regmap *base,
+ 	return tmp != reg->disable;
+ }
+ 
++static int rockchip_usb2phy_reset(struct rockchip_usb2phy *rphy)
++{
++	int ret;
++
++	ret = reset_control_assert(rphy->phy_reset);
++	if (ret)
++		return ret;
++
++	udelay(10);
++
++	ret = reset_control_deassert(rphy->phy_reset);
++	if (ret)
++		return ret;
++
++	usleep_range(100, 200);
++
++	return 0;
++}
++
+ static int rockchip_usb2phy_clk480m_prepare(struct clk_hw *hw)
+ {
+ 	struct rockchip_usb2phy *rphy =
+@@ -405,6 +445,27 @@ static int rockchip_usb2phy_extcon_register(struct rockchip_usb2phy *rphy)
+ 	return 0;
+ }
+ 
++static int rockchip_usb2phy_enable_host_disc_irq(struct rockchip_usb2phy *rphy,
++						 struct rockchip_usb2phy_port *rport,
++						 bool en)
++{
++	int ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disfall_clr, true);
++	if (ret)
++		return ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disfall_en, en);
++	if (ret)
++		return ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disrise_clr, true);
++	if (ret)
++		return ret;
++
++	return property_enable(rphy->grf, &rport->port_cfg->disrise_en, en);
++}
++
+ static int rockchip_usb2phy_init(struct phy *phy)
+ {
+ 	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+@@ -449,6 +510,15 @@ static int rockchip_usb2phy_init(struct phy *phy)
+ 			dev_dbg(&rport->phy->dev, "mode %d\n", rport->mode);
+ 		}
+ 	} else if (rport->port_id == USB2PHY_PORT_HOST) {
++		if (rport->port_cfg->disfall_en.offset) {
++			rport->host_disconnect = true;
++			ret = rockchip_usb2phy_enable_host_disc_irq(rphy, rport, true);
++			if (ret) {
++				dev_err(rphy->dev, "failed to enable disconnect irq\n");
++				goto out;
++			}
++		}
++
+ 		/* clear linestate and enable linestate detect irq */
+ 		ret = property_enable(rphy->grf,
+ 				      &rport->port_cfg->ls_det_clr, true);
+@@ -490,6 +560,18 @@ static int rockchip_usb2phy_power_on(struct phy *phy)
+ 		return ret;
+ 	}
+ 
++	/*
++	 * For rk3588, it needs to reset phy when exit from
++	 * suspend mode with common_on_n 1'b1(aka REFCLK_LOGIC,
++	 * Bias, and PLL blocks are powered down) for lower
++	 * power consumption. If you don't want to reset phy,
++	 * please keep the common_on_n 1'b0 to set these blocks
++	 * remain powered.
++	 */
++	ret = rockchip_usb2phy_reset(rphy);
++	if (ret)
++		return ret;
++
+ 	/* waiting for the utmi_clk to become stable */
+ 	usleep_range(1500, 2000);
+ 
+@@ -810,9 +892,7 @@ static void rockchip_usb2phy_sm_work(struct work_struct *work)
+ 	struct rockchip_usb2phy_port *rport =
+ 		container_of(work, struct rockchip_usb2phy_port, sm_work.work);
+ 	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
+-	unsigned int sh = rport->port_cfg->utmi_hstdet.bitend -
+-			  rport->port_cfg->utmi_hstdet.bitstart + 1;
+-	unsigned int ul, uhd, state;
++	unsigned int sh, ul, uhd, state;
+ 	unsigned int ul_mask, uhd_mask;
+ 	int ret;
+ 
+@@ -822,18 +902,26 @@ static void rockchip_usb2phy_sm_work(struct work_struct *work)
+ 	if (ret < 0)
+ 		goto next_schedule;
+ 
+-	ret = regmap_read(rphy->grf, rport->port_cfg->utmi_hstdet.offset, &uhd);
+-	if (ret < 0)
+-		goto next_schedule;
+-
+-	uhd_mask = GENMASK(rport->port_cfg->utmi_hstdet.bitend,
+-			   rport->port_cfg->utmi_hstdet.bitstart);
+ 	ul_mask = GENMASK(rport->port_cfg->utmi_ls.bitend,
+ 			  rport->port_cfg->utmi_ls.bitstart);
+ 
+-	/* stitch on utmi_ls and utmi_hstdet as phy state */
+-	state = ((uhd & uhd_mask) >> rport->port_cfg->utmi_hstdet.bitstart) |
+-		(((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << sh);
++	if (rport->port_cfg->utmi_hstdet.offset) {
++		ret = regmap_read(rphy->grf, rport->port_cfg->utmi_hstdet.offset, &uhd);
++		if (ret < 0)
++			goto next_schedule;
++
++		uhd_mask = GENMASK(rport->port_cfg->utmi_hstdet.bitend,
++				   rport->port_cfg->utmi_hstdet.bitstart);
++
++		sh = rport->port_cfg->utmi_hstdet.bitend -
++		     rport->port_cfg->utmi_hstdet.bitstart + 1;
++		/* stitch on utmi_ls and utmi_hstdet as phy state */
++		state = ((uhd & uhd_mask) >> rport->port_cfg->utmi_hstdet.bitstart) |
++			(((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << sh);
++	} else {
++		state = ((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << 1 |
++			rport->host_disconnect;
++	}
+ 
+ 	switch (state) {
+ 	case PHY_STATE_HS_ONLINE:
+@@ -966,6 +1054,31 @@ static irqreturn_t rockchip_usb2phy_otg_mux_irq(int irq, void *data)
+ 	return ret;
+ }
+ 
++static irqreturn_t rockchip_usb2phy_host_disc_irq(int irq, void *data)
++{
++	struct rockchip_usb2phy_port *rport = data;
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
++
++	if (!property_enabled(rphy->grf, &rport->port_cfg->disfall_st) &&
++	    !property_enabled(rphy->grf, &rport->port_cfg->disrise_st))
++		return IRQ_NONE;
++
++	mutex_lock(&rport->mutex);
++
++	/* clear disconnect fall or rise detect irq pending status */
++	if (property_enabled(rphy->grf, &rport->port_cfg->disfall_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->disfall_clr, true);
++		rport->host_disconnect = false;
++	} else if (property_enabled(rphy->grf, &rport->port_cfg->disrise_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->disrise_clr, true);
++		rport->host_disconnect = true;
++	}
++
++	mutex_unlock(&rport->mutex);
++
++	return IRQ_HANDLED;
++}
++
+ static irqreturn_t rockchip_usb2phy_irq(int irq, void *data)
+ {
+ 	struct rockchip_usb2phy *rphy = data;
+@@ -978,6 +1091,10 @@ static irqreturn_t rockchip_usb2phy_irq(int irq, void *data)
+ 		if (!rport->phy)
+ 			continue;
+ 
++		if (rport->port_id == USB2PHY_PORT_HOST &&
++		    rport->port_cfg->disfall_en.offset)
++			ret |= rockchip_usb2phy_host_disc_irq(irq, rport);
++
+ 		switch (rport->port_id) {
+ 		case USB2PHY_PORT_OTG:
+ 			if (rport->mode != USB_DR_MODE_HOST &&
+@@ -1188,7 +1305,6 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	struct phy_provider *provider;
+ 	struct rockchip_usb2phy *rphy;
+ 	const struct rockchip_usb2phy_cfg *phy_cfgs;
+-	const struct of_device_id *match;
+ 	unsigned int reg;
+ 	int index, ret;
+ 
+@@ -1196,12 +1312,6 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	if (!rphy)
+ 		return -ENOMEM;
+ 
+-	match = of_match_device(dev->driver->of_match_table, dev);
+-	if (!match || !match->data) {
+-		dev_err(dev, "phy configs are not assigned!\n");
+-		return -EINVAL;
+-	}
+-
+ 	if (!dev->parent || !dev->parent->of_node) {
+ 		rphy->grf = syscon_regmap_lookup_by_phandle(np, "rockchip,usbgrf");
+ 		if (IS_ERR(rphy->grf)) {
+@@ -1242,26 +1352,29 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	rphy->dev = dev;
+-	phy_cfgs = match->data;
++	phy_cfgs = device_get_match_data(dev);
+ 	rphy->chg_state = USB_CHG_STATE_UNDEFINED;
+ 	rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
+ 	rphy->irq = platform_get_irq_optional(pdev, 0);
+ 	platform_set_drvdata(pdev, rphy);
+ 
++	if (!phy_cfgs)
++		return dev_err_probe(dev, -EINVAL, "phy configs are not assigned!\n");
++
+ 	ret = rockchip_usb2phy_extcon_register(rphy);
+ 	if (ret)
+ 		return ret;
+ 
+ 	/* find out a proper config which can be matched with dt. */
+ 	index = 0;
+-	while (phy_cfgs[index].reg) {
++	do {
+ 		if (phy_cfgs[index].reg == reg) {
+ 			rphy->phy_cfg = &phy_cfgs[index];
+ 			break;
+ 		}
+ 
+ 		++index;
+-	}
++	} while (phy_cfgs[index].reg);
+ 
+ 	if (!rphy->phy_cfg) {
+ 		dev_err(dev, "no phy-config can be matched with %pOFn node\n",
+@@ -1269,18 +1382,26 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 	}
+ 
+-	rphy->clk = of_clk_get_by_name(np, "phyclk");
+-	if (!IS_ERR(rphy->clk)) {
+-		clk_prepare_enable(rphy->clk);
+-	} else {
+-		dev_info(&pdev->dev, "no phyclk specified\n");
+-		rphy->clk = NULL;
++	rphy->phy_reset = devm_reset_control_get_optional(dev, "phy");
++	if (IS_ERR(rphy->phy_reset))
++		return PTR_ERR(rphy->phy_reset);
++
++	rphy->clk = devm_clk_get_optional_enabled(dev, "phyclk");
++	if (IS_ERR(rphy->clk)) {
++		return dev_err_probe(&pdev->dev, PTR_ERR(rphy->clk),
++				     "failed to get phyclk\n");
+ 	}
+ 
+ 	ret = rockchip_usb2phy_clk480m_register(rphy);
+ 	if (ret) {
+ 		dev_err(dev, "failed to register 480m output clock\n");
+-		goto disable_clks;
++		return ret;
++	}
++
++	if (rphy->phy_cfg->phy_tuning) {
++		ret = rphy->phy_cfg->phy_tuning(rphy);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	index = 0;
+@@ -1343,11 +1464,55 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 
+ put_child:
+ 	of_node_put(child_np);
+-disable_clks:
+-	if (rphy->clk) {
+-		clk_disable_unprepare(rphy->clk);
+-		clk_put(rphy->clk);
++	return ret;
++}
++
++static int rk3588_usb2phy_tuning(struct rockchip_usb2phy *rphy)
++{
++	int ret = 0;
++	bool usb3otg = false;
++	/*
++	 * utmi_termselect = 1'b1 (en FS terminations)
++	 * utmi_xcvrselect = 2'b01 (FS transceiver)
++	 */
++	int suspend_cfg = 0x14;
++
++	if (rphy->phy_cfg->reg == 0x0000 || rphy->phy_cfg->reg == 0x4000) {
++		/* USB2 config for USB3_0 and USB3_1 */
++		suspend_cfg |= 0x01; /* utmi_opmode = 2'b01 (no-driving) */
++		usb3otg = true;
++	} else if (rphy->phy_cfg->reg == 0x8000 || rphy->phy_cfg->reg == 0xc000) {
++		/* USB2 config for USB2_0 and USB2_1 */
++		suspend_cfg |= 0x00; /* utmi_opmode = 2'b00 (normal) */
++	} else {
++		return -EINVAL;
+ 	}
++
++	/* Deassert SIDDQ to power on analog block */
++	ret = regmap_write(rphy->grf, 0x0008, GENMASK(29, 29) | 0x0000);
++	if (ret)
++		return ret;
++
++	/* Do reset after exit IDDQ mode */
++	ret = rockchip_usb2phy_reset(rphy);
++	if (ret)
++		return ret;
++
++	/* suspend configuration */
++	ret |= regmap_write(rphy->grf, 0x000c, GENMASK(20, 16) | suspend_cfg);
++
++	/* HS DC Voltage Level Adjustment 4'b1001 : +5.89% */
++	ret |= regmap_write(rphy->grf, 0x0004, GENMASK(27, 24) | 0x0900);
++
++	/* HS Transmitter Pre-Emphasis Current Control 2'b10 : 2x */
++	ret |= regmap_write(rphy->grf, 0x0008, GENMASK(20, 19) | 0x0010);
++
++	if (!usb3otg)
++		return ret;
++
++	/* Pullup iddig pin for USB3_0 OTG mode */
++	ret |= regmap_write(rphy->grf, 0x0010, GENMASK(17, 16) | 0x0003);
++
+ 	return ret;
+ }
+ 
+@@ -1664,6 +1829,126 @@ static const struct rockchip_usb2phy_cfg rk3568_phy_cfgs[] = {
+ 	{ /* sentinel */ }
+ };
+ 
++static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
++	{
++		.reg = 0x0000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x000c, 11, 11, 0, 1 },
++				.bvalid_det_en	= { 0x0080, 1, 1, 0, 1 },
++				.bvalid_det_st	= { 0x0084, 1, 1, 0, 1 },
++				.bvalid_det_clr = { 0x0088, 1, 1, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_avalid	= { 0x00c0, 7, 7, 0, 1 },
++				.utmi_bvalid	= { 0x00c0, 6, 6, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++		.chg_det = {
++			.cp_det		= { 0x00c0, 0, 0, 0, 1 },
++			.dcp_det	= { 0x00c0, 0, 0, 0, 1 },
++			.dp_det		= { 0x00c0, 1, 1, 1, 0 },
++			.idm_sink_en	= { 0x0008, 5, 5, 1, 0 },
++			.idp_sink_en	= { 0x0008, 5, 5, 0, 1 },
++			.idp_src_en	= { 0x0008, 14, 14, 0, 1 },
++			.rdm_pdwn_en	= { 0x0008, 14, 14, 0, 1 },
++			.vdm_src_en	= { 0x0008, 7, 6, 0, 3 },
++			.vdp_src_en	= { 0x0008, 7, 6, 0, 3 },
++		},
++	},
++	{
++		.reg = 0x4000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x000c, 11, 11, 0, 1 },
++				.bvalid_det_en	= { 0x0080, 1, 1, 0, 1 },
++				.bvalid_det_st	= { 0x0084, 1, 1, 0, 1 },
++				.bvalid_det_clr = { 0x0088, 1, 1, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_avalid	= { 0x00c0, 7, 7, 0, 1 },
++				.utmi_bvalid	= { 0x00c0, 6, 6, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++		.chg_det = {
++			.cp_det		= { 0x00c0, 0, 0, 0, 1 },
++			.dcp_det	= { 0x00c0, 0, 0, 0, 1 },
++			.dp_det		= { 0x00c0, 1, 1, 1, 0 },
++			.idm_sink_en	= { 0x0008, 5, 5, 1, 0 },
++			.idp_sink_en	= { 0x0008, 5, 5, 0, 1 },
++			.idp_src_en	= { 0x0008, 14, 14, 0, 1 },
++			.rdm_pdwn_en	= { 0x0008, 14, 14, 0, 1 },
++			.vdm_src_en	= { 0x0008, 7, 6, 0, 3 },
++			.vdp_src_en	= { 0x0008, 7, 6, 0, 3 },
++		},
++	},
++	{
++		.reg = 0x8000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_HOST] = {
++				.phy_sus	= { 0x0008, 2, 2, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++	},
++	{
++		.reg = 0xc000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_HOST] = {
++				.phy_sus	= { 0x0008, 2, 2, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++	},
++	{ /* sentinel */ }
++};
++
+ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
+ 	{
+ 		.reg = 0x100,
+@@ -1714,6 +1999,7 @@ static const struct of_device_id rockchip_usb2phy_dt_match[] = {
+ 	{ .compatible = "rockchip,rk3366-usb2phy", .data = &rk3366_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3399-usb2phy", .data = &rk3399_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3568-usb2phy", .data = &rk3568_phy_cfgs },
++	{ .compatible = "rockchip,rk3588-usb2phy", .data = &rk3588_phy_cfgs },
+ 	{ .compatible = "rockchip,rv1108-usb2phy", .data = &rv1108_phy_cfgs },
+ 	{}
+ };
+diff --git a/drivers/soc/rockchip/pm_domains.c b/drivers/soc/rockchip/pm_domains.c
+index 84bc022f9e5..e3de49e671d 100644
+--- a/drivers/soc/rockchip/pm_domains.c
++++ b/drivers/soc/rockchip/pm_domains.c
+@@ -43,8 +43,10 @@ struct rockchip_domain_info {
+ 	bool active_wakeup;
+ 	int pwr_w_mask;
+ 	int req_w_mask;
++	int mem_status_mask;
+ 	int repair_status_mask;
+ 	u32 pwr_offset;
++	u32 mem_offset;
+ 	u32 req_offset;
+ };
+ 
+@@ -54,6 +56,9 @@ struct rockchip_pmu_info {
+ 	u32 req_offset;
+ 	u32 idle_offset;
+ 	u32 ack_offset;
++	u32 mem_pwr_offset;
++	u32 chain_status_offset;
++	u32 mem_status_offset;
+ 	u32 repair_status_offset;
+ 
+ 	u32 core_pwrcnt_offset;
+@@ -119,13 +124,15 @@ struct rockchip_pmu {
+ 	.active_wakeup = wakeup,			\
+ }
+ 
+-#define DOMAIN_M_O_R(_name, p_offset, pwr, status, r_status, r_offset, req, idle, ack, wakeup)	\
++#define DOMAIN_M_O_R(_name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, ack, wakeup)	\
+ {							\
+ 	.name = _name,					\
+ 	.pwr_offset = p_offset,				\
+ 	.pwr_w_mask = (pwr) << 16,			\
+ 	.pwr_mask = (pwr),				\
+ 	.status_mask = (status),			\
++	.mem_offset = m_offset,				\
++	.mem_status_mask = (m_status),			\
+ 	.repair_status_mask = (r_status),		\
+ 	.req_offset = r_offset,				\
+ 	.req_w_mask = (req) << 16,			\
+@@ -269,8 +276,8 @@ void rockchip_pmu_unblock(void)
+ }
+ EXPORT_SYMBOL_GPL(rockchip_pmu_unblock);
+ 
+-#define DOMAIN_RK3588(name, p_offset, pwr, status, r_status, r_offset, req, idle, wakeup)	\
+-	DOMAIN_M_O_R(name, p_offset, pwr, status, r_status, r_offset, req, idle, idle, wakeup)
++#define DOMAIN_RK3588(name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, wakeup)	\
++	DOMAIN_M_O_R(name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, idle, wakeup)
+ 
+ static bool rockchip_pmu_domain_is_idle(struct rockchip_pm_domain *pd)
+ {
+@@ -408,17 +415,92 @@ static bool rockchip_pmu_domain_is_on(struct rockchip_pm_domain *pd)
+ 	return !(val & pd->info->status_mask);
+ }
+ 
++static bool rockchip_pmu_domain_is_mem_on(struct rockchip_pm_domain *pd)
++{
++	struct rockchip_pmu *pmu = pd->pmu;
++	unsigned int val;
++
++	regmap_read(pmu->regmap,
++		    pmu->info->mem_status_offset + pd->info->mem_offset, &val);
++
++	/* 1'b0: power on, 1'b1: power off */
++	return !(val & pd->info->mem_status_mask);
++}
++
++static bool rockchip_pmu_domain_is_chain_on(struct rockchip_pm_domain *pd)
++{
++	struct rockchip_pmu *pmu = pd->pmu;
++	unsigned int val;
++
++	regmap_read(pmu->regmap,
++		    pmu->info->chain_status_offset + pd->info->mem_offset, &val);
++
++	/* 1'b1: power on, 1'b0: power off */
++	return val & pd->info->mem_status_mask;
++}
++
++static int rockchip_pmu_domain_mem_reset(struct rockchip_pm_domain *pd)
++{
++	struct rockchip_pmu *pmu = pd->pmu;
++	struct generic_pm_domain *genpd = &pd->genpd;
++	bool is_on;
++	int ret = 0;
++
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_chain_on, pd, is_on,
++					is_on == true, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get chain status '%s', target_on=1, val=%d\n",
++			genpd->name, is_on);
++		goto error;
++	}
++
++	udelay(20);
++
++	regmap_write(pmu->regmap, pmu->info->mem_pwr_offset + pd->info->pwr_offset,
++		     (pd->info->pwr_mask | pd->info->pwr_w_mask));
++	wmb();
++
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_mem_on, pd, is_on,
++					is_on == false, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get mem status '%s', target_on=0, val=%d\n",
++			genpd->name, is_on);
++		goto error;
++	}
++
++	regmap_write(pmu->regmap, pmu->info->mem_pwr_offset + pd->info->pwr_offset,
++		     pd->info->pwr_w_mask);
++	wmb();
++
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_mem_on, pd, is_on,
++					is_on == true, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get mem status '%s', target_on=1, val=%d\n",
++			genpd->name, is_on);
++	}
++
++error:
++	return ret;
++}
++
+ static void rockchip_do_pmu_set_power_domain(struct rockchip_pm_domain *pd,
+ 					     bool on)
+ {
+ 	struct rockchip_pmu *pmu = pd->pmu;
+ 	struct generic_pm_domain *genpd = &pd->genpd;
+ 	u32 pd_pwr_offset = pd->info->pwr_offset;
+-	bool is_on;
++	bool is_on, is_mem_on = false;
+ 
+ 	if (pd->info->pwr_mask == 0)
+ 		return;
+-	else if (pd->info->pwr_w_mask)
++
++	if (on && pd->info->mem_status_mask)
++		is_mem_on = rockchip_pmu_domain_is_mem_on(pd);
++
++	if (pd->info->pwr_w_mask)
+ 		regmap_write(pmu->regmap, pmu->info->pwr_offset + pd_pwr_offset,
+ 			     on ? pd->info->pwr_w_mask :
+ 			     (pd->info->pwr_mask | pd->info->pwr_w_mask));
+@@ -428,6 +510,9 @@ static void rockchip_do_pmu_set_power_domain(struct rockchip_pm_domain *pd,
+ 
+ 	wmb();
+ 
++	if (is_mem_on && rockchip_pmu_domain_mem_reset(pd))
++		return;
++
+ 	if (readx_poll_timeout_atomic(rockchip_pmu_domain_is_on, pd, is_on,
+ 				      is_on == on, 0, 10000)) {
+ 		dev_err(pmu->dev,
+@@ -645,7 +730,9 @@ static int rockchip_pm_add_one_domain(struct rockchip_pmu *pmu,
+ 	pd->genpd.flags = GENPD_FLAG_PM_CLK;
+ 	if (pd_info->active_wakeup)
+ 		pd->genpd.flags |= GENPD_FLAG_ACTIVE_WAKEUP;
+-	pm_genpd_init(&pd->genpd, NULL, !rockchip_pmu_domain_is_on(pd));
++	pm_genpd_init(&pd->genpd, NULL,
++		      !rockchip_pmu_domain_is_on(pd) ||
++		      (pd->info->mem_status_mask && !rockchip_pmu_domain_is_mem_on(pd)));
+ 
+ 	pmu->genpd_data.domains[id] = &pd->genpd;
+ 	return 0;
+@@ -1024,35 +1111,35 @@ static const struct rockchip_domain_info rk3568_pm_domains[] = {
+ };
+ 
+ static const struct rockchip_domain_info rk3588_pm_domains[] = {
+-	[RK3588_PD_GPU]		= DOMAIN_RK3588("gpu",     0x0, BIT(0),  0,       BIT(1),  0x0, BIT(0),  BIT(0),  false),
+-	[RK3588_PD_NPU]		= DOMAIN_RK3588("npu",     0x0, BIT(1),  BIT(1),  0,       0x0, 0,       0,       false),
+-	[RK3588_PD_VCODEC]	= DOMAIN_RK3588("vcodec",  0x0, BIT(2),  BIT(2),  0,       0x0, 0,       0,       false),
+-	[RK3588_PD_NPUTOP]	= DOMAIN_RK3588("nputop",  0x0, BIT(3),  0,       BIT(2),  0x0, BIT(1),  BIT(1),  false),
+-	[RK3588_PD_NPU1]	= DOMAIN_RK3588("npu1",    0x0, BIT(4),  0,       BIT(3),  0x0, BIT(2),  BIT(2),  false),
+-	[RK3588_PD_NPU2]	= DOMAIN_RK3588("npu2",    0x0, BIT(5),  0,       BIT(4),  0x0, BIT(3),  BIT(3),  false),
+-	[RK3588_PD_VENC0]	= DOMAIN_RK3588("venc0",   0x0, BIT(6),  0,       BIT(5),  0x0, BIT(4),  BIT(4),  false),
+-	[RK3588_PD_VENC1]	= DOMAIN_RK3588("venc1",   0x0, BIT(7),  0,       BIT(6),  0x0, BIT(5),  BIT(5),  false),
+-	[RK3588_PD_RKVDEC0]	= DOMAIN_RK3588("rkvdec0", 0x0, BIT(8),  0,       BIT(7),  0x0, BIT(6),  BIT(6),  false),
+-	[RK3588_PD_RKVDEC1]	= DOMAIN_RK3588("rkvdec1", 0x0, BIT(9),  0,       BIT(8),  0x0, BIT(7),  BIT(7),  false),
+-	[RK3588_PD_VDPU]	= DOMAIN_RK3588("vdpu",    0x0, BIT(10), 0,       BIT(9),  0x0, BIT(8),  BIT(8),  false),
+-	[RK3588_PD_RGA30]	= DOMAIN_RK3588("rga30",   0x0, BIT(11), 0,       BIT(10), 0x0, 0,       0,       false),
+-	[RK3588_PD_AV1]		= DOMAIN_RK3588("av1",     0x0, BIT(12), 0,       BIT(11), 0x0, BIT(9),  BIT(9),  false),
+-	[RK3588_PD_VI]		= DOMAIN_RK3588("vi",      0x0, BIT(13), 0,       BIT(12), 0x0, BIT(10), BIT(10), false),
+-	[RK3588_PD_FEC]		= DOMAIN_RK3588("fec",     0x0, BIT(14), 0,       BIT(13), 0x0, 0,       0,       false),
+-	[RK3588_PD_ISP1]	= DOMAIN_RK3588("isp1",    0x0, BIT(15), 0,       BIT(14), 0x0, BIT(11), BIT(11), false),
+-	[RK3588_PD_RGA31]	= DOMAIN_RK3588("rga31",   0x4, BIT(0),  0,       BIT(15), 0x0, BIT(12), BIT(12), false),
+-	[RK3588_PD_VOP]		= DOMAIN_RK3588("vop",     0x4, BIT(1),  0,       BIT(16), 0x0, BIT(13) | BIT(14), BIT(13) | BIT(14), false),
+-	[RK3588_PD_VO0]		= DOMAIN_RK3588("vo0",     0x4, BIT(2),  0,       BIT(17), 0x0, BIT(15), BIT(15), false),
+-	[RK3588_PD_VO1]		= DOMAIN_RK3588("vo1",     0x4, BIT(3),  0,       BIT(18), 0x4, BIT(0),  BIT(16), false),
+-	[RK3588_PD_AUDIO]	= DOMAIN_RK3588("audio",   0x4, BIT(4),  0,       BIT(19), 0x4, BIT(1),  BIT(17), false),
+-	[RK3588_PD_PHP]		= DOMAIN_RK3588("php",     0x4, BIT(5),  0,       BIT(20), 0x4, BIT(5),  BIT(21), false),
+-	[RK3588_PD_GMAC]	= DOMAIN_RK3588("gmac",    0x4, BIT(6),  0,       BIT(21), 0x0, 0,       0,       false),
+-	[RK3588_PD_PCIE]	= DOMAIN_RK3588("pcie",    0x4, BIT(7),  0,       BIT(22), 0x0, 0,       0,       true),
+-	[RK3588_PD_NVM]		= DOMAIN_RK3588("nvm",     0x4, BIT(8),  BIT(24), 0,       0x4, BIT(2),  BIT(18), false),
+-	[RK3588_PD_NVM0]	= DOMAIN_RK3588("nvm0",    0x4, BIT(9),  0,       BIT(23), 0x0, 0,       0,       false),
+-	[RK3588_PD_SDIO]	= DOMAIN_RK3588("sdio",    0x4, BIT(10), 0,       BIT(24), 0x4, BIT(3),  BIT(19), false),
+-	[RK3588_PD_USB]		= DOMAIN_RK3588("usb",     0x4, BIT(11), 0,       BIT(25), 0x4, BIT(4),  BIT(20), true),
+-	[RK3588_PD_SDMMC]	= DOMAIN_RK3588("sdmmc",   0x4, BIT(13), 0,       BIT(26), 0x0, 0,       0,       false),
++	[RK3588_PD_GPU]		= DOMAIN_RK3588("gpu",     0x0, BIT(0),  0,       0x0, 0,       BIT(1),  0x0, BIT(0),  BIT(0),  false),
++	[RK3588_PD_NPU]		= DOMAIN_RK3588("npu",     0x0, BIT(1),  BIT(1),  0x0, 0,       0,       0x0, 0,       0,       false),
++	[RK3588_PD_VCODEC]	= DOMAIN_RK3588("vcodec",  0x0, BIT(2),  BIT(2),  0x0, 0,       0,       0x0, 0,       0,       false),
++	[RK3588_PD_NPUTOP]	= DOMAIN_RK3588("nputop",  0x0, BIT(3),  0,       0x0, BIT(11), BIT(2),  0x0, BIT(1),  BIT(1),  false),
++	[RK3588_PD_NPU1]	= DOMAIN_RK3588("npu1",    0x0, BIT(4),  0,       0x0, BIT(12), BIT(3),  0x0, BIT(2),  BIT(2),  false),
++	[RK3588_PD_NPU2]	= DOMAIN_RK3588("npu2",    0x0, BIT(5),  0,       0x0, BIT(13), BIT(4),  0x0, BIT(3),  BIT(3),  false),
++	[RK3588_PD_VENC0]	= DOMAIN_RK3588("venc0",   0x0, BIT(6),  0,       0x0, BIT(14), BIT(5),  0x0, BIT(4),  BIT(4),  false),
++	[RK3588_PD_VENC1]	= DOMAIN_RK3588("venc1",   0x0, BIT(7),  0,       0x0, BIT(15), BIT(6),  0x0, BIT(5),  BIT(5),  false),
++	[RK3588_PD_RKVDEC0]	= DOMAIN_RK3588("rkvdec0", 0x0, BIT(8),  0,       0x0, BIT(16), BIT(7),  0x0, BIT(6),  BIT(6),  false),
++	[RK3588_PD_RKVDEC1]	= DOMAIN_RK3588("rkvdec1", 0x0, BIT(9),  0,       0x0, BIT(17), BIT(8),  0x0, BIT(7),  BIT(7),  false),
++	[RK3588_PD_VDPU]	= DOMAIN_RK3588("vdpu",    0x0, BIT(10), 0,       0x0, BIT(18), BIT(9),  0x0, BIT(8),  BIT(8),  false),
++	[RK3588_PD_RGA30]	= DOMAIN_RK3588("rga30",   0x0, BIT(11), 0,       0x0, BIT(19), BIT(10), 0x0, 0,       0,       false),
++	[RK3588_PD_AV1]		= DOMAIN_RK3588("av1",     0x0, BIT(12), 0,       0x0, BIT(20), BIT(11), 0x0, BIT(9),  BIT(9),  false),
++	[RK3588_PD_VI]		= DOMAIN_RK3588("vi",      0x0, BIT(13), 0,       0x0, BIT(21), BIT(12), 0x0, BIT(10), BIT(10), false),
++	[RK3588_PD_FEC]		= DOMAIN_RK3588("fec",     0x0, BIT(14), 0,       0x0, BIT(22), BIT(13), 0x0, 0,       0,       false),
++	[RK3588_PD_ISP1]	= DOMAIN_RK3588("isp1",    0x0, BIT(15), 0,       0x0, BIT(23), BIT(14), 0x0, BIT(11), BIT(11), false),
++	[RK3588_PD_RGA31]	= DOMAIN_RK3588("rga31",   0x4, BIT(0),  0,       0x0, BIT(24), BIT(15), 0x0, BIT(12), BIT(12), false),
++	[RK3588_PD_VOP]		= DOMAIN_RK3588("vop",     0x4, BIT(1),  0,       0x0, BIT(25), BIT(16), 0x0, BIT(13) | BIT(14), BIT(13) | BIT(14), false),
++	[RK3588_PD_VO0]		= DOMAIN_RK3588("vo0",     0x4, BIT(2),  0,       0x0, BIT(26), BIT(17), 0x0, BIT(15), BIT(15), false),
++	[RK3588_PD_VO1]		= DOMAIN_RK3588("vo1",     0x4, BIT(3),  0,       0x0, BIT(27), BIT(18), 0x4, BIT(0),  BIT(16), false),
++	[RK3588_PD_AUDIO]	= DOMAIN_RK3588("audio",   0x4, BIT(4),  0,       0x0, BIT(28), BIT(19), 0x4, BIT(1),  BIT(17), false),
++	[RK3588_PD_PHP]		= DOMAIN_RK3588("php",     0x4, BIT(5),  0,       0x0, BIT(29), BIT(20), 0x4, BIT(5),  BIT(21), false),
++	[RK3588_PD_GMAC]	= DOMAIN_RK3588("gmac",    0x4, BIT(6),  0,       0x0, BIT(30), BIT(21), 0x0, 0,       0,       false),
++	[RK3588_PD_PCIE]	= DOMAIN_RK3588("pcie",    0x4, BIT(7),  0,       0x0, BIT(31), BIT(22), 0x0, 0,       0,       true),
++	[RK3588_PD_NVM]		= DOMAIN_RK3588("nvm",     0x4, BIT(8),  BIT(24), 0x4, 0,       0,       0x4, BIT(2),  BIT(18), false),
++	[RK3588_PD_NVM0]	= DOMAIN_RK3588("nvm0",    0x4, BIT(9),  0,       0x4, BIT(1),  BIT(23), 0x0, 0,       0,       false),
++	[RK3588_PD_SDIO]	= DOMAIN_RK3588("sdio",    0x4, BIT(10), 0,       0x4, BIT(2),  BIT(24), 0x4, BIT(3),  BIT(19), false),
++	[RK3588_PD_USB]		= DOMAIN_RK3588("usb",     0x4, BIT(11), 0,       0x4, BIT(3),  BIT(25), 0x4, BIT(4),  BIT(20), true),
++	[RK3588_PD_SDMMC]	= DOMAIN_RK3588("sdmmc",   0x4, BIT(13), 0,       0x4, BIT(5),  BIT(26), 0x0, 0,       0,       false),
+ };
+ 
+ static const struct rockchip_pmu_info px30_pmu = {
+@@ -1207,6 +1294,9 @@ static const struct rockchip_pmu_info rk3588_pmu = {
+ 	.req_offset = 0x10c,
+ 	.idle_offset = 0x120,
+ 	.ack_offset = 0x118,
++	.mem_pwr_offset = 0x1a0,
++	.chain_status_offset = 0x1f0,
++	.mem_status_offset = 0x1f8,
+ 	.repair_status_offset = 0x290,
+ 
+ 	.num_domains = ARRAY_SIZE(rk3588_pm_domains),
+diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
+index a84305091c4..dec38a845cf 100644
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -33,7 +33,7 @@
+ #include "ohci.h"
+ 
+ #define DRIVER_DESC "OHCI generic platform driver"
+-#define OHCI_MAX_CLKS 3
++#define OHCI_MAX_CLKS 4
+ #define hcd_to_ohci_priv(h) ((struct ohci_platform_priv *)hcd_to_ohci(h)->priv)
+ 
+ struct ohci_platform_priv {
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

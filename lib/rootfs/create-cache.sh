@@ -17,6 +17,15 @@ get_package_list_hash() {
 # get_rootfs_cache_list <cache_type> <packages_hash>
 #
 # return a list of versions of all avaiable cache from remote and local.
+#
+# Latest-release=$(
+#       curl --silent \
+#       --fail \
+#       -L "https://api.github.com/repos/armbian/cache/releases?per_page=1" | \
+#       jq -r '.[].tag_name'
+#   )
+# return a number of Latest release.
+#
 get_rootfs_cache_list() {
 	local cache_type=$1
 	local packages_hash=$2
@@ -79,8 +88,8 @@ create_rootfs_cache() {
 		create_sources_list "$RELEASE" "$SDCARD/"
 	else
 
-		local ROOT_FS_CREATE_VERSION=${ROOT_FS_CREATE_VERSION:-$(date --utc +"%Y%m%d")}
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${packages_hash}.tar.zst
+		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-007}
+		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_LOCAL_VERSION}.tar.zst
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
 		display_alert "Creating new rootfs cache for" "$RELEASE" "info"
@@ -289,7 +298,7 @@ create_rootfs_cache() {
 		umount_chroot "$SDCARD"
 
 		tar cp --xattrs --directory=$SDCARD/ --exclude='./dev/*' --exclude='./proc/*' --exclude='./run/*' --exclude='./tmp/*' \
-			--exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' . | pv -p -b -r -s $(du -sb $SDCARD/ | cut -f1) -N "$cache_name" | zstdmt -"$K_ZST" -c > $cache_fname
+			--exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' . | pv -p -b -r -s $(du -sb $SDCARD/ | cut -f1) -N "$cache_name" | zstdmt -19 -c > $cache_fname
 
 		# sign rootfs cache archive that it can be used for web cache once. Internal purposes
 		if [[ -n "${GPG_PASS}" && "${SUDO_USER}" ]]; then

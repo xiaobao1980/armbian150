@@ -101,8 +101,8 @@ elif [[ $BOOT_SOC == rk3568 ]]; then
 elif [[ $BOOT_SOC == rk3588 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
-	DDR_BLOB="${DDR_BLOB:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.08.bin}"
-	BL31_BLOB='rk35/rk3588_bl31_v1.28.elf'
+	DDR_BLOB="${DDR_BLOB:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin}"
+	BL31_BLOB='rk35/rk3588_bl31_v1.32.elf'
 
 elif [[ $BOARD == rockpi-s ]]; then
 
@@ -162,7 +162,11 @@ prepare_boot_configuration() {
 
 	elif [[ $BOOT_SCENARIO == "spl-blobs" ]]; then
 
-		UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB spl/u-boot-spl.bin u-boot.dtb u-boot.itb;;idbloader.img u-boot.itb"
+		if [[ $BOARD == quartz64a || $BOARD == quartz64b || $BOARD == soquartz ]]; then
+			UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB spl/u-boot-spl.bin all;;idbloader.img u-boot.itb"
+		else
+			UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB spl/u-boot-spl.bin u-boot.dtb u-boot.itb;;idbloader.img u-boot.itb"
+		fi
 		ATFSOURCE=''
 		ATF_COMPILE='no'
 
@@ -176,7 +180,7 @@ prepare_boot_configuration() {
 
 	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
 
-		if [[ $BOARD != "rock-3a" ]] && [[ $BOARD != "rock-5b" ]]; then
+		if [[ $BOARD != "rock-3a" ]] && [[ $BOARD != "rock-5b" ]] && [[ $BOARD != "orangepi5" ]] && [[ $BOARD != "khadas-edge2" ]]; then
 			UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB tpl/u-boot-tpl.bin spl/u-boot-spl.bin u-boot.itb ${UBOOT_TARGET_MAP} rkspi_loader.img"
 		else
 			UBOOT_TARGET_MAP="${UBOOT_TARGET_MAP} rkspi_loader.img"
@@ -437,7 +441,7 @@ family_tweaks_bsp() {
 		fi
 	fi
 
-	if [[ $BOARD == orangepi4-lts ]]; then
+	if [[ $BOARD == orangepi4-lts || $BOARD == orangepi-800 ]]; then
 
 		# Bluetooth on orangepi 4 LTS board is handled by a Spreadtrum (sprd) chip and requires
 		# a custom hciattach_opi binary, plus a systemd service to run it at boot time

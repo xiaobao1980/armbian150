@@ -769,7 +769,7 @@ index 000000000..2e253c0e1
 +
 +	bt {
 +		bt_enable_h: bt-enable-h {
-+			rockchip,pins = <3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +
 +		bt_host_wake_l: bt-host-wake-l {
@@ -777,7 +777,7 @@ index 000000000..2e253c0e1
 +		};
 +
 +		bt_wake_l: bt-wake-l {
-+			rockchip,pins = <3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +

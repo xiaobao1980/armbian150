@@ -1,20 +1,20 @@
-From fb48f4c462deca66df07a5d0e640a70c528abd42 Mon Sep 17 00:00:00 2001
+From d8b157a229dd2be611b51718677ec7e6e781d532 Mon Sep 17 00:00:00 2001
 From: balbes150 <balbes-150@yandex.ru>
-Date: Mon, 24 Apr 2023 14:36:16 +0300
+Date: Wed, 26 Apr 2023 16:05:15 +0300
 Subject: [PATCH] 1
 
 Signed-off-by: balbes150 <balbes-150@yandex.ru>
 ---
- .../dts/rockchip/rk3568-firefly-roc-pc.dts    | 1022 +++++++++++++++++
- 1 file changed, 1022 insertions(+)
+ .../dts/rockchip/rk3568-firefly-roc-pc.dts    | 965 ++++++++++++++++++
+ 1 file changed, 965 insertions(+)
  create mode 100755 arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
 
 diff --git a/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts b/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
 new file mode 100755
-index 000000000..2e253c0e1
+index 00000000000..55441eef71b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
-@@ -0,0 +1,1022 @@
+@@ -0,0 +1,965 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
@@ -83,16 +83,6 @@ index 000000000..2e253c0e1
 +		vin-supply = <&vcc3v3_sys>;
 +	};
 +
-+	vcc3v3_vga: vcc3v3-vga {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_vga";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+		vin-supply = <&vcc3v3_sys>;
-+	};
-+
 +	pcie30_avdd0v9: pcie30-avdd0v9 {
 +		compatible = "regulator-fixed";
 +		regulator-name = "pcie30_avdd0v9";
@@ -154,26 +144,6 @@ index 000000000..2e253c0e1
 +		vin-supply = <&dc_12v>;
 +	};
 +
-+	vcc3v3_lcd0_n: vcc3v3-lcd0-n {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_lcd0_n";
-+		regulator-boot-on;
-+
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
-+	};
-+
-+	vcc3v3_lcd1_n: vcc3v3-lcd1-n {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_lcd1_n";
-+		regulator-boot-on;
-+
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
-+	};
-+
 +	vcc5v0_host: vcc5v0-host-regulator {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
@@ -191,24 +161,6 @@ index 000000000..2e253c0e1
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&vcc5v0_otg_en>;
 +		regulator-name = "vcc5v0_otg";
-+	};
-+
-+	vcc3v3_lcd0_n: vcc3v3-lcd0-n {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_lcd0_n";
-+		regulator-boot-on;
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
-+	};
-+
-+	vcc3v3_lcd1_n: vcc3v3-lcd1-n {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_lcd1_n";
-+		regulator-boot-on;
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
 +	};
 +
 +	vcc_hub_power: vcc-hub-power-regulator {
@@ -410,7 +362,7 @@ index 000000000..2e253c0e1
 +};
 +
 +&hdmi_in {
-+	hdmi_in_vp0: endpoint@0 {
++	hdmi_in_vp0: endpoint {
 +		remote-endpoint = <&vp0_out_hdmi>;
 +	};
 +};
@@ -552,6 +504,18 @@ index 000000000..2e253c0e1
 +				};
 +			};
 +
++			vcc_1v8: DCDC_REG5 {
++				regulator-name = "vcc_1v8";
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++
++				regulator-state-mem {
++					regulator-off-in-suspend;
++				};
++			};
++
 +			vdda0v9_image: LDO_REG1 {
 +				regulator-boot-on;
 +				regulator-always-on;
@@ -658,17 +622,6 @@ index 000000000..2e253c0e1
 +				regulator-min-microvolt = <1800000>;
 +				regulator-max-microvolt = <1800000>;
 +
-+				regulator-state-mem {
-+					regulator-off-in-suspend;
-+				};
-+			};
-+
-+			vcc_1v8: DCDC_REG5 {
-+				regulator-always-on;
-+				regulator-boot-on;
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <1800000>;
-+				regulator-name = "vcc_1v8";
 +				regulator-state-mem {
 +					regulator-off-in-suspend;
 +				};
@@ -911,7 +864,6 @@ index 000000000..2e253c0e1
 +};
 +
 +&uart3 {
-+//	status = "disabled";
 +	pinctrl-names = "default";
 +	status = "okay";
 +};
@@ -924,7 +876,7 @@ index 000000000..2e253c0e1
 +
 +&uart8 {
 +	pinctrl-names = "default";
-+	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn>;
++	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn &uart8m0_rtsn>;
 +	status = "okay";
 +	uart-has-rtscts;
 +
@@ -962,7 +914,6 @@ index 000000000..2e253c0e1
 +	status = "okay";
 +};
 +
-+
 +&usb_host1_xhci {
 +	status = "okay";
 +};
@@ -994,14 +945,6 @@ index 000000000..2e253c0e1
 +	phy-supply = <&vcc5v0_host>;
 +	status = "okay";
 +};
-+
-+//&usbdrd30 {
-+//	status = "okay";
-+//};
-+
-+//&usbhost30 {
-+//	status = "okay";
-+//};
 +
 +&rk809 {
 +    rtc {

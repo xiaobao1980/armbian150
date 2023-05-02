@@ -1,1 +1,2 @@
-../../../../focal/environments/kde-plasma/config_base/packages.uninstall
+gnome-software
+gnome-keyring

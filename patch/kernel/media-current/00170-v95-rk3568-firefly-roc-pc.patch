@@ -1,8 +1,20 @@
-new file mode 100644
-index 000000000..fac2db500
+From fb48f4c462deca66df07a5d0e640a70c528abd42 Mon Sep 17 00:00:00 2001
+From: balbes150 <balbes-150@yandex.ru>
+Date: Mon, 24 Apr 2023 14:36:16 +0300
+Subject: [PATCH] 1
+
+Signed-off-by: balbes150 <balbes-150@yandex.ru>
+---
+ .../dts/rockchip/rk3568-firefly-roc-pc.dts    | 1022 +++++++++++++++++
+ 1 file changed, 1022 insertions(+)
+ create mode 100755 arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts b/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
+new file mode 100755
+index 000000000..2e253c0e1
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-firefly-roc-pc.dts
-@@ -0,0 +1,1044 @@
+@@ -0,0 +1,1022 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
@@ -12,6 +24,7 @@ index 000000000..fac2db500
 +/dts-v1/;
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/pwm/pwm.h>
++#include <dt-bindings/leds/common.h>
 +#include <dt-bindings/pinctrl/rockchip.h>
 +#include <dt-bindings/soc/rockchip,vop2.h>
 +#include "rk3568.dtsi"
@@ -267,31 +280,7 @@ index 000000000..fac2db500
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&wifi_enable_h>;
 +		reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
-+	};
-+
-+	wireless_wlan: wireless-wlan {
-+		compatible = "wlan-platdata";
-+		rockchip,grf = <&grf>;
-+		wifi_chip_type = "ap6398s";
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&wifi_host_wake_irq>;
-+		WIFI,host_wake_irq = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
-+		status = "okay";
-+	};
-+
-+	wireless_bluetooth: wireless-bluetooth {
-+		compatible = "bluetooth-platdata";
-+		clocks = <&rk809 1>;
-+		clock-names = "ext_clock";
-+		//wifi-bt-power-toggle;
-+		uart_rts_gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_LOW>;
-+		pinctrl-names = "default", "rts_gpio";
-+		pinctrl-0 = <&uart8m0_rtsn>;
-+		pinctrl-1 = <&uart8_gpios>;
-+		BT,reset_gpio    = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
-+		BT,wake_gpio     = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
-+		BT,wake_host_irq = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
-+		status = "okay";
++		post-power-on-delay-ms = <100>;
 +	};
 +
 +	flash_led: flash-led {
@@ -713,7 +702,7 @@ index 000000000..fac2db500
 +};
 +
 +&i2c1 {
-+    status = "okay";
++	status = "okay";
 +};
 +
 +&i2c4 {
@@ -778,15 +767,17 @@ index 000000000..fac2db500
 +		};
 +	};
 +
-+	wireless-wlan {
-+		wifi_host_wake_irq: wifi-host-wake-irq {
-+			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_down>;
++	bt {
++		bt_enable_h: bt-enable-h {
++			rockchip,pins = <3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
-+	};
 +
-+	wireless-bluetooth {
-+		uart8_gpios: uart8-gpios {
-+			rockchip,pins = <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
++		bt_host_wake_l: bt-host-wake-l {
++			rockchip,pins = <3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++
++		bt_wake_l: bt-wake-l {
++			rockchip,pins = <3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
@@ -909,21 +900,6 @@ index 000000000..fac2db500
 +	status = "okay";
 +};
 +
-+&sdio_pwrseq {
-+	status = "okay";
-+	reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
-+	post-power-on-delay-ms = <100>;
-+};
-+
-+&wireless_wlan {
-+	wifi_chip_type = "ap6275s";
-+	status = "okay";
-+};
-+
-+&wireless_bluetooth {
-+	status = "okay";
-+};
-+
 +&tsadc {
 +	rockchip,hw-tshut-mode = <1>;
 +	rockchip,hw-tshut-polarity = <0>;
@@ -947,9 +923,23 @@ index 000000000..fac2db500
 +};
 +
 +&uart8 {
-+	status = "okay";
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn>;
++	status = "okay";
++	uart-has-rtscts;
++
++	bluetooth {
++		compatible = "brcm,bcm43438-bt";
++		clocks = <&rk809 1>;
++		clock-names = "lpo";
++		device-wakeup-gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
++		host-wakeup-gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
++		shutdown-gpios = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&bt_host_wake_l &bt_wake_l &bt_enable_h>;
++		vbat-supply = <&vcc3v3_sys>;
++		vddio-supply = <&vcca1v8_pmu>;
++	};
 +};
 +
 +&usb_host0_ehci {
@@ -1047,4 +1037,6 @@ index 000000000..fac2db500
 +		remote-endpoint = <&hdmi_in_vp0>;
 +	};
 +};
+-- 
+Created with Armbian build tools https://github.com/armbian/build
 

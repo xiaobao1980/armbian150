@@ -199,6 +199,14 @@ uboot_custom_postprocess() {
 
 		tools/mkimage -n $BOOT_SOC -T rksd -d $RKBIN_DIR/$DDR_BLOB:spl/u-boot-spl.bin idbloader.img
 
+		if [[ -n "$EDK_UBOOT" ]]; then
+			cp -f $SRC/packages/blobs/edk2/$EDK_UBOOT u-boot.itb
+		fi
+
+		if [[ -n "$EDK_LOADER" ]]; then
+			cp -f $SRC/packages/blobs/edk2/$EDK_LOADER idbloader.img
+		fi
+
 	elif [[ $BOOT_SCENARIO == "only-blobs" ]]; then
 
 		local tempfile=$(mktemp)

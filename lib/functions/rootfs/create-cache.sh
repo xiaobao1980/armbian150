@@ -22,8 +22,8 @@ get_rootfs_cache_list() {
 	local packages_hash=$2
 
 	{
-		curl --silent --fail -L "https://api.github.com/repos/armbian/cache/releases?per_page=3" | jq -r '.[].tag_name' \
-		|| curl --silent --fail -L https://cache.armbian.com/rootfs/list
+#		curl --silent --fail -L "https://api.github.com/repos/armbian/cache/releases?per_page=3" | jq -r '.[].tag_name' \
+#		|| curl --silent --fail -L https://cache.armbian.com/rootfs/list
 
 		find ${SRC}/cache/rootfs/ -mtime -7 -name "${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-*.tar.zst" |
 			sed -e 's#^.*/##' |
@@ -46,26 +46,26 @@ create_rootfs_cache() {
 	[[ ${BUILD_MINIMAL} == yes ]] && local cache_type="minimal"
 
 	# seek last cache, proceed to previous otherwise build it
-	local cache_list
-	readarray -t cache_list <<< "$(get_rootfs_cache_list "$cache_type" "$packages_hash" | sort -r)"
-	for ROOTFSCACHE_VERSION in "${cache_list[@]}"; do
+#	local cache_list
+#	readarray -t cache_list <<< "$(get_rootfs_cache_list "$cache_type" "$packages_hash" | sort -r)"
+#	for ROOTFSCACHE_VERSION in "${cache_list[@]}"; do
 
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOTFSCACHE_VERSION}.tar.zst
+		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}.tar.zst
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
-		[[ "$ROOT_FS_CREATE_ONLY" == yes ]] && break
+#		[[ "$ROOT_FS_CREATE_ONLY" == yes ]] && break
 
 		display_alert "Checking cache" "$cache_name" "info"
 
 		# if aria2 file exists download didn't succeeded
-		if [[ ! -f $cache_fname || -f ${cache_fname}.aria2 ]]; then
-			display_alert "Downloading from servers"
-			download_and_verify "rootfs" "$cache_name" ||
-				continue
-		fi
+#		if [[ ! -f $cache_fname || -f ${cache_fname}.aria2 ]]; then
+#			display_alert "Downloading from servers"
+#			download_and_verify "rootfs" "$cache_name" ||
+#				continue
+#		fi
 
-		[[ -f $cache_fname && ! -f ${cache_fname}.aria2 ]] && break
-	done
+#		[[ -f $cache_fname && ! -f ${cache_fname}.aria2 ]] && break
+#	done
 
 	# if aria2 file exists download didn't succeeded
 	if [[ "$ROOT_FS_CREATE_ONLY" != "yes" && -f $cache_fname && ! -f $cache_fname.aria2 ]]; then
@@ -79,10 +79,10 @@ create_rootfs_cache() {
 		create_sources_list "$RELEASE" "$SDCARD/"
 	else
 
-		local ROOT_FS_CREATE_VERSION=${ROOT_FS_CREATE_VERSION:-$(date --utc +"%Y%m%d")}
-#		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_CREATE_VERSION}.tar.zst
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${packages_hash}.tar.zst
-		local cache_fname=${SRC}/cache/rootfs/${cache_name}
+#		local ROOT_FS_CREATE_VERSION=${ROOT_FS_CREATE_VERSION:-$(date --utc +"%Y%m%d")}
+##		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_CREATE_VERSION}.tar.zst
+#		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${packages_hash}.tar.zst
+#		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
 		display_alert "Creating new rootfs cache for" "$RELEASE" "info"
 
@@ -225,9 +225,9 @@ create_rootfs_cache() {
 		fi
 
 		# stage: check md5 sum of installed packages. Just in case.
-		display_alert "Checking MD5 sum of installed packages" "debsums" "info"
-		chroot $SDCARD /bin/bash -e -c "debsums -s"
-		[[ $? -ne 0 ]] && exit_with_error "MD5 sums check of installed packages failed"
+#		display_alert "Checking MD5 sum of installed packages" "debsums" "info"
+#		chroot $SDCARD /bin/bash -e -c "debsums -s"
+#		[[ $? -ne 0 ]] && exit_with_error "MD5 sums check of installed packages failed"
 
 		# Remove packages from packages.uninstall
 

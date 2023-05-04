@@ -25,7 +25,7 @@ get_rootfs_cache_list() {
 #		curl --silent --fail -L "https://api.github.com/repos/armbian/cache/releases?per_page=3" | jq -r '.[].tag_name' \
 #		|| curl --silent --fail -L https://cache.armbian.com/rootfs/list
 
-		find ${SRC}/cache/rootfs/ -mtime -7 -name "${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-*.tar.zst" |
+		find ${SRC}/cache/rootfs/ -mtime -7 -name "${ARCH}-${RELEASE}-${cache_type}-${packages_hash}.tar.zst" |
 			sed -e 's#^.*/##' |
 			sed -e 's#\..*$##' |
 			awk -F'-' '{print $5}'
@@ -46,26 +46,26 @@ create_rootfs_cache() {
 	[[ ${BUILD_MINIMAL} == yes ]] && local cache_type="minimal"
 
 	# seek last cache, proceed to previous otherwise build it
-	local cache_list
-	readarray -t cache_list <<< "$(get_rootfs_cache_list "$cache_type" "$packages_hash" | sort -r)"
-	for ROOTFSCACHE_VERSION in "${cache_list[@]}"; do
+#	local cache_list
+#	readarray -t cache_list <<< "$(get_rootfs_cache_list "$cache_type" "$packages_hash" | sort -r)"
+#	for ROOTFSCACHE_VERSION in "${cache_list[@]}"; do
 
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOTFSCACHE_VERSION}.tar.zst
+		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}.tar.zst
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
-		[[ "$ROOT_FS_CREATE_ONLY" == yes ]] && break
+#		[[ "$ROOT_FS_CREATE_ONLY" == yes ]] && break
 
-		display_alert "Checking cache" "$cache_name" "info"
+#		display_alert "Checking cache" "$cache_name" "info"
 
 		# if aria2 file exists download didn't succeeded
-		if [[ ! -f $cache_fname || -f ${cache_fname}.aria2 ]]; then
-			display_alert "Downloading from servers"
-			download_and_verify "rootfs" "$cache_name" ||
-				continue
-		fi
+#		if [[ ! -f $cache_fname || -f ${cache_fname}.aria2 ]]; then
+#			display_alert "Downloading from servers"
+#			download_and_verify "rootfs" "$cache_name" ||
+#				continue
+#		fi
 
-		[[ -f $cache_fname && ! -f ${cache_fname}.aria2 ]] && break
-	done
+#		[[ -f $cache_fname && ! -f ${cache_fname}.aria2 ]] && break
+#	done
 
 	# if aria2 file exists download didn't succeeded
 	if [[ "$ROOT_FS_CREATE_ONLY" != "yes" && -f $cache_fname && ! -f $cache_fname.aria2 ]]; then
@@ -80,9 +80,9 @@ create_rootfs_cache() {
 	else
 
 #		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-007}
-		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-${packages_hash}}
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_LOCAL_VERSION}.tar.zst
-		local cache_fname=${SRC}/cache/rootfs/${cache_name}
+#		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-${packages_hash}}
+#		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_LOCAL_VERSION}.tar.zst
+#		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
 		display_alert "Creating new rootfs cache for" "$RELEASE" "info"
 

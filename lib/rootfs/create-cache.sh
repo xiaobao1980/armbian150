@@ -25,7 +25,7 @@ get_rootfs_cache_list() {
 #		curl --silent --fail -L "https://api.github.com/repos/armbian/cache/releases?per_page=3" | jq -r '.[].tag_name' \
 #		|| curl --silent --fail -L https://cache.armbian.com/rootfs/list
 
-		find ${SRC}/cache/rootfs/ -mtime -7 -name "${ARCH}-${RELEASE}-${cache_type}-${packages_hash}.tar.zst" |
+		find ${SRC}/cache/rootfs/ -mtime -7 -name "${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-*.tar.zst" |
 			sed -e 's#^.*/##' |
 			sed -e 's#\..*$##' |
 			awk -F'-' '{print $5}'
@@ -55,7 +55,7 @@ create_rootfs_cache() {
 
 #		[[ "$ROOT_FS_CREATE_ONLY" == yes ]] && break
 
-#		display_alert "Checking cache" "$cache_name" "info"
+		display_alert "Checking cache" "$cache_name" "info"
 
 		# if aria2 file exists download didn't succeeded
 #		if [[ ! -f $cache_fname || -f ${cache_fname}.aria2 ]]; then

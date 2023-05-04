@@ -79,9 +79,9 @@ create_rootfs_cache() {
 		create_sources_list "$RELEASE" "$SDCARD/"
 	else
 
-		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-007}
-#		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_LOCAL_VERSION}.tar.zst
-		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${packages_hash}.tar.zst
+#		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-007}
+#		local ROOT_FS_LOCAL_VERSION=${ROOT_FS_LOCAL_VERSION:-${packages_hash}}
+		local cache_name=${ARCH}-${RELEASE}-${cache_type}-${packages_hash}-${ROOT_FS_LOCAL_VERSION}.tar.zst
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 
 		display_alert "Creating new rootfs cache for" "$RELEASE" "info"

@@ -1,6 +1,4 @@
 # Rockchip RK3399 hexa core 3/4GB RAM SoC GBE eMMC USB3 USB-C WiFi/BT
-# Uses the same u-boot dtb from Orangepi4 original board, but sets
-# specific kernel DTB with BOOT_FDT_FILE directive
 BOARD_NAME="OrangePi 800"
 BOARDFAMILY="media"
 BOOTCONFIG="orangepi-4-rk3399_defconfig"

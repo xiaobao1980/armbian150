@@ -57,7 +57,7 @@ prepare_host() {
 
 	elif [[ $(dpkg --print-architecture) == arm64 ]]; then
 
-		hostdeps+=" gcc-arm-none-eabi libc6 libc6-amd64-cross qemu"
+		hostdeps+=" gcc-arm-none-eabi libc6 libc6-amd64-cross qemu python3-setuptools python3-pyelftools"
 
 	else
 

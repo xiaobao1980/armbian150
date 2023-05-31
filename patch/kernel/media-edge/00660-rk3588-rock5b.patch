@@ -1,0 +1,394 @@
+From f6f623d7b5fa33fede4955aee75dbea1d61f8137 Mon Sep 17 00:00:00 2001
+From: balbes150 <balbes-150@yandex.ru>
+Date: Tue, 30 May 2023 17:11:31 +0300
+Subject: [PATCH] 1
+
+Signed-off-by: balbes150 <balbes-150@yandex.ru>
+---
+ .../boot/dts/rockchip/rk3588-rock-5b.dts      | 229 +++++++++++++++++-
+ arch/arm64/boot/dts/rockchip/rk3588.dtsi      |  68 ++++++
+ 2 files changed, 289 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+index b00b2b61578..a417ebc82a4 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+@@ -2,6 +2,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/usb/pd.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include "rk3588.dtsi"
+@@ -13,6 +14,7 @@ / {
+ 
+ 	aliases {
+ 		mmc0 = &sdhci;
++		mmc1 = &sdmmc;
+ 		serial2 = &uart2;
+ 	};
+ 
+@@ -45,6 +47,15 @@ sound {
+ 		pinctrl-0 = <&hp_detect>;
+ 	};
+ 
++	vcc12v_dcin: vcc12v-dcin-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc12v_dcin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <12000000>;
++		regulator-max-microvolt = <12000000>;
++	};
++
+ 	vcc5v0_sys: vcc5v0-sys-regulator {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc5v0_sys";
+@@ -67,7 +78,40 @@ vcc5v0_host: vcc5v0-host-regulator {
+ 		pinctrl-0 = <&vcc5v0_host_en>;
+ 		vin-supply = <&vcc5v0_sys>;
+ 	};
+-	
++
++	vcc3v3_pcie2x1l2: vcc3v3-pcie2x1l2 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_pcie2x1l2";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <5000>;
++		vin-supply = <&vcc_3v3_s3>;
++	};
++
++	vcc3v3_pcie2x1l0: vcc3v3-pcie2x1l0 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_pcie2x1l0";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		enable-active-high;
++		regulator-boot-on;
++		regulator-always-on;
++		gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_HIGH>;
++		startup-delay-us = <50000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
++	vcc3v3_pcie30: vcc3v3-pcie30 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_pcie30";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		enable-active-high;
++		gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
++		startup-delay-us = <5000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
+ 	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_1v1_nldo_s3";
+@@ -144,6 +188,78 @@ regulator-state-mem {
+ 	};
+ };
+ 
++&i2c4 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c4m1_xfer>;
++
++	usbc0: fusb302@22 {
++		compatible = "fcs,fusb302";
++		reg = <0x22>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <RK_PB4 IRQ_TYPE_LEVEL_LOW>;
++		fcs,int_n = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&usbc0_int>;
++		vbus-supply = <&vcc12v_dcin>;
++		status = "okay";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				usbc0_role_sw: endpoint@0 {
++					remote-endpoint = <&dwc3_0_role_switch>;
++				};
++			};
++		};
++
++		usb_con: connector {
++			compatible = "usb-c-connector";
++			label = "USB-C";
++			data-role = "dual";
++			power-role = "sink";
++			try-power-role = "sink";
++			op-sink-microwatt = <1000000>;
++//			sink-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)
++//				 PDO_VAR(5000, 20000, 5000)>;
++
++			altmodes {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				altmode@0 {
++					reg = <0>;
++					svid = <0xff01>;
++					vdo = <0xffffffff>;
++				};
++			};
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++//					usbc0_orien_sw: endpoint {
++//						remote-endpoint = <&usbdp_phy0_orientation_switch>;
++//					};
++				};
++
++				port@1 {
++					reg = <1>;
++//					dp_altmode_mux: endpoint {
++//						remote-endpoint = <&usbdp_phy0_dp_altmode_mux>;
++//					};
++				};
++			};
++		};
++	};
++};
++
++
+ &i2c6 {
+ 	status = "okay";
+ 
+@@ -246,22 +362,54 @@ &uart2 {
+ 	status = "okay";
+ };
+ 
+-&u2phy2_host {
+-	/* connected to USB hub, which is powered by vcc5v0_sys */
+-	phy-supply = <&vcc5v0_sys>;
++//&u2phy2_host {
++//	/* connected to USB hub, which is powered by vcc5v0_sys */
++//	phy-supply = <&vcc5v0_sys>;
++//	status = "okay";
++//};
++
++//&u2phy3_host {
++//	phy-supply = <&vcc5v0_host>;
++//	status = "okay";
++//};
++
++//&u2phy2 {
++//	status = "okay";
++//};
++
++//&u2phy3 {
++//	status = "okay";
++//};
++
++//&usb_host0_ehci {
++//	status = "okay";
++//};
++
++//&usb_host0_ohci {
++//	status = "okay";
++//};
++
++//&usb_host1_ehci {
++//	status = "okay";
++//};
++
++//&usb_host1_ohci {
++//	status = "okay";
++//};
++
++&u2phy2 {
+ 	status = "okay";
+ };
+ 
+-&u2phy3_host {
+-	phy-supply = <&vcc5v0_host>;
++&u2phy2_host {
+ 	status = "okay";
+ };
+ 
+-&u2phy2 {
++&u2phy3 {
+ 	status = "okay";
+ };
+ 
+-&u2phy3 {
++&u2phy3_host {
+ 	status = "okay";
+ };
+ 
+@@ -281,11 +429,76 @@ &usb_host1_ohci {
+ 	status = "okay";
+ };
+ 
++&usbhost3_0 {
++	status = "okay";
++};
++
++&usbhost_dwc3_0 {
++	status = "okay";
++};
++
++&combphy2_psu {
++	status = "okay";
++};
++
++&u2phy1 {
++	status = "okay";
++};
++
++&u2phy1_otg {
++	status = "okay";
++};
++
++&usbdrd3_1{
++	status = "okay";
++};
++
++&usbdrd_dwc3_1{
++	status = "okay";
++};
++
++&u2phy0 {
++	status = "okay";
++};
++
++&u2phy0_otg {
++	rockchip,typec-vbus-det;
++	status = "okay";
++};
++
++&usbdrd3_0 {
++	status = "okay";
++};
++
++&usbdrd_dwc3_0 {
++	status = "okay";
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		dwc3_0_role_switch: endpoint@0 {
++			reg = <0>;
++			remote-endpoint = <&usbc0_role_sw>;
++		};
++	};
++};
++
++
++
+ &pinctrl {
+ 	usb {
+ 		vcc5v0_host_en: vcc5v0-host-en {
+ 			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
++
++		vcc5v0_otg_en: vcc5v0-otg-en {
++			rockchip,pins = <2 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	usb-typec {
++		usbc0_int: usbc0-int {
++			rockchip,pins = <3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
+ 	};
+ };
+ 
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588.dtsi b/arch/arm64/boot/dts/rockchip/rk3588.dtsi
+index 28013c23c55..673af6c52e1 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588.dtsi
+@@ -7,11 +7,79 @@
+ #include "rk3588-pinctrl.dtsi"
+ 
+ / {
++	compatible = "rockchip,rk3588";
++
++	usbdrd3_1: usbdrd3_1 {
++		compatible = "rockchip,rk3588-dwc3", "rockchip,rk3399-dwc3";
++		clocks = <&cru REF_CLK_USB3OTG1>, <&cru SUSPEND_CLK_USB3OTG1>,
++			 <&cru ACLK_USB3OTG1>;
++		clock-names = "ref", "suspend", "bus";
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++		status = "disabled";
++
++		usbdrd_dwc3_1: usb@fc400000 {
++			compatible = "snps,dwc3";
++			reg = <0x0 0xfc400000 0x0 0x400000>;
++			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL_HIGH 0>;
++			power-domains = <&power RK3588_PD_USB>;
++			resets = <&cru SRST_A_USB3OTG1>;
++			reset-names = "usb3-otg";
++			dr_mode = "host";
++			phys = <&u2phy1_otg>;
++			phy-names = "usb2-phy", "usb3-phy";
++			phy_type = "utmi_wide";
++			snps,dis_enblslpm_quirk;
++			snps,dis-u2-freeclk-exists-quirk;
++			snps,dis-del-phy-power-chg-quirk;
++			snps,dis-tx-ipgap-linecheck-quirk;
++			status = "disabled";
++		};
++	};
++
++	pcie30_phy_grf: syscon@fd5b8000 {
++		compatible = "rockchip,pcie30-phy-grf", "syscon";
++		reg = <0x0 0xfd5b8000 0x0 0x10000>;
++	};
++
+ 	pipe_phy1_grf: syscon@fd5c0000 {
+ 		compatible = "rockchip,rk3588-pipe-phy-grf", "syscon";
+ 		reg = <0x0 0xfd5c0000 0x0 0x100>;
+ 	};
+ 
++	usbdpphy1_grf: syscon@fd5cc000 {
++		compatible = "rockchip,rk3588-usbdpphy-grf", "syscon";
++		reg = <0x0 0xfd5cc000 0x0 0x4000>;
++	};
++
++	usb2phy1_grf: syscon@fd5d4000 {
++		compatible = "rockchip,rk3588-usb2phy-grf", "syscon",
++			     "simple-mfd";
++		reg = <0x0 0xfd5d4000 0x0 0x4000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		u2phy1: usb2-phy@4000 {
++			compatible = "rockchip,rk3588-usb2phy";
++			reg = <0x4000 0x10>;
++			interrupts = <GIC_SPI 394 IRQ_TYPE_LEVEL_HIGH 0>;
++			resets = <&cru SRST_OTGPHY_U3_1>, <&cru SRST_P_USB2PHY_U3_1_GRF0>;
++			reset-names = "phy", "apb";
++			clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>;
++			clock-names = "phyclk";
++			clock-output-names = "usb480m_phy1";
++			#clock-cells = <0>;
++			rockchip,usbctrl-grf = <&usb_grf>;
++			status = "disabled";
++
++			u2phy1_otg: otg-port {
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++	};
++
+ 	i2s8_8ch: i2s@fddc8000 {
+ 		compatible = "rockchip,rk3588-i2s-tdm";
+ 		reg = <0x0 0xfddc8000 0x0 0x1000>;
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

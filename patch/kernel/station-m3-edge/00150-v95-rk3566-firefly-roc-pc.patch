@@ -1,20 +1,8 @@
-From 669f8f8397362401bca59e7c320ebd50b1e06f6d Mon Sep 17 00:00:00 2001
-From: balbes150 <balbes-150@yandex.ru>
-Date: Fri, 12 May 2023 13:58:42 +0300
-Subject: [PATCH] 1
-
-Signed-off-by: balbes150 <balbes-150@yandex.ru>
----
- .../dts/rockchip/rk3566-firefly-roc-pc.dts    | 772 ++++++++++++++++++
- 1 file changed, 772 insertions(+)
- create mode 100644 arch/arm64/boot/dts/rockchip/rk3566-firefly-roc-pc.dts
-
-diff --git a/arch/arm64/boot/dts/rockchip/rk3566-firefly-roc-pc.dts b/arch/arm64/boot/dts/rockchip/rk3566-firefly-roc-pc.dts
 new file mode 100644
-index 00000000000..21cfb089c6c
+index 000000000..fac2db500
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3566-firefly-roc-pc.dts
-@@ -0,0 +1,772 @@
+@@ -0,0 +1,773 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
@@ -233,8 +221,8 @@ index 00000000000..21cfb089c6c
 +	snps,reset-active-low;
 +	/* Reset time is 20ms, 100ms for rtl8211f */
 +	snps,reset-delays-us = <0 20000 100000>;
-+	tx_delay = <0x4f>;
-+	rx_delay = <0x24>;
++	tx_delay = <0x4e>;
++	rx_delay = <0x2c>;
 +	phy-handle = <&rgmii_phy1>;
 +	status = "okay";
 +};
@@ -246,7 +234,7 @@ index 00000000000..21cfb089c6c
 +};
 +
 +&hdmi_in {
-+	hdmi_in_vp0: endpoint {
++	hdmi_in_vp0: endpoint@0 {
 +		remote-endpoint = <&vp0_out_hdmi>;
 +	};
 +};
@@ -290,18 +278,25 @@ index 00000000000..21cfb089c6c
 +		compatible = "rockchip,rk809";
 +		reg = <0x20>;
 +		interrupt-parent = <&gpio0>;
-+		interrupts = <RK_PA7 IRQ_TYPE_LEVEL_LOW>;
-+		clock-output-names = "rk808-clkout1", "rk808-clkout2";
-+		assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
-+		assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
-+		clock-names = "mclk";
-+		clocks = <&cru I2S1_MCLKOUT_TX>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&pmic_int>, <&i2s1m0_mclk>;
-+		rockchip,system-power-controller;
-+		wakeup-source;
++		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
++		assigned-clocks = <&cru I2S1_MCLKOUT>, <&cru I2S1_MCLK_TX_IOE>;
++		assigned-clock-rates = <12288000>;
++		assigned-clock-parents = <&cru I2S1_MCLKOUT_TX>, <&cru I2S1_MCLKOUT_TX>;
 +		#clock-cells = <1>;
++		clock-names = "mclk";
++		clocks = <&cru I2S1_MCLKOUT>;
++		pinctrl-names = "default", "pmic-sleep",
++				"pmic-power-off", "pmic-reset";
++		pinctrl-0 = <&pmic_int>, <&i2s1m0_mclk>;
++
++		rockchip,system-power-controller;
 +		#sound-dai-cells = <0>;
++		clock-output-names = "rk808-clkout1", "rk808-clkout2";
++		//fb-inner-reg-idxs = <2>;
++		/* 1: rst regs (default in codes), 0: rst the pmic */
++		pmic-reset-func = <0>;
++		/* not save the PMIC_POWER_EN register in uboot */
++		not-save-power-en = <1>;
 +
 +		vcc1-supply = <&vcc3v3_sys>;
 +		vcc2-supply = <&vcc3v3_sys>;
@@ -312,37 +307,36 @@ index 00000000000..21cfb089c6c
 +		vcc7-supply = <&vcc3v3_sys>;
 +		vcc8-supply = <&vcc3v3_sys>;
 +		vcc9-supply = <&vcc3v3_sys>;
-+
-+		codec {
-+			mic-in-differential;
-+		};
++		wakeup-source;
 +
 +		regulators {
-+			vdd_log: DCDC_REG1 {
-+				regulator-name = "vdd_log";
++			vdd_logic: DCDC_REG1 {
++				regulator-name = "vdd_logic";
 +				regulator-always-on;
 +				regulator-boot-on;
++				regulator-init-microvolt = <900000>;
++				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
-+				regulator-init-microvolt = <900000>;
-+				regulator-ramp-delay = <6001>;
-+
-+				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <900000>;
-+				};
-+			};
-+
-+			vdd_gpu: DCDC_REG2 {
-+				regulator-name = "vdd_gpu";
-+				regulator-min-microvolt = <900000>;
-+				regulator-max-microvolt = <1350000>;
-+				regulator-init-microvolt = <900000>;
 +				regulator-ramp-delay = <6001>;
 +
 +				regulator-state-mem {
 +					regulator-off-in-suspend;
-+					regulator-suspend-microvolt = <900000>;
++				};
++			};
++
++			vdd_gpu: DCDC_REG2 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-name = "vdd_gpu";
++				regulator-init-microvolt = <900000>;
++				regulator-initial-mode = <0x2>;
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <1350000>;
++				regulator-ramp-delay = <6001>;
++
++				regulator-state-mem {
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -350,9 +344,8 @@ index 00000000000..21cfb089c6c
 +				regulator-name = "vcc_ddr";
 +				regulator-always-on;
 +				regulator-boot-on;
-+				regulator-min-microvolt = <1100000>;
-+				regulator-max-microvolt = <1100000>;
 +				regulator-initial-mode = <0x2>;
++
 +				regulator-state-mem {
 +					regulator-on-in-suspend;
 +				};
@@ -360,37 +353,26 @@ index 00000000000..21cfb089c6c
 +
 +			vdd_npu: DCDC_REG4 {
 +				regulator-name = "vdd_npu";
-+				regulator-min-microvolt = <900000>;
-+				regulator-max-microvolt = <1350000>;
++				regulator-init-microvolt = <900000>;
 +				regulator-initial-mode = <0x2>;
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <1350000>;
++				regulator-ramp-delay = <6001>;
++
 +				regulator-state-mem {
 +					regulator-off-in-suspend;
 +				};
 +			};
 +
-+			vcc_1v8: DCDC_REG5 {
-+				regulator-name = "vcc_1v8";
-+				regulator-always-on;
-+				regulator-boot-on;
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <1800000>;
-+
-+				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <1800000>;
-+				};
-+			};
-+
 +			vdda0v9_image: LDO_REG1 {
-+				regulator-name = "vdda0v9_image";
-+				regulator-always-on;
 +				regulator-boot-on;
++				regulator-always-on;
++				regulator-name = "vdda0v9_image";
 +				regulator-min-microvolt = <900000>;
 +				regulator-max-microvolt = <900000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <900000>;
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -402,8 +384,7 @@ index 00000000000..21cfb089c6c
 +				regulator-max-microvolt = <900000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <900000>;
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -413,6 +394,7 @@ index 00000000000..21cfb089c6c
 +				regulator-boot-on;
 +				regulator-min-microvolt = <900000>;
 +				regulator-max-microvolt = <900000>;
++
 +				regulator-state-mem {
 +					regulator-on-in-suspend;
 +					regulator-suspend-microvolt = <900000>;
@@ -420,16 +402,14 @@ index 00000000000..21cfb089c6c
 +			};
 +
 +			vccio_acodec: LDO_REG4 {
-+				regulator-name = "vccio_acodec";
 +				regulator-always-on;
 +				regulator-boot-on;
++				regulator-name = "vccio_acodec";
 +				regulator-min-microvolt = <3300000>;
 +				regulator-max-microvolt = <3300000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <3300000>;
-+
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -441,8 +421,7 @@ index 00000000000..21cfb089c6c
 +				regulator-max-microvolt = <3300000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <3300000>;
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -467,8 +446,7 @@ index 00000000000..21cfb089c6c
 +				regulator-max-microvolt = <1800000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <1800000>;
++					regulator-off-in-suspend;
 +				};
 +			};
 +
@@ -487,43 +465,50 @@ index 00000000000..21cfb089c6c
 +
 +			vcca1v8_image: LDO_REG9 {
 +				regulator-name = "vcca1v8_image";
-+				regulator-always-on;
-+				regulator-boot-on;
 +				regulator-min-microvolt = <1800000>;
 +				regulator-max-microvolt = <1800000>;
 +
 +				regulator-state-mem {
-+					regulator-on-in-suspend;
-+					regulator-suspend-microvolt = <1800000>;
++					regulator-off-in-suspend;
++				};
++			};
++
++			vcc_1v8: DCDC_REG5 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-name = "vcc_1v8";
++				regulator-state-mem {
++					regulator-off-in-suspend;
 +				};
 +			};
 +
 +			vcc_3v3: SWITCH_REG1 {
++				regulator-name = "vcc_3v3";
++				regulator-always-on;
 +				regulator-boot-on;
-+				regulator-name = "vcc3v3";
++
++				regulator-state-mem {
++					regulator-off-in-suspend;
++				};
 +			};
 +
 +			vcc3v3_sd: SWITCH_REG2 {
 +				regulator-name = "vcc3v3_sd";
 +				regulator-always-on;
 +				regulator-boot-on;
++
++				regulator-state-mem {
++					regulator-off-in-suspend;
++				};
 +			};
 +		};
++
++		codec {
++			mic-in-differential;
++		};
 +	};
-+};
-+
-+&i2c1 {
-+	status = "okay";
-+};
-+
-+&i2c2 {
-+	status = "okay";
-+};
-+
-+&i2c3 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c3m0_xfer>;
-+	status = "okay";
 +};
 +
 +&i2s0_8ch {
@@ -692,6 +677,8 @@ index 00000000000..21cfb089c6c
 +};
 +
 +&uart0 {
++//	pinctrl-names = "default";
++//	pinctrl-0 = <&uart0_xfer>;
 +	status = "disabled";
 +};
 +
@@ -739,6 +726,7 @@ index 00000000000..21cfb089c6c
 +	status = "okay";
 +};
 +
++
 +&usb_host1_xhci {
 +	status = "okay";
 +};
@@ -772,6 +760,7 @@ index 00000000000..21cfb089c6c
 +};
 +
 +&vop {
++	compatible = "rockchip,rk3568-vop";
 +	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
 +	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
 +	status = "okay";
@@ -787,6 +776,4 @@ index 00000000000..21cfb089c6c
 +		remote-endpoint = <&hdmi_in_vp0>;
 +	};
 +};
--- 
-Created with Armbian build tools https://github.com/armbian/build
 

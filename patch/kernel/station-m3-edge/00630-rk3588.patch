@@ -1,46 +1,157 @@
-From 020c0f6a3bcc8a4eb5d50515292cc5ef5d32343c Mon Sep 17 00:00:00 2001
+From 9121fa9418c4250922b1a5c4b319ec1af3826fa4 Mon Sep 17 00:00:00 2001
 From: balbes150 <balbes-150@yandex.ru>
-Date: Fri, 7 Apr 2023 12:07:27 +0300
+Date: Mon, 22 May 2023 17:31:35 +0300
 Subject: [PATCH] 1
 
 Signed-off-by: balbes150 <balbes-150@yandex.ru>
 ---
- .../bindings/mfd/rockchip,rk806.yaml          | 406 ++++++++++
- .../bindings/thermal/rockchip-thermal.yaml    |   1 +
- .../boot/dts/rockchip/rk3588-evb1-v10.dts     | 759 ++++++++++++++++++
- arch/arm64/boot/dts/rockchip/rk3588s.dtsi     | 481 +++++++++++
- arch/arm64/configs/defconfig                  |   3 +-
+ .../bindings/ata/snps,dwc-ahci-common.yaml    |   8 +-
+ .../bindings/ata/snps,dwc-ahci.yaml           |  40 +-
+ .../bindings/mfd/rockchip,rk806.yaml          | 406 ++++++++
+ .../bindings/pci/rockchip-dw-pcie.yaml        |  58 +-
+ .../devicetree/bindings/pci/snps,dw-pcie.yaml |  15 +-
+ .../phy/phy-rockchip-naneng-combphy.yaml      |   8 +-
+ .../bindings/phy/rockchip,inno-usb2phy.yaml   |  21 +-
+ .../devicetree/bindings/soc/rockchip/grf.yaml |   3 +
+ .../devicetree/bindings/usb/generic-ehci.yaml |   1 +
+ .../devicetree/bindings/usb/generic-ohci.yaml |  17 +-
+ arch/arm/configs/multi_v7_defconfig           |   2 +-
+ .../boot/dts/rockchip/rk3588-evb1-v10.dts     | 880 ++++++++++++++++++
+ .../dts/rockchip/rk3588-rk806-single.dtsi     | 179 ++++
+ .../boot/dts/rockchip/rk3588-rock-5b.dts      | 105 +++
+ arch/arm64/boot/dts/rockchip/rk3588.dtsi      |  99 ++
+ .../boot/dts/rockchip/rk3588s-rock-5a.dts     |  46 +
+ arch/arm64/boot/dts/rockchip/rk3588s.dtsi     | 761 +++++++++++++++
  drivers/clk/Kconfig                           |   2 +-
+ drivers/clk/clk-composite.c                   |   2 +-
+ drivers/clk/clk-divider.c                     |   6 +-
  drivers/clk/clk-rk808.c                       |  34 +-
  drivers/cpufreq/Kconfig.arm                   |  10 +
  drivers/cpufreq/Makefile                      |   1 +
  drivers/cpufreq/cpufreq-dt-platdev.c          |   2 +
- drivers/cpufreq/rockchip-cpufreq.c            | 628 +++++++++++++++
+ drivers/cpufreq/rockchip-cpufreq.c            | 640 +++++++++++++
  drivers/input/misc/Kconfig                    |   2 +-
  drivers/mfd/Kconfig                           |  21 +-
  drivers/mfd/Makefile                          |   4 +-
- drivers/mfd/{rk808.c => rk8xx-core.c}         | 352 +++-----
- drivers/mfd/rk8xx-i2c.c                       | 185 +++++
+ drivers/mfd/{rk808.c => rk8xx-core.c}         | 352 +++----
+ drivers/mfd/rk8xx-i2c.c                       | 185 ++++
  drivers/mfd/rk8xx-spi.c                       | 124 +++
- .../net/ethernet/stmicro/stmmac/dwmac-rk.c    |  74 +-
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 357 ++++++-
  drivers/pinctrl/Kconfig                       |   2 +-
- drivers/pinctrl/pinctrl-rk805.c               | 189 ++++-
+ drivers/pinctrl/pinctrl-rk805.c               | 189 +++-
  drivers/power/supply/Kconfig                  |   2 +-
  drivers/regulator/Kconfig                     |   2 +-
  drivers/regulator/helpers.c                   |  22 +-
- drivers/regulator/rk808-regulator.c           | 383 +++++++++
+ drivers/regulator/rk808-regulator.c           | 399 +++++++-
  drivers/rtc/Kconfig                           |   2 +-
- drivers/thermal/rockchip_thermal.c            | 322 +++++---
- include/linux/mfd/rk808.h                     | 417 +++++++++-
+ drivers/soc/rockchip/pm_domains.c             | 160 +++-
+ drivers/usb/host/ohci-platform.c              |   2 +-
+ include/linux/mfd/rk808.h                     | 417 ++++++++-
  include/linux/regulator/driver.h              |   2 +
  sound/soc/codecs/Kconfig                      |   2 +-
- 29 files changed, 4000 insertions(+), 434 deletions(-)
+ 44 files changed, 5206 insertions(+), 386 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/mfd/rockchip,rk806.yaml
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3588-rk806-single.dtsi
  create mode 100644 drivers/cpufreq/rockchip-cpufreq.c
  rename drivers/mfd/{rk808.c => rk8xx-core.c} (71%)
  create mode 100644 drivers/mfd/rk8xx-i2c.c
  create mode 100644 drivers/mfd/rk8xx-spi.c
 
+diff --git a/Documentation/devicetree/bindings/ata/snps,dwc-ahci-common.yaml b/Documentation/devicetree/bindings/ata/snps,dwc-ahci-common.yaml
+index c1457910520..34c5bf65b02 100644
+--- a/Documentation/devicetree/bindings/ata/snps,dwc-ahci-common.yaml
++++ b/Documentation/devicetree/bindings/ata/snps,dwc-ahci-common.yaml
+@@ -31,11 +31,11 @@ properties:
+       PM-alive clock, RxOOB detection clock, embedded PHYs reference (Rx/Tx)
+       clock, etc.
+     minItems: 1
+-    maxItems: 4
++    maxItems: 6
+ 
+   clock-names:
+     minItems: 1
+-    maxItems: 4
++    maxItems: 6
+     items:
+       oneOf:
+         - description: Application APB/AHB/AXI BIU clock
+@@ -48,6 +48,10 @@ properties:
+           const: pmalive
+         - description: RxOOB detection clock
+           const: rxoob
++        - description: PHY Transmit Clock
++          const: asic
++        - description: PHY Receive Clock
++          const: rbc
+         - description: SATA Ports reference clock
+           const: ref
+ 
+diff --git a/Documentation/devicetree/bindings/ata/snps,dwc-ahci.yaml b/Documentation/devicetree/bindings/ata/snps,dwc-ahci.yaml
+index 5afa4b57ce2..37830185b9b 100644
+--- a/Documentation/devicetree/bindings/ata/snps,dwc-ahci.yaml
++++ b/Documentation/devicetree/bindings/ata/snps,dwc-ahci.yaml
+@@ -13,9 +13,6 @@ description:
+   This document defines device tree bindings for the generic Synopsys DWC
+   implementation of the AHCI SATA controller.
+ 
+-allOf:
+-  - $ref: snps,dwc-ahci-common.yaml#
+-
+ properties:
+   compatible:
+     oneOf:
+@@ -23,9 +20,11 @@ properties:
+         const: snps,dwc-ahci
+       - description: SPEAr1340 AHCI SATA device
+         const: snps,spear-ahci
+-      - description: Rockhip RK3568 AHCI controller
++      - description: Rockhip AHCI controller
+         items:
+-          - const: rockchip,rk3568-dwc-ahci
++          - enum:
++              - rockchip,rk3568-dwc-ahci
++              - rockchip,rk3588-dwc-ahci
+           - const: snps,dwc-ahci
+ 
+ patternProperties:
+@@ -39,6 +38,37 @@ required:
+   - reg
+   - interrupts
+ 
++allOf:
++  - $ref: snps,dwc-ahci-common.yaml#
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - rockchip,rk3588-dwc-ahci
++    then:
++      properties:
++        clock-names:
++          items:
++            - const: sata
++            - const: pmalive
++            - const: rxoob
++            - const: ref
++            - const: asic
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - rockchip,rk3568-dwc-ahci
++    then:
++      properties:
++        clock-names:
++          items:
++            - const: sata
++            - const: pmalive
++            - const: rxoob
++
+ unevaluatedProperties: false
+ 
+ examples:
 diff --git a/Documentation/devicetree/bindings/mfd/rockchip,rk806.yaml b/Documentation/devicetree/bindings/mfd/rockchip,rk806.yaml
 new file mode 100644
 index 00000000000..cf2500f2e9a
@@ -453,26 +564,380 @@ index 00000000000..cf2500f2e9a
 +            };
 +        };
 +    };
-diff --git a/Documentation/devicetree/bindings/thermal/rockchip-thermal.yaml b/Documentation/devicetree/bindings/thermal/rockchip-thermal.yaml
-index f6c1be226aa..55f8ec0bec0 100644
---- a/Documentation/devicetree/bindings/thermal/rockchip-thermal.yaml
-+++ b/Documentation/devicetree/bindings/thermal/rockchip-thermal.yaml
-@@ -19,6 +19,7 @@ properties:
-       - rockchip,rk3368-tsadc
-       - rockchip,rk3399-tsadc
-       - rockchip,rk3568-tsadc
-+      - rockchip,rk3588-tsadc
-       - rockchip,rv1108-tsadc
+diff --git a/Documentation/devicetree/bindings/pci/rockchip-dw-pcie.yaml b/Documentation/devicetree/bindings/pci/rockchip-dw-pcie.yaml
+index 24c88942e59..7897af0ec29 100644
+--- a/Documentation/devicetree/bindings/pci/rockchip-dw-pcie.yaml
++++ b/Documentation/devicetree/bindings/pci/rockchip-dw-pcie.yaml
+@@ -41,20 +41,51 @@ properties:
+       - const: config
+ 
+   clocks:
++    minItems: 5
+     items:
+       - description: AHB clock for PCIe master
+       - description: AHB clock for PCIe slave
+       - description: AHB clock for PCIe dbi
+       - description: APB clock for PCIe
+       - description: Auxiliary clock for PCIe
++      - description: PIPE clock
+ 
+   clock-names:
++    minItems: 5
+     items:
+       - const: aclk_mst
+       - const: aclk_slv
+       - const: aclk_dbi
+       - const: pclk
+       - const: aux
++      - const: pipe
++
++  interrupts:
++    maxItems: 5
++
++  interrupt-names:
++    items:
++      - const: sys
++      - const: pmc
++      - const: msg
++      - const: legacy
++      - const: err
++
++  legacy-interrupt-controller:
++    description: Interrupt controller node for handling legacy PCI interrupts.
++    type: object
++    properties:
++      "#address-cells":
++        const: 0
++
++      "#interrupt-cells":
++        const: 1
++
++      "interrupt-controller": true
++
++      interrupts:
++        items:
++          - description: combined legacy interrupt
+ 
+   msi-map: true
+ 
+@@ -70,13 +101,19 @@ properties:
+     maxItems: 1
+ 
+   ranges:
+-    maxItems: 2
++    minItems: 2
++    maxItems: 3
+ 
+   resets:
+-    maxItems: 1
++    minItems: 1
++    maxItems: 2
+ 
+   reset-names:
+-    const: pipe
++    oneOf:
++      - const: pipe
++      - items:
++          - const: pwr
++          - const: pipe
+ 
+   vpcie3v3-supply: true
+ 
+@@ -98,6 +135,7 @@ unevaluatedProperties: false
+ 
+ examples:
+   - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+     bus {
+         #address-cells = <2>;
+@@ -117,6 +155,12 @@ examples:
+                           "aclk_dbi", "pclk",
+                           "aux";
+             device_type = "pci";
++            interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 159 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 158 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 157 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 156 IRQ_TYPE_LEVEL_HIGH>;
++            interrupt-names = "sys", "pmc", "msg", "legacy", "err";
+             linux,pci-domain = <2>;
+             max-link-speed = <2>;
+             msi-map = <0x2000 &its 0x2000 0x1000>;
+@@ -130,6 +174,14 @@ examples:
+             reset-names = "pipe";
+             #address-cells = <3>;
+             #size-cells = <2>;
++
++            legacy-interrupt-controller {
++                interrupt-controller;
++                #address-cells = <0>;
++                #interrupt-cells = <1>;
++                interrupt-parent = <&gic>;
++                interrupts = <GIC_SPI 72 IRQ_TYPE_EDGE_RISING>;
++            };
+         };
+     };
+ ...
+diff --git a/Documentation/devicetree/bindings/pci/snps,dw-pcie.yaml b/Documentation/devicetree/bindings/pci/snps,dw-pcie.yaml
+index 1a83f0f65f1..9f605eb297f 100644
+--- a/Documentation/devicetree/bindings/pci/snps,dw-pcie.yaml
++++ b/Documentation/devicetree/bindings/pci/snps,dw-pcie.yaml
+@@ -193,9 +193,22 @@ properties:
+           oneOf:
+             - description: See native "app" IRQ for details
+               enum: [ intr ]
++        - description: Combined Legacy A/B/C/D interrupt signal.
++          const: legacy
++        - description: Combined System interrupt signal.
++          const: sys
++        - description: Combined Power Management interrupt signal.
++          const: pmc
++        - description: Combined Message Received interrupt signal.
++          const: msg
++        - description: Combined Error interrupt signal.
++          const: err
++
+     allOf:
+       - contains:
+-          const: msi
++          enum:
++            - msi
++            - msg
+ 
+ additionalProperties: true
+ 
+diff --git a/Documentation/devicetree/bindings/phy/phy-rockchip-naneng-combphy.yaml b/Documentation/devicetree/bindings/phy/phy-rockchip-naneng-combphy.yaml
+index 9ae514fa753..82550a5c2ed 100644
+--- a/Documentation/devicetree/bindings/phy/phy-rockchip-naneng-combphy.yaml
++++ b/Documentation/devicetree/bindings/phy/phy-rockchip-naneng-combphy.yaml
+@@ -31,8 +31,14 @@ properties:
+       - const: pipe
+ 
+   resets:
++    minItems: 1
++    maxItems: 2
++
++  reset-names:
++    minItems: 1
+     items:
+-      - description: exclusive PHY reset line
++      - const: phy
++      - const: apb
+ 
+   rockchip,enable-ssc:
+     type: boolean
+diff --git a/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml b/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml
+index 0d6b8c28be0..5254413137c 100644
+--- a/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml
+@@ -20,6 +20,7 @@ properties:
+       - rockchip,rk3366-usb2phy
+       - rockchip,rk3399-usb2phy
+       - rockchip,rk3568-usb2phy
++      - rockchip,rk3588-usb2phy
+       - rockchip,rv1108-usb2phy
  
    reg:
+@@ -56,6 +57,14 @@ properties:
+     description: Muxed interrupt for both ports
+     maxItems: 1
+ 
++  resets:
++    maxItems: 2
++
++  reset-names:
++    items:
++      - const: phy
++      - const: apb
++
+   rockchip,usbgrf:
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description:
+@@ -120,15 +129,21 @@ required:
+   - reg
+   - clock-output-names
+   - "#clock-cells"
+-  - host-port
+-  - otg-port
++
++anyOf:
++  - required:
++      - otg-port
++  - required:
++      - host-port
+ 
+ allOf:
+   - if:
+       properties:
+         compatible:
+           contains:
+-            const: rockchip,rk3568-usb2phy
++            enum:
++              - rockchip,rk3568-usb2phy
++              - rockchip,rk3588-usb2phy
+ 
+     then:
+       properties:
+diff --git a/Documentation/devicetree/bindings/soc/rockchip/grf.yaml b/Documentation/devicetree/bindings/soc/rockchip/grf.yaml
+index 65a2d5a4f28..bf2370c66ed 100644
+--- a/Documentation/devicetree/bindings/soc/rockchip/grf.yaml
++++ b/Documentation/devicetree/bindings/soc/rockchip/grf.yaml
+@@ -24,6 +24,7 @@ properties:
+               - rockchip,rk3588-bigcore1-grf
+               - rockchip,rk3588-ioc
+               - rockchip,rk3588-php-grf
++              - rockchip,rk3588-pipe-phy-grf
+               - rockchip,rk3588-sys-grf
+               - rockchip,rk3588-pcie3-phy-grf
+               - rockchip,rk3588-pcie3-pipe-grf
+@@ -52,6 +53,7 @@ properties:
+               - rockchip,rk3399-pmugrf
+               - rockchip,rk3568-grf
+               - rockchip,rk3568-pmugrf
++              - rockchip,rk3588-usb2phy-grf
+               - rockchip,rv1108-grf
+               - rockchip,rv1108-pmugrf
+               - rockchip,rv1126-grf
+@@ -199,6 +201,7 @@ allOf:
+               - rockchip,rk3308-usb2phy-grf
+               - rockchip,rk3328-usb2phy-grf
+               - rockchip,rk3399-grf
++              - rockchip,rk3588-usb2phy-grf
+               - rockchip,rv1108-grf
+ 
+     then:
+diff --git a/Documentation/devicetree/bindings/usb/generic-ehci.yaml b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+index 9445764bd8d..b956bb5fada 100644
+--- a/Documentation/devicetree/bindings/usb/generic-ehci.yaml
++++ b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+@@ -61,6 +61,7 @@ properties:
+               - ibm,476gtr-ehci
+               - nxp,lpc1850-ehci
+               - qca,ar7100-ehci
++              - rockchip,rk3588-ehci
+               - snps,hsdk-v1.0-ehci
+               - socionext,uniphier-ehci
+           - const: generic-ehci
+diff --git a/Documentation/devicetree/bindings/usb/generic-ohci.yaml b/Documentation/devicetree/bindings/usb/generic-ohci.yaml
+index d06d1e7d887..be268e23ca7 100644
+--- a/Documentation/devicetree/bindings/usb/generic-ohci.yaml
++++ b/Documentation/devicetree/bindings/usb/generic-ohci.yaml
+@@ -44,6 +44,7 @@ properties:
+               - hpe,gxp-ohci
+               - ibm,476gtr-ohci
+               - ingenic,jz4740-ohci
++              - rockchip,rk3588-ohci
+               - snps,hsdk-v1.0-ohci
+           - const: generic-ohci
+       - enum:
+@@ -69,7 +70,7 @@ properties:
+ 
+   clocks:
+     minItems: 1
+-    maxItems: 3
++    maxItems: 4
+     description: |
+       In case the Renesas R-Car Gen3 SoCs:
+         - if a host only channel: first clock should be host.
+@@ -147,6 +148,20 @@ allOf:
+     then:
+       properties:
+         transceiver: false
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: rockchip,rk3588-ohci
++    then:
++      properties:
++        clocks:
++          minItems: 4
++    else:
++      properties:
++        clocks:
++          minItems: 1
++          maxItems: 3
+ 
+ unevaluatedProperties: false
+ 
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 871fffe9218..f0800f806b5 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -596,7 +596,7 @@ CONFIG_MFD_CPCAP=y
+ CONFIG_MFD_PM8XXX=y
+ CONFIG_MFD_QCOM_RPM=y
+ CONFIG_MFD_SPMI_PMIC=y
+-CONFIG_MFD_RK808=y
++CONFIG_MFD_RK8XX_I2C=y
+ CONFIG_MFD_RN5T618=y
+ CONFIG_MFD_SEC_CORE=y
+ CONFIG_MFD_STMPE=y
 diff --git a/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts b/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
-index b91af0204db..c0770c0bc17 100644
+index b91af0204db..29e9c7b7d52 100644
 --- a/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
-@@ -49,6 +49,21 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+@@ -47,6 +47,109 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+ 		regulator-max-microvolt = <5000000>;
+ 		vin-supply = <&vcc12v_dcin>;
  	};
- };
- 
++
++	vcc5v0_usbdcin: vcc5v0-usbdcin {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_usbdcin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc12v_dcin>;
++	};
++
++	vcc5v0_usb: vcc5v0-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_usb";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc5v0_usbdcin>;
++	};
++
++	vcc5v0_host: vcc5v0-host {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_host";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++		vin-supply = <&vcc5v0_usb>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_host_en>;
++	};
++
++	pcie20_avdd0v85: pcie20-avdd0v85 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie20_avdd0v85";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <850000>;
++		regulator-max-microvolt = <850000>;
++		vin-supply = <&avdd_0v85_s0>;
++	};
++
++	pcie20_avdd1v8: pcie20-avdd1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie20_avdd1v8";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		vin-supply = <&avcc_1v8_s0>;
++	};
++};
++
 +&cpu_l0 {
 +	cpu-supply = <&vdd_cpu_lit_s0>;
 +	mem-supply = <&vdd_cpu_lit_mem_s0>;
@@ -488,10 +953,42 @@ index b91af0204db..c0770c0bc17 100644
 +	mem-supply = <&vdd_cpu_big1_mem_s0>;
 +};
 +
++&u2phy2 {
++	status = "okay";
++};
++
++&u2phy3 {
++	status = "okay";
++};
++
++&u2phy2_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&u2phy3_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
+ };
+ 
  &gmac0 {
- 	clock_in_out = "output";
- 	phy-handle = <&rgmii_phy>;
-@@ -123,6 +138,750 @@ &sdhci {
+@@ -123,7 +226,784 @@ &sdhci {
  	status = "okay";
  };
  
@@ -1235,6 +1732,14 @@ index b91af0204db..c0770c0bc17 100644
 +	};
 +};
 +
++&combphy0_ps {
++	status = "okay";
++};
++
++&sata0 {
++	status = "okay";
++};
++
 +&tsadc {
 +	status = "okay";
 +};
@@ -1242,22 +1747,1429 @@ index b91af0204db..c0770c0bc17 100644
  &uart2 {
  	pinctrl-0 = <&uart2m0_xfer>;
  	status = "okay";
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 7790ee42c68..47ebb0c186e 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -667,7 +667,8 @@ CONFIG_MFD_MAX77620=y
- CONFIG_MFD_MT6360=y
- CONFIG_MFD_MT6397=y
- CONFIG_MFD_SPMI_PMIC=y
--CONFIG_MFD_RK808=y
-+CONFIG_MFD_RK8XX_I2C=y
-+CONFIG_MFD_RK8XX_SPI=y
- CONFIG_MFD_SEC_CORE=y
- CONFIG_MFD_SL28CPLD=y
- CONFIG_MFD_ROHM_BD718XX=y
+ };
++
++&pcie2x1l1 {
++	reset-gpios = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&rtl8111_isolate>;
++	status = "okay";
++};
++
++&pinctrl {
++	rtl8111 {
++		rtl8111_isolate: rtl8111-isolate {
++			rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&combphy2_psu {
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-rk806-single.dtsi b/arch/arm64/boot/dts/rockchip/rk3588-rk806-single.dtsi
+new file mode 100644
+index 00000000000..d194812b840
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rk806-single.dtsi
+@@ -0,0 +1,179 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
++ *
++ */
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/pinctrl/rockchip.h>
++
++&spi2 {
++	status = "okay";
++	assigned-clocks = <&cru CLK_SPI2>;
++	assigned-clock-rates = <200000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi2m2_cs0 &spi2m2_pins>;
++	num-cs = <1>;
++
++	rk806single: rk806single@0 {
++		compatible = "rockchip,rk806";
++		spi-max-frequency = <1000000>;
++		reg = <0x0>;
++
++		interrupt-parent = <&gpio0>;
++		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pmic_pins>, <&rk806_dvs1_null>, <&rk806_dvs2_null>, <&rk806_dvs3_null>;
++
++		vcc1-supply = <&vcc5v0_sys>;
++		vcc2-supply = <&vcc5v0_sys>;
++		vcc3-supply = <&vcc5v0_sys>;
++		vcc4-supply = <&vcc5v0_sys>;
++		vcc5-supply = <&vcc5v0_sys>;
++		vcc6-supply = <&vcc5v0_sys>;
++		vcc7-supply = <&vcc5v0_sys>;
++		vcc8-supply = <&vcc5v0_sys>;
++		vcc9-supply = <&vcc5v0_sys>;
++		vcc10-supply = <&vcc5v0_sys>;
++		vcc11-supply = <&vcc_2v0_pldo_s3>;
++		vcc12-supply = <&vcc5v0_sys>;
++		vcc13-supply = <&vcc_1v1_nldo_s3>;
++		vcc14-supply = <&vcc_1v1_nldo_s3>;
++		vcca-supply = <&vcc5v0_sys>;
++
++		gpio-controller;
++		#gpio-cells = <2>;
++
++		rk806_dvs1_null: dvs1-null-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun0";
++		};
++
++		rk806_dvs1_slp: dvs1-slp-pins {
++			pins = "gpio_pwrctrl1";
++			function = "pin_fun1";
++		};
++
++		rk806_dvs1_pwrdn: dvs1-pwrdn-pins {
++			pins = "gpio_pwrctrl1";
++			function = "pin_fun2";
++		};
++
++		rk806_dvs1_rst: dvs1-rst-pins {
++			pins = "gpio_pwrctrl1";
++			function = "pin_fun3";
++		};
++
++		rk806_dvs2_null: dvs2-null-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun0";
++		};
++
++		rk806_dvs2_slp: dvs2-slp-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun1";
++		};
++
++		rk806_dvs2_pwrdn: dvs2-pwrdn-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun2";
++		};
++
++		rk806_dvs2_rst: dvs2-rst-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun3";
++		};
++
++		rk806_dvs2_dvs: dvs2-dvs-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun4";
++		};
++
++		rk806_dvs2_gpio: dvs2-gpio-pins {
++			pins = "gpio_pwrctrl2";
++			function = "pin_fun5";
++		};
++
++		rk806_dvs3_null: dvs3-null-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun0";
++		};
++
++		rk806_dvs3_slp: dvs3-slp-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun1";
++		};
++
++		rk806_dvs3_pwrdn: dvs3-pwrdn-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun2";
++		};
++
++		rk806_dvs3_rst: dvs3-rst-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun3";
++		};
++
++		rk806_dvs3_dvs: dvs3-dvs-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun4";
++		};
++
++		rk806_dvs3_gpio: dvs3-gpio-pins {
++			pins = "gpio_pwrctrl3";
++			function = "pin_fun5";
++		};
++
++		regulators {
++			vcc_2v0_pldo_s3: dcdc-reg7 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <2000000>;
++				regulator-max-microvolt = <2000000>;
++				regulator-ramp-delay = <12500>;
++				regulator-name = "vdd_2v0_pldo_s3";
++				regulator-state-mem {
++					regulator-on-in-suspend;
++					regulator-suspend-microvolt = <2000000>;
++				};
++			};
++
++			vcc_3v3_s3: dcdc-reg8 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-name = "vcc_3v3_s3";
++				regulator-state-mem {
++					regulator-on-in-suspend;
++					regulator-suspend-microvolt = <3300000>;
++				};
++			};
++
++			vcc_3v3_s0: pldo-reg4 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-ramp-delay = <12500>;
++				regulator-name = "vcc_3v3_s0";
++				regulator-state-mem {
++					regulator-off-in-suspend;
++				};
++			};
++
++			vccio_sd_s0: pldo-reg5 {
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-ramp-delay = <12500>;
++				regulator-name = "vccio_sd_s0";
++				regulator-state-mem {
++					regulator-off-in-suspend;
++				};
++			};
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+index 3e4aee8f70c..b00b2b61578 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+@@ -3,7 +3,9 @@
+ /dts-v1/;
+ 
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/pinctrl/rockchip.h>
+ #include "rk3588.dtsi"
++#include "rk3588-rk806-single.dtsi"
+ 
+ / {
+ 	model = "Radxa ROCK 5 Model B";
+@@ -51,6 +53,39 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 	};
++
++	vcc5v0_host: vcc5v0-host-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_host";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_host_en>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++	
++	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_1v1_nldo_s3";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <1100000>;
++		regulator-max-microvolt = <1100000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
++	vcc3v3_pcie2x1l2: vcc3v3-pcie2x1l2 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_pcie2x1l2";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <5000>;
++		vin-supply = <&vcc_3v3_s3>;
++	};
+ };
+ 
+ &cpu_b0 {
+@@ -190,7 +225,77 @@ &sdhci {
+ 	status = "okay";
+ };
+ 
++&sdmmc {
++	max-frequency = <200000000>;
++	no-sdio;
++	no-mmc;
++	bus-width = <4>;
++	cap-mmc-highspeed;
++	cap-sd-highspeed;
++	disable-wp;
++	sd-uhs-sdr104;
++	vmmc-supply = <&vcc_3v3_s3>;
++	vqmmc-supply = <&vccio_sd_s0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc_bus4 &sdmmc_clk &sdmmc_cmd &sdmmc_det>;
++	status = "okay";
++};
++
+ &uart2 {
+ 	pinctrl-0 = <&uart2m0_xfer>;
+ 	status = "okay";
+ };
++
++&u2phy2_host {
++	/* connected to USB hub, which is powered by vcc5v0_sys */
++	phy-supply = <&vcc5v0_sys>;
++	status = "okay";
++};
++
++&u2phy3_host {
++	phy-supply = <&vcc5v0_host>;
++	status = "okay";
++};
++
++&u2phy2 {
++	status = "okay";
++};
++
++&u2phy3 {
++	status = "okay";
++};
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
++};
++
++&pinctrl {
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&combphy0_ps {
++	status = "okay";
++};
++
++&pcie2x1l2 {
++	reset-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie2x1l2>;
++	status = "okay";
++
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588.dtsi b/arch/arm64/boot/dts/rockchip/rk3588.dtsi
+index 8be75556af8..28013c23c55 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588.dtsi
+@@ -7,6 +7,11 @@
+ #include "rk3588-pinctrl.dtsi"
+ 
+ / {
++	pipe_phy1_grf: syscon@fd5c0000 {
++		compatible = "rockchip,rk3588-pipe-phy-grf", "syscon";
++		reg = <0x0 0xfd5c0000 0x0 0x100>;
++	};
++
+ 	i2s8_8ch: i2s@fddc8000 {
+ 		compatible = "rockchip,rk3588-i2s-tdm";
+ 		reg = <0x0 0xfddc8000 0x0 0x1000>;
+@@ -75,6 +80,61 @@ i2s10_8ch: i2s@fde00000 {
+ 		status = "disabled";
+ 	};
+ 
++	pcie2x1l0: pcie@fe170000 {
++		compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		bus-range = <0x20 0x2f>;
++		clocks = <&cru ACLK_PCIE_1L0_MSTR>, <&cru ACLK_PCIE_1L0_SLV>,
++			 <&cru ACLK_PCIE_1L0_DBI>, <&cru PCLK_PCIE_1L0>,
++			 <&cru CLK_PCIE_AUX2>, <&cru CLK_PCIE1L0_PIPE>;
++		clock-names = "aclk_mst", "aclk_slv",
++			      "aclk_dbi", "pclk",
++			      "aux", "pipe";
++		device_type = "pci";
++		interrupts = <GIC_SPI 243 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 242 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 241 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 240 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 239 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "sys", "pmc", "msg", "legacy", "err";
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie2x1l0_intc 0>,
++				<0 0 0 2 &pcie2x1l0_intc 1>,
++				<0 0 0 3 &pcie2x1l0_intc 2>,
++				<0 0 0 4 &pcie2x1l0_intc 3>;
++		linux,pci-domain = <2>;
++		num-ib-windows = <8>;
++		num-ob-windows = <8>;
++		num-viewport = <4>;
++		max-link-speed = <2>;
++		msi-map = <0x2000 &its0 0x2000 0x1000>;
++		num-lanes = <1>;
++		phys = <&combphy1_ps PHY_TYPE_PCIE>;
++		phy-names = "pcie-phy";
++		power-domains = <&power RK3588_PD_PCIE>;
++		ranges = <0x01000000 0x0 0xf2100000 0x0 0xf2100000 0x0 0x00100000>,
++			 <0x02000000 0x0 0xf2200000 0x0 0xf2200000 0x0 0x00e00000>,
++			 <0x03000000 0x9 0x80000000 0x9 0x80000000 0x0 0x40000000>;
++		reg = <0xa 0x40800000 0x0 0x00400000>,
++		      <0x0 0xfe170000 0x0 0x00010000>,
++		      <0x0 0xf2000000 0x0 0x00100000>;
++		reg-names = "dbi", "apb", "config";
++		resets = <&cru SRST_PCIE2_POWER_UP>, <&cru SRST_P_PCIE2>;
++		reset-names = "pwr", "pipe";
++		status = "disabled";
++
++		pcie2x1l0_intc: legacy-interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 240 IRQ_TYPE_EDGE_RISING 0>;
++		};
++
++	};
++
+ 	gmac0: ethernet@fe1b0000 {
+ 		compatible = "rockchip,rk3588-gmac", "snps,dwmac-4.20a";
+ 		reg = <0x0 0xfe1b0000 0x0 0x10000>;
+@@ -123,4 +183,43 @@ gmac0_mtl_tx_setup: tx-queues-config {
+ 			queue1 {};
+ 		};
+ 	};
++
++	sata1: sata@fe220000 {
++		compatible = "rockchip,rk3588-dwc-ahci", "snps,dwc-ahci";
++		reg = <0 0xfe220000 0 0x1000>;
++		clocks = <&cru ACLK_SATA1>, <&cru CLK_PMALIVE1>,
++			 <&cru CLK_RXOOB1>, <&cru CLK_PIPEPHY1_REF>,
++			 <&cru CLK_PIPEPHY1_PIPE_ASIC_G>;
++		clock-names = "sata", "pmalive", "rxoob", "ref", "asic";
++		interrupts = <GIC_SPI 274 IRQ_TYPE_LEVEL_HIGH 0>;
++		ports-implemented = <0x1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++
++		sata-port@0 {
++			reg = <0>;
++			hba-port-cap = <HBA_PORT_FBSCP>;
++			phys = <&combphy1_ps PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			snps,rx-ts-max = <32>;
++			snps,tx-ts-max = <32>;
++		};
++	};
++
++	combphy1_ps: phy@fee10000 {
++		compatible = "rockchip,rk3588-naneng-combphy";
++		reg = <0x0 0xfee10000 0x0 0x100>;
++		#phy-cells = <1>;
++		clocks = <&cru CLK_REF_PIPE_PHY1>, <&cru PCLK_PCIE_COMBO_PIPE_PHY1>,
++			 <&cru PCLK_PHP_ROOT>;
++		clock-names = "ref", "apb", "pipe";
++		assigned-clocks = <&cru CLK_REF_PIPE_PHY1>;
++		assigned-clock-rates = <100000000>;
++		resets = <&cru SRST_REF_PIPE_PHY1>, <&cru SRST_P_PCIE2_PHY1>;
++		reset-names = "phy", "apb";
++		rockchip,pipe-grf = <&php_grf>;
++		rockchip,pipe-phy-grf = <&pipe_phy1_grf>;
++		status = "disabled";
++	};
+ };
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
+index 901825514f9..cbe2a1b8bc7 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
+@@ -5,6 +5,7 @@
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include "rk3588s.dtsi"
++#include "rk3588-rk806-single.dtsi"
+ 
+ / {
+ 	model = "Radxa ROCK 5 Model A";
+@@ -18,6 +19,35 @@ aliases {
+ 	chosen {
+ 		stdout-path = "serial2:1500000n8";
+ 	};
++
++	vcc12v_dcin: vcc12v-dcin {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc12v_dcin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <12000000>;
++		regulator-max-microvolt = <12000000>;
++	};
++
++	vcc5v0_sys: vcc5v0-sys {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_sys";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc12v_dcin>;
++	};
++
++	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_1v1_nldo_s3";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <1100000>;
++		regulator-max-microvolt = <1100000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
+ };
+ 
+ &gmac1 {
+@@ -71,3 +101,19 @@ &uart2 {
+ 	pinctrl-0 = <&uart2m0_xfer>;
+ 	status = "okay";
+ };
++
++&sdmmc {
++	max-frequency = <150000000>;
++	no-sdio;
++	no-mmc;
++	bus-width = <4>;
++	cap-mmc-highspeed;
++	cap-sd-highspeed;
++	disable-wp;
++	sd-uhs-sdr104;
++	vmmc-supply = <&vcc_3v3_s0>;
++	vqmmc-supply = <&vccio_sd_s0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc_bus4 &sdmmc_clk &sdmmc_cmd &sdmmc_det>;
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s.dtsi b/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
+index 657c019d27f..b5fdc046d8f 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s.dtsi
+@@ -8,6 +8,9 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/power/rk3588-power.h>
+ #include <dt-bindings/reset/rockchip,rk3588-cru.h>
++#include <dt-bindings/thermal/thermal.h>
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/ata/ahci.h>
+ 
+ / {
+ 	compatible = "rockchip,rk3588";
+@@ -16,6 +19,215 @@ / {
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
+ 
++	cluster0_opp_table: opp-table-cluster0 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-408000000 {
++			opp-hz = /bits/ 64 <408000000>;
++			opp-microvolt = <750000 750000 950000>,
++					<750000 750000 950000>;
++			clock-latency-ns = <40000>;
++			opp-suspend;
++		};
++		opp-600000000 {
++			opp-hz = /bits/ 64 <600000000>;
++			opp-microvolt = <750000 750000 950000>,
++					<750000 750000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-816000000 {
++			opp-hz = /bits/ 64 <816000000>;
++			opp-microvolt = <750000 750000 950000>,
++					<750000 750000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1008000000 {
++			opp-hz = /bits/ 64 <1008000000>;
++			opp-microvolt = <750000 750000 950000>,
++					<750000 750000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <775000 775000 950000>,
++					<775000 775000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1416000000 {
++			opp-hz = /bits/ 64 <1416000000>;
++			opp-microvolt = <825000 825000 950000>,
++					<825000 825000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1608000000 {
++			opp-hz = /bits/ 64 <1608000000>;
++			opp-microvolt = <875000 875000 950000>,
++					<875000 875000 950000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1800000000 {
++			opp-hz = /bits/ 64 <1800000000>;
++			opp-microvolt = <950000 950000 950000>,
++					<950000 950000 950000>;
++			clock-latency-ns = <40000>;
++		};
++	};
++
++	cluster1_opp_table: opp-table-cluster1 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		rockchip,grf = <&bigcore0_grf>;
++		rockchip,volt-mem-read-margin = <
++			855000	1
++			765000	2
++			675000	3
++			495000	4
++		>;
++
++		rockchip,reboot-freq = <1800000000>;
++
++		opp-408000000 {
++			opp-hz = /bits/ 64 <408000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++			opp-suspend;
++		};
++		opp-600000000 {
++			opp-hz = /bits/ 64 <600000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-816000000 {
++			opp-hz = /bits/ 64 <816000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1008000000 {
++			opp-hz = /bits/ 64 <1008000000>;
++			opp-microvolt = <625000 625000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <650000 650000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1416000000 {
++			opp-hz = /bits/ 64 <1416000000>;
++			opp-microvolt = <675000 675000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1608000000 {
++			opp-hz = /bits/ 64 <1608000000>;
++			opp-microvolt = <700000 700000 1000000>,
++					<700000 700000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1800000000 {
++			opp-hz = /bits/ 64 <1800000000>;
++			opp-microvolt = <775000 775000 1000000>,
++					<775000 775000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-2016000000 {
++			opp-hz = /bits/ 64 <2016000000>;
++			opp-microvolt = <850000 850000 1000000>,
++					<850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-2208000000 {
++			opp-hz = /bits/ 64 <2208000000>;
++			opp-microvolt = <925000 925000 1000000>,
++					<925000 925000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++	};
++
++	cluster2_opp_table: opp-table-cluster2 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		rockchip,grf = <&bigcore1_grf>;
++		rockchip,volt-mem-read-margin = <
++			855000	1
++			765000	2
++			675000	3
++			495000	4
++		>;
++
++		rockchip,reboot-freq = <1800000000>;
++
++		opp-408000000 {
++			opp-hz = /bits/ 64 <408000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++			opp-suspend;
++		};
++		opp-600000000 {
++			opp-hz = /bits/ 64 <600000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-816000000 {
++			opp-hz = /bits/ 64 <816000000>;
++			opp-microvolt = <600000 600000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1008000000 {
++			opp-hz = /bits/ 64 <1008000000>;
++			opp-microvolt = <625000 625000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <650000 650000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1416000000 {
++			opp-hz = /bits/ 64 <1416000000>;
++			opp-microvolt = <675000 675000 1000000>,
++					<675000 675000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1608000000 {
++			opp-hz = /bits/ 64 <1608000000>;
++			opp-microvolt = <700000 700000 1000000>,
++					<700000 700000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1800000000 {
++			opp-hz = /bits/ 64 <1800000000>;
++			opp-microvolt = <775000 775000 1000000>,
++					<775000 775000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-2016000000 {
++			opp-hz = /bits/ 64 <2016000000>;
++			opp-microvolt = <850000 850000 1000000>,
++					<850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-2208000000 {
++			opp-hz = /bits/ 64 <2208000000>;
++			opp-microvolt = <925000 925000 1000000>,
++					<925000 925000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -62,6 +274,7 @@ cpu_l0: cpu@0 {
+ 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
+ 			assigned-clocks = <&scmi_clk SCMI_CLK_CPUL>;
+ 			assigned-clock-rates = <816000000>;
++			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <32768>;
+ 			i-cache-line-size = <64>;
+@@ -81,6 +294,7 @@ cpu_l1: cpu@100 {
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <530>;
+ 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
++			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <32768>;
+ 			i-cache-line-size = <64>;
+@@ -100,6 +314,7 @@ cpu_l2: cpu@200 {
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <530>;
+ 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
++			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <32768>;
+ 			i-cache-line-size = <64>;
+@@ -119,6 +334,7 @@ cpu_l3: cpu@300 {
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <530>;
+ 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
++			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <32768>;
+ 			i-cache-line-size = <64>;
+@@ -140,6 +356,7 @@ cpu_b0: cpu@400 {
+ 			clocks = <&scmi_clk SCMI_CLK_CPUB01>;
+ 			assigned-clocks = <&scmi_clk SCMI_CLK_CPUB01>;
+ 			assigned-clock-rates = <816000000>;
++			operating-points-v2 = <&cluster1_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <65536>;
+ 			i-cache-line-size = <64>;
+@@ -159,6 +376,7 @@ cpu_b1: cpu@500 {
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+ 			clocks = <&scmi_clk SCMI_CLK_CPUB01>;
++			operating-points-v2 = <&cluster1_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <65536>;
+ 			i-cache-line-size = <64>;
+@@ -180,6 +398,7 @@ cpu_b2: cpu@600 {
+ 			clocks = <&scmi_clk SCMI_CLK_CPUB23>;
+ 			assigned-clocks = <&scmi_clk SCMI_CLK_CPUB23>;
+ 			assigned-clock-rates = <816000000>;
++			operating-points-v2 = <&cluster2_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <65536>;
+ 			i-cache-line-size = <64>;
+@@ -199,6 +418,7 @@ cpu_b3: cpu@700 {
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+ 			clocks = <&scmi_clk SCMI_CLK_CPUB23>;
++			operating-points-v2 = <&cluster2_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 			i-cache-size = <65536>;
+ 			i-cache-line-size = <64>;
+@@ -351,6 +571,230 @@ spll: clock-0 {
+ 		#clock-cells = <0>;
+ 	};
+ 
++	thermal_zones: thermal-zones {
++		soc_thermal: soc-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			sustainable-power = <2100>; /* milliwatts */
++
++			thermal-sensors = <&tsadc 0>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				soc_target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&soc_target>;
++					cooling-device = <&cpu_l0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <1024>;
++				};
++			};
++		};
++
++		bigcore0_thermal: bigcore0-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 1>;
++
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				b0_target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&b0_target>;
++					cooling-device = <&cpu_b0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <1024>;
++				};
++			};
++		};
++
++		bigcore1_thermal: bigcore1-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 2>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				b1_target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&b1_target>;
++					cooling-device = <&cpu_b2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_b3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <1024>;
++				};
++			};
++		};
++
++		little_core_thermal: littlecore-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 3>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				l0_target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&l0_target>;
++					cooling-device = <&cpu_l0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu_l3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <1024>;
++				};
++			};
++		};
++
++		center_thermal: center-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 4>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++		};
++
++		gpu_thermal: gpu-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 5>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++		};
++
++		npu_thermal: npu-thermal {
++			polling-delay-passive = <20>; /* milliseconds */
++			polling-delay = <1000>; /* milliseconds */
++			thermal-sensors = <&tsadc 6>;
++			trips {
++				trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				trip-point-2 {
++					/* millicelsius */
++					temperature = <115000>;
++					/* millicelsius */
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++		};
++	};
++
+ 	timer {
+ 		compatible = "arm,armv8-timer";
+ 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_HIGH 0>,
+@@ -388,16 +832,130 @@ scmi_shmem: sram@0 {
+ 		};
+ 	};
+ 
++	usb_host0_ehci: usb@fc800000 {
++		compatible = "rockchip,rk3588-ehci", "generic-ehci";
++		reg = <0x0 0xfc800000 0x0 0x40000>;
++		interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST0>, <&cru HCLK_HOST_ARB0>, <&cru ACLK_USB>, <&u2phy2>;
++		phys = <&u2phy2_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host0_ohci: usb@fc840000 {
++		compatible = "rockchip,rk3588-ohci", "generic-ohci";
++		reg = <0x0 0xfc840000 0x0 0x40000>;
++		interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST0>, <&cru HCLK_HOST_ARB0>, <&cru ACLK_USB>, <&u2phy2>;
++		phys = <&u2phy2_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host1_ehci: usb@fc880000 {
++		compatible = "rockchip,rk3588-ehci", "generic-ehci";
++		reg = <0x0 0xfc880000 0x0 0x40000>;
++		interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST1>, <&cru HCLK_HOST_ARB1>, <&cru ACLK_USB>, <&u2phy3>;
++		phys = <&u2phy3_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host1_ohci: usb@fc8c0000 {
++		compatible = "rockchip,rk3588-ohci", "generic-ohci";
++		reg = <0x0 0xfc8c0000 0x0 0x40000>;
++		interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru HCLK_HOST1>, <&cru HCLK_HOST_ARB1>, <&cru ACLK_USB>, <&u2phy3>;
++		phys = <&u2phy3_host>;
++		phy-names = "usb";
++		power-domains = <&power RK3588_PD_USB>;
++		status = "disabled";
++	};
++
+ 	sys_grf: syscon@fd58c000 {
+ 		compatible = "rockchip,rk3588-sys-grf", "syscon";
+ 		reg = <0x0 0xfd58c000 0x0 0x1000>;
+ 	};
+ 
++	usb2phy2_grf: syscon@fd5d8000 {
++		compatible = "rockchip,rk3588-usb2phy-grf", "syscon", "simple-mfd";
++		reg = <0x0 0xfd5d8000 0x0 0x4000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		u2phy2: usb2-phy@8000 {
++			compatible = "rockchip,rk3588-usb2phy";
++			reg = <0x8000 0x10>;
++			interrupts = <GIC_SPI 391 IRQ_TYPE_LEVEL_HIGH 0>;
++			resets = <&cru SRST_OTGPHY_U2_0>, <&cru SRST_P_USB2PHY_U2_0_GRF0>;
++			reset-names = "phy", "apb";
++			clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>;
++			clock-names = "phyclk";
++			clock-output-names = "usb480m_phy2";
++			#clock-cells = <0>;
++			status = "disabled";
++
++			u2phy2_host: host-port {
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++	};
++
++	usb2phy3_grf: syscon@fd5dc000 {
++		compatible = "rockchip,rk3588-usb2phy-grf", "syscon", "simple-mfd";
++		reg = <0x0 0xfd5dc000 0x0 0x4000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		u2phy3: usb2-phy@c000 {
++			compatible = "rockchip,rk3588-usb2phy";
++			reg = <0xc000 0x10>;
++			interrupts = <GIC_SPI 392 IRQ_TYPE_LEVEL_HIGH 0>;
++			resets = <&cru SRST_OTGPHY_U2_1>, <&cru SRST_P_USB2PHY_U2_1_GRF0>;
++			reset-names = "phy", "apb";
++			clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>;
++			clock-names = "phyclk";
++			clock-output-names = "usb480m_phy3";
++			#clock-cells = <0>;
++			status = "disabled";
++
++			u2phy3_host: host-port {
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++	};
++
++	bigcore0_grf: syscon@fd590000 {
++		compatible = "rockchip,rk3588-bigcore0-grf", "syscon";
++		reg = <0x0 0xfd590000 0x0 0x100>;
++	};
++
++	bigcore1_grf: syscon@fd592000 {
++		compatible = "rockchip,rk3588-bigcore1-grf", "syscon";
++		reg = <0x0 0xfd592000 0x0 0x100>;
++	};
++
+ 	php_grf: syscon@fd5b0000 {
+ 		compatible = "rockchip,rk3588-php-grf", "syscon";
+ 		reg = <0x0 0xfd5b0000 0x0 0x1000>;
+ 	};
+ 
++	pipe_phy0_grf: syscon@fd5bc000 {
++		compatible = "rockchip,rk3588-pipe-phy-grf", "syscon";
++		reg = <0x0 0xfd5bc000 0x0 0x100>;
++	};
++
++	pipe_phy2_grf: syscon@fd5c4000 {
++		compatible = "rockchip,rk3588-pipe-phy-grf", "syscon";
++		reg = <0x0 0xfd5c4000 0x0 0x100>;
++	};
++
+ 	ioc: syscon@fd5f0000 {
+ 		compatible = "rockchip,rk3588-ioc", "syscon";
+ 		reg = <0x0 0xfd5f0000 0x0 0x10000>;
+@@ -1112,6 +1670,114 @@ qos_vop_m1: qos@fdf82200 {
+ 		reg = <0x0 0xfdf82200 0x0 0x20>;
+ 	};
+ 
++	pcie2x1l1: pcie@fe180000 {
++		compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		bus-range = <0x30 0x3f>;
++		clocks = <&cru ACLK_PCIE_1L1_MSTR>, <&cru ACLK_PCIE_1L1_SLV>,
++			 <&cru ACLK_PCIE_1L1_DBI>, <&cru PCLK_PCIE_1L1>,
++			 <&cru CLK_PCIE_AUX3>, <&cru CLK_PCIE1L1_PIPE>;
++		clock-names = "aclk_mst", "aclk_slv",
++			      "aclk_dbi", "pclk",
++			      "aux", "pipe";
++		device_type = "pci";
++		interrupts = <GIC_SPI 248 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 246 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 245 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 244 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "sys", "pmc", "msg", "legacy", "err";
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie2x1l1_intc 0>,
++				<0 0 0 2 &pcie2x1l1_intc 1>,
++				<0 0 0 3 &pcie2x1l1_intc 2>,
++				<0 0 0 4 &pcie2x1l1_intc 3>;
++		linux,pci-domain = <3>;
++		num-ib-windows = <8>;
++		num-ob-windows = <8>;
++		num-viewport = <4>;
++		max-link-speed = <2>;
++		msi-map = <0x3000 &its0 0x3000 0x1000>;
++		num-lanes = <1>;
++		phys = <&combphy2_psu PHY_TYPE_PCIE>;
++		phy-names = "pcie-phy";
++		power-domains = <&power RK3588_PD_PCIE>;
++		ranges = <0x01000000 0x0 0xf3100000 0x0 0xf3100000 0x0 0x00100000>,
++			 <0x02000000 0x0 0xf3200000 0x0 0xf3200000 0x0 0x00e00000>,
++			 <0x03000000 0x9 0xc0000000 0x9 0xc0000000 0x0 0x40000000>;
++		reg = <0xa 0x40c00000 0x0 0x00400000>,
++		      <0x0 0xfe180000 0x0 0x00010000>,
++		      <0x0 0xf3000000 0x0 0x00100000>;
++		reg-names = "dbi", "apb", "config";
++		resets = <&cru SRST_PCIE3_POWER_UP>, <&cru SRST_P_PCIE3>;
++		reset-names = "pwr", "pipe";
++		status = "disabled";
++
++		pcie2x1l1_intc: legacy-interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 245 IRQ_TYPE_EDGE_RISING 0>;
++		};
++	};
++
++	pcie2x1l2: pcie@fe190000 {
++		compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		bus-range = <0x40 0x4f>;
++		clocks = <&cru ACLK_PCIE_1L2_MSTR>, <&cru ACLK_PCIE_1L2_SLV>,
++			 <&cru ACLK_PCIE_1L2_DBI>, <&cru PCLK_PCIE_1L2>,
++			 <&cru CLK_PCIE_AUX4>, <&cru CLK_PCIE1L2_PIPE>;
++		clock-names = "aclk_mst", "aclk_slv",
++			      "aclk_dbi", "pclk",
++			      "aux", "pipe";
++		device_type = "pci";
++		interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 252 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 251 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "sys", "pmc", "msg", "legacy", "err";
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie2x1l2_intc 0>,
++				<0 0 0 2 &pcie2x1l2_intc 1>,
++				<0 0 0 3 &pcie2x1l2_intc 2>,
++				<0 0 0 4 &pcie2x1l2_intc 3>;
++		linux,pci-domain = <4>;
++		num-ib-windows = <8>;
++		num-ob-windows = <8>;
++		num-viewport = <4>;
++		max-link-speed = <2>;
++		msi-map = <0x4000 &its0 0x4000 0x1000>;
++		num-lanes = <1>;
++		phys = <&combphy0_ps PHY_TYPE_PCIE>;
++		phy-names = "pcie-phy";
++		power-domains = <&power RK3588_PD_PCIE>;
++		ranges = <0x01000000 0x0 0xf4100000 0x0 0xf4100000 0x0 0x00100000>,
++			 <0x02000000 0x0 0xf4200000 0x0 0xf4200000 0x0 0x00e00000>,
++			 <0x03000000 0xa 0x00000000 0xa 0x00000000 0x0 0x40000000>;
++		reg = <0xa 0x41000000 0x0 0x00400000>,
++		      <0x0 0xfe190000 0x0 0x00010000>,
++		      <0x0 0xf4000000 0x0 0x00100000>;
++		reg-names = "dbi", "apb", "config";
++		resets = <&cru SRST_PCIE4_POWER_UP>, <&cru SRST_P_PCIE4>;
++		reset-names = "pwr", "pipe";
++		status = "disabled";
++
++		pcie2x1l2_intc: legacy-interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 250 IRQ_TYPE_EDGE_RISING 0>;
++		};
++	};
++
+ 	gmac1: ethernet@fe1c0000 {
+ 		compatible = "rockchip,rk3588-gmac", "snps,dwmac-4.20a";
+ 		reg = <0x0 0xfe1c0000 0x0 0x10000>;
+@@ -1161,6 +1827,52 @@ gmac1_mtl_tx_setup: tx-queues-config {
+ 		};
+ 	};
+ 
++	sata0: sata@fe210000 {
++		compatible = "rockchip,rk3588-dwc-ahci", "snps,dwc-ahci";
++		reg = <0 0xfe210000 0 0x1000>;
++		clocks = <&cru ACLK_SATA0>, <&cru CLK_PMALIVE0>,
++			 <&cru CLK_RXOOB0>, <&cru CLK_PIPEPHY0_REF>,
++			 <&cru CLK_PIPEPHY0_PIPE_ASIC_G>;
++		clock-names = "sata", "pmalive", "rxoob", "ref", "asic";
++		interrupts = <GIC_SPI 273 IRQ_TYPE_LEVEL_HIGH 0>;
++		ports-implemented = <0x1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++
++		sata-port@0 {
++			reg = <0>;
++			hba-port-cap = <HBA_PORT_FBSCP>;
++			phys = <&combphy0_ps PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			snps,rx-ts-max = <32>;
++			snps,tx-ts-max = <32>;
++		};
++	};
++
++	sata2: sata@fe230000 {
++		compatible = "rockchip,rk3588-dwc-ahci", "snps,dwc-ahci";
++		reg = <0 0xfe230000 0 0x1000>;
++		clocks = <&cru ACLK_SATA2>, <&cru CLK_PMALIVE2>,
++			 <&cru CLK_RXOOB2>, <&cru CLK_PIPEPHY2_REF>,
++			 <&cru CLK_PIPEPHY2_PIPE_ASIC_G>;
++		clock-names = "sata", "pmalive", "rxoob", "ref", "asic";
++		interrupts = <GIC_SPI 275 IRQ_TYPE_LEVEL_HIGH 0>;
++		ports-implemented = <0x1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++
++		sata-port@0 {
++			reg = <0>;
++			hba-port-cap = <HBA_PORT_FBSCP>;
++			phys = <&combphy2_psu PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			snps,rx-ts-max = <32>;
++			snps,tx-ts-max = <32>;
++		};
++	};
++
+ 	sdmmc: mmc@fe2c0000 {
+ 		compatible = "rockchip,rk3588-dw-mshc", "rockchip,rk3288-dw-mshc";
+ 		reg = <0x0 0xfe2c0000 0x0 0x4000>;
+@@ -1300,7 +2012,24 @@ gic: interrupt-controller@fe600000 {
+ 		mbi-alias = <0x0 0xfe610000>;
+ 		mbi-ranges = <424 56>;
+ 		msi-controller;
++		ranges;
++		#address-cells = <2>;
+ 		#interrupt-cells = <4>;
++		#size-cells = <2>;
++
++		its0: msi-controller@fe640000 {
++			compatible = "arm,gic-v3-its";
++			msi-controller;
++			#msi-cells = <1>;
++			reg = <0x0 0xfe640000 0x0 0x20000>;
++		};
++
++		its1: msi-controller@fe660000 {
++			compatible = "arm,gic-v3-its";
++			msi-controller;
++			#msi-cells = <1>;
++			reg = <0x0 0xfe660000 0x0 0x20000>;
++		};
+ 
+ 		ppi-partitions {
+ 			ppi_partition0: interrupt-partition-0 {
+@@ -1825,6 +2554,38 @@ dmac2: dma-controller@fed10000 {
+ 		#dma-cells = <1>;
+ 	};
+ 
++	combphy0_ps: phy@fee00000 {
++		compatible = "rockchip,rk3588-naneng-combphy";
++		reg = <0x0 0xfee00000 0x0 0x100>;
++		#phy-cells = <1>;
++		clocks = <&cru CLK_REF_PIPE_PHY0>, <&cru PCLK_PCIE_COMBO_PIPE_PHY0>,
++			 <&cru PCLK_PHP_ROOT>;
++		clock-names = "ref", "apb", "pipe";
++		assigned-clocks = <&cru CLK_REF_PIPE_PHY0>;
++		assigned-clock-rates = <100000000>;
++		resets = <&cru SRST_REF_PIPE_PHY0>, <&cru SRST_P_PCIE2_PHY0>;
++		reset-names = "phy", "apb";
++		rockchip,pipe-grf = <&php_grf>;
++		rockchip,pipe-phy-grf = <&pipe_phy0_grf>;
++		status = "disabled";
++	};
++
++	combphy2_psu: phy@fee20000 {
++		compatible = "rockchip,rk3588-naneng-combphy";
++		reg = <0x0 0xfee20000 0x0 0x100>;
++		#phy-cells = <1>;
++		clocks = <&cru CLK_REF_PIPE_PHY2>, <&cru PCLK_PCIE_COMBO_PIPE_PHY2>,
++			 <&cru PCLK_PHP_ROOT>;
++		clock-names = "ref", "apb", "pipe";
++		assigned-clocks = <&cru CLK_REF_PIPE_PHY2>;
++		assigned-clock-rates = <100000000>;
++		resets = <&cru SRST_REF_PIPE_PHY2>, <&cru SRST_P_PCIE2_PHY2>;
++		reset-names = "phy", "apb";
++		rockchip,pipe-grf = <&php_grf>;
++		rockchip,pipe-phy-grf = <&pipe_phy2_grf>;
++		status = "disabled";
++	};
++
+ 	system_sram2: sram@ff001000 {
+ 		compatible = "mmio-sram";
+ 		reg = <0x0 0xff001000 0x0 0xef000>;
 diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index b6c5bf69a2b..b08fa3273c8 100644
+index 016814e1553..c0c8e526a1e 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -82,7 +82,7 @@ config COMMON_CLK_MAX9485
@@ -1269,6 +3181,50 @@ index b6c5bf69a2b..b08fa3273c8 100644
  	help
  	  This driver supports RK805, RK809 and RK817, RK808 and RK818 crystal oscillator clock.
  	  These multi-function devices have two fixed-rate oscillators, clocked at 32KHz each.
+diff --git a/drivers/clk/clk-composite.c b/drivers/clk/clk-composite.c
+index edfa94641bb..3fab488704d 100644
+--- a/drivers/clk/clk-composite.c
++++ b/drivers/clk/clk-composite.c
+@@ -119,7 +119,7 @@ static int clk_composite_determine_rate(struct clk_hw *hw,
+ 			if (ret)
+ 				continue;
+ 
+-			rate_diff = abs(req->rate - tmp_req.rate);
++			rate_diff = req->rate > tmp_req.rate ? req->rate - tmp_req.rate : tmp_req.rate - req->rate;
+ 
+ 			if (!rate_diff || !req->best_parent_hw
+ 				       || best_rate_diff > rate_diff) {
+diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
+index a2c2b5203b0..6dba6ab30e1 100644
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -220,7 +220,7 @@ static int _div_round_up(const struct clk_div_table *table,
+ 			 unsigned long parent_rate, unsigned long rate,
+ 			 unsigned long flags)
+ {
+-	int div = DIV_ROUND_UP_ULL((u64)parent_rate, rate);
++	int div = DIV_ROUND_UP_ULL((u64)parent_rate, rate > UINT_MAX ? UINT_MAX : rate);
+ 
+ 	if (flags & CLK_DIVIDER_POWER_OF_TWO)
+ 		div = __roundup_pow_of_two(div);
+@@ -237,7 +237,7 @@ static int _div_round_closest(const struct clk_div_table *table,
+ 	int up, down;
+ 	unsigned long up_rate, down_rate;
+ 
+-	up = DIV_ROUND_UP_ULL((u64)parent_rate, rate);
++	up = DIV_ROUND_UP_ULL((u64)parent_rate, rate > UINT_MAX ? UINT_MAX : rate);
+ 	down = parent_rate / rate;
+ 
+ 	if (flags & CLK_DIVIDER_POWER_OF_TWO) {
+@@ -473,7 +473,7 @@ int divider_get_val(unsigned long rate, unsigned long parent_rate,
+ {
+ 	unsigned int div, value;
+ 
+-	div = DIV_ROUND_UP_ULL((u64)parent_rate, rate);
++	div = DIV_ROUND_UP_ULL((u64)parent_rate, rate > UINT_MAX ? UINT_MAX : rate);
+ 
+ 	if (!_is_valid_div(table, div, flags))
+ 		return -EINVAL;
 diff --git a/drivers/clk/clk-rk808.c b/drivers/clk/clk-rk808.c
 index 32f833d732e..f7412b137e5 100644
 --- a/drivers/clk/clk-rk808.c
@@ -1384,7 +3340,7 @@ index 32f833d732e..f7412b137e5 100644
  		return ret;
  
 diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 97acaa2136f..8e806df1124 100644
+index 123b4bbfcfe..6fdc2f0430b 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -189,6 +189,16 @@ config ARM_RASPBERRYPI_CPUFREQ
@@ -1417,7 +3373,7 @@ index ef851077491..c3f8c9cd563 100644
  obj-$(CONFIG_ARM_S5PV210_CPUFREQ)	+= s5pv210-cpufreq.o
  obj-$(CONFIG_ARM_SA1110_CPUFREQ)	+= sa1110-cpufreq.o
 diff --git a/drivers/cpufreq/cpufreq-dt-platdev.c b/drivers/cpufreq/cpufreq-dt-platdev.c
-index e8570365109..bcf168624ff 100644
+index 338cf6cc659..64cdc649636 100644
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
 @@ -156,6 +156,8 @@ static const struct of_device_id blocklist[] __initconst = {
@@ -1431,10 +3387,10 @@ index e8570365109..bcf168624ff 100644
  	{ .compatible = "st,stih418", },
 diff --git a/drivers/cpufreq/rockchip-cpufreq.c b/drivers/cpufreq/rockchip-cpufreq.c
 new file mode 100644
-index 00000000000..f6c86b8581f
+index 00000000000..6a60ec05d65
 --- /dev/null
 +++ b/drivers/cpufreq/rockchip-cpufreq.c
-@@ -0,0 +1,628 @@
+@@ -0,0 +1,640 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Rockchip CPUFreq Driver. This is similar to the generic DT
@@ -1769,13 +3725,13 @@ index 00000000000..f6c86b8581f
 +	reg_table_token = dev_pm_opp_set_regulators(dev, reg_names);
 +	if (reg_table_token < 0) {
 +		ret = reg_table_token;
-+		dev_err(dev, "Failed to set opp regulators\n");
++		dev_err_probe(dev, ret, "Failed to set opp regulators\n");
 +		goto np_err;
 +	}
 +
 +	ret = dev_pm_opp_of_get_sharing_cpus(dev, &cluster->cpus);
 +	if (ret) {
-+		dev_err(dev, "Failed to get sharing cpus\n");
++		dev_err_probe(dev, ret, "Failed to get sharing cpus\n");
 +		goto np_err;
 +	}
 +
@@ -1956,9 +3912,66 @@ index 00000000000..f6c86b8581f
 +	return 0;
 +}
 +
++static void rockchip_cpufreq_free_list(void *data)
++{
++	struct cluster_info *cluster, *pos;
++
++	list_for_each_entry_safe(cluster, pos, &cluster_info_list, list_head) {
++		list_del(&cluster->list_head);
++	}
++}
++
++static int rockchip_cpufreq_init_list(struct device *dev)
++{
++	struct cluster_info *cluster;
++	int cpu, ret;
++
++	for_each_possible_cpu(cpu) {
++		cluster = rockchip_cluster_info_lookup(cpu);
++		if (cluster)
++			continue;
++
++		cluster = devm_kzalloc(dev, sizeof(*cluster), GFP_KERNEL);
++		if (!cluster) {
++			ret = -ENOMEM;
++			goto release_cluster_info;
++		}
++
++		ret = rockchip_cpufreq_cluster_init(cpu, cluster);
++		if (ret) {
++			dev_err_probe(dev, ret, "Failed to initialize dvfs info cpu%d\n", cpu);
++			goto release_cluster_info;
++		}
++		list_add(&cluster->list_head, &cluster_info_list);
++	}
++
++	return 0;
++
++release_cluster_info:
++	rockchip_cpufreq_free_list(NULL);
++	return ret;
++}
++
++static void rockchip_cpufreq_unregister(void *data)
++{
++	cpufreq_unregister_driver(&rockchip_cpufreq_driver);
++}
++
 +static int rockchip_cpufreq_probe(struct platform_device *pdev)
 +{
 +	int ret, cpu;
++
++	ret = rockchip_cpufreq_init_list(&pdev->dev);
++	if (ret)
++		return ret;
++
++	ret = devm_add_action_or_reset(&pdev->dev, rockchip_cpufreq_free_list, NULL);
++	if (ret)
++		return ret;
++
++	ret = devm_register_reboot_notifier(&pdev->dev, &rockchip_cpufreq_reboot_notifier);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Failed to register reboot handler\n");
 +
 +	for_each_possible_cpu(cpu) {
 +		ret = rockchip_cpufreq_init(&pdev->dev, cpu);
@@ -1970,12 +3983,10 @@ index 00000000000..f6c86b8581f
 +	if (ret)
 +		return dev_err_probe(&pdev->dev, ret, "failed register driver\n");
 +
-+	return 0;
-+}
++	ret = devm_add_action_or_reset(&pdev->dev, rockchip_cpufreq_unregister, NULL);
++	if (ret)
++		return ret;
 +
-+static int rockchip_cpufreq_remove(struct platform_device *pdev)
-+{
-+	cpufreq_unregister_driver(&rockchip_cpufreq_driver);
 +	return 0;
 +}
 +
@@ -1984,42 +3995,15 @@ index 00000000000..f6c86b8581f
 +		.name	= "rockchip-cpufreq",
 +	},
 +	.probe		= rockchip_cpufreq_probe,
-+	.remove		= rockchip_cpufreq_remove,
 +};
 +
 +static int __init rockchip_cpufreq_driver_init(void)
 +{
-+	struct cluster_info *cluster, *pos;
-+	int cpu, ret;
-+
-+	for_each_possible_cpu(cpu) {
-+		cluster = rockchip_cluster_info_lookup(cpu);
-+		if (cluster)
-+			continue;
-+
-+		cluster = kzalloc(sizeof(*cluster), GFP_KERNEL);
-+		if (!cluster) {
-+			ret = -ENOMEM;
-+			goto release_cluster_info;
-+		}
-+
-+		ret = rockchip_cpufreq_cluster_init(cpu, cluster);
-+		if (ret) {
-+			pr_err("Failed to initialize dvfs info cpu%d\n", cpu);
-+			goto release_cluster_info;
-+		}
-+		list_add(&cluster->list_head, &cluster_info_list);
-+	}
-+
-+	ret = register_reboot_notifier(&rockchip_cpufreq_reboot_notifier);
-+	if (ret) {
-+		pr_err("Failed to register reboot handler\n");
-+		goto release_cluster_info;
-+	}
++	int ret;
 +
 +	ret = platform_driver_register(&rockchip_cpufreq_platdrv);
 +	if (ret)
-+		goto remove_reboot_notifier;
++		return ret;
 +
 +	cpufreq_pdev = platform_device_register_data(NULL, "rockchip-cpufreq", -1,
 +						     NULL, 0);
@@ -2033,30 +4017,14 @@ index 00000000000..f6c86b8581f
 +
 +unregister_platform_driver:
 +	platform_driver_unregister(&rockchip_cpufreq_platdrv);
-+
-+remove_reboot_notifier:
-+	unregister_reboot_notifier(&rockchip_cpufreq_reboot_notifier);
-+
-+release_cluster_info:
-+	list_for_each_entry_safe(cluster, pos, &cluster_info_list, list_head) {
-+		list_del(&cluster->list_head);
-+		kfree(cluster);
-+	}
 +	return ret;
 +}
 +module_init(rockchip_cpufreq_driver_init);
 +
 +static void __exit rockchip_cpufreq_driver_exit(void)
 +{
-+	struct cluster_info *cluster, *pos;
-+
 +	platform_device_unregister(cpufreq_pdev);
 +	platform_driver_unregister(&rockchip_cpufreq_platdrv);
-+	unregister_reboot_notifier(&rockchip_cpufreq_reboot_notifier);
-+	list_for_each_entry_safe(cluster, pos, &cluster_info_list, list_head) {
-+		list_del(&cluster->list_head);
-+		kfree(cluster);
-+	}
 +}
 +module_exit(rockchip_cpufreq_driver_exit)
 +
@@ -2064,10 +4032,10 @@ index 00000000000..f6c86b8581f
 +MODULE_DESCRIPTION("Rockchip cpufreq driver");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/input/misc/Kconfig b/drivers/input/misc/Kconfig
-index 5c2d0c06d2a..6a6978fc68f 100644
+index 81a54a59e13..8a320e6218e 100644
 --- a/drivers/input/misc/Kconfig
 +++ b/drivers/input/misc/Kconfig
-@@ -598,7 +598,7 @@ config INPUT_PWM_VIBRA
+@@ -609,7 +609,7 @@ config INPUT_PWM_VIBRA
  
  config INPUT_RK805_PWRKEY
  	tristate "Rockchip RK805 PMIC power key support"
@@ -2077,10 +4045,10 @@ index 5c2d0c06d2a..6a6978fc68f 100644
  	  Select this option to enable power key driver for RK805.
  
 diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index fcc141e067b..6a970a13247 100644
+index e90463c4441..d4879cb4e1f 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -1176,12 +1176,17 @@ config MFD_RC5T583
+@@ -1183,12 +1183,17 @@ config MFD_RC5T583
  	  Additional drivers must be enabled in order to use the
  	  different functionality of the device.
  
@@ -2099,7 +4067,7 @@ index fcc141e067b..6a970a13247 100644
  	help
  	  If you say yes here you get support for the RK805, RK808, RK809,
  	  RK817 and RK818 Power Management chips.
-@@ -1189,6 +1194,20 @@ config MFD_RK808
+@@ -1196,6 +1201,20 @@ config MFD_RK808
  	  through I2C interface. The device supports multiple sub-devices
  	  including interrupts, RTC, LDO & DCDC regulators, and onkey.
  
@@ -2121,10 +4089,10 @@ index fcc141e067b..6a970a13247 100644
  	tristate "Ricoh RN5T567/618 PMIC"
  	depends on I2C
 diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index 2f6c89d1e27..a3ecabfe465 100644
+index 1d2392f06f7..4e666ef5b7f 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -213,7 +213,9 @@ obj-$(CONFIG_MFD_PALMAS)	+= palmas.o
+@@ -214,7 +214,9 @@ obj-$(CONFIG_MFD_PALMAS)	+= palmas.o
  obj-$(CONFIG_MFD_VIPERBOARD)    += viperboard.o
  obj-$(CONFIG_MFD_NTXEC)		+= ntxec.o
  obj-$(CONFIG_MFD_RC5T583)	+= rc5t583.o rc5t583-irq.o
@@ -2877,7 +4845,7 @@ index 00000000000..2822bfa8a04
 +MODULE_DESCRIPTION("RK8xx I2C PMIC driver");
 diff --git a/drivers/mfd/rk8xx-spi.c b/drivers/mfd/rk8xx-spi.c
 new file mode 100644
-index 00000000000..d207a796f13
+index 00000000000..fd137f38c2c
 --- /dev/null
 +++ b/drivers/mfd/rk8xx-spi.c
 @@ -0,0 +1,124 @@
@@ -3004,9 +4972,576 @@ index 00000000000..d207a796f13
 +
 +MODULE_AUTHOR("Xu Shengfei <xsf@rock-chips.com>");
 +MODULE_DESCRIPTION("RK8xx SPI PMIC driver");
-+MODULE_LICENSE("GPL v2");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index a0bc10aa796..915aa212224 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -24,6 +24,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/power_supply.h>
+ #include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/usb/of.h>
+ #include <linux/usb/otg.h>
+@@ -32,6 +33,8 @@
+ #define SCHEDULE_DELAY		(60 * HZ)
+ #define OTG_SCHEDULE_DELAY	(2 * HZ)
+ 
++struct rockchip_usb2phy;
++
+ enum rockchip_usb2phy_port_id {
+ 	USB2PHY_PORT_OTG,
+ 	USB2PHY_PORT_HOST,
+@@ -116,6 +119,12 @@ struct rockchip_chg_det_reg {
+  * @bvalid_det_en: vbus valid rise detection enable register.
+  * @bvalid_det_st: vbus valid rise detection status register.
+  * @bvalid_det_clr: vbus valid rise detection clear register.
++ * @disfall_en: host disconnect fall edge detection enable.
++ * @disfall_st: host disconnect fall edge detection state.
++ * @disfall_clr: host disconnect fall edge detection clear.
++ * @disrise_en: host disconnect rise edge detection enable.
++ * @disrise_st: host disconnect rise edge detection state.
++ * @disrise_clr: host disconnect rise edge detection clear.
+  * @id_det_en: id detection enable register.
+  * @id_det_st: id detection state register.
+  * @id_det_clr: id detection clear register.
+@@ -133,6 +142,12 @@ struct rockchip_usb2phy_port_cfg {
+ 	struct usb2phy_reg	bvalid_det_en;
+ 	struct usb2phy_reg	bvalid_det_st;
+ 	struct usb2phy_reg	bvalid_det_clr;
++	struct usb2phy_reg      disfall_en;
++	struct usb2phy_reg      disfall_st;
++	struct usb2phy_reg      disfall_clr;
++	struct usb2phy_reg      disrise_en;
++	struct usb2phy_reg      disrise_st;
++	struct usb2phy_reg      disrise_clr;
+ 	struct usb2phy_reg	id_det_en;
+ 	struct usb2phy_reg	id_det_st;
+ 	struct usb2phy_reg	id_det_clr;
+@@ -150,6 +165,7 @@ struct rockchip_usb2phy_port_cfg {
+  * struct rockchip_usb2phy_cfg - usb-phy configuration.
+  * @reg: the address offset of grf for usb-phy config.
+  * @num_ports: specify how many ports that the phy has.
++ * @phy_tuning: phy default parameters tuning.
+  * @clkout_ctl: keep on/turn off output clk of phy.
+  * @port_cfgs: usb-phy port configurations.
+  * @chg_det: charger detection registers.
+@@ -157,6 +173,7 @@ struct rockchip_usb2phy_port_cfg {
+ struct rockchip_usb2phy_cfg {
+ 	unsigned int	reg;
+ 	unsigned int	num_ports;
++	int (*phy_tuning)(struct rockchip_usb2phy *rphy);
+ 	struct usb2phy_reg	clkout_ctl;
+ 	const struct rockchip_usb2phy_port_cfg	port_cfgs[USB2PHY_NUM_PORTS];
+ 	const struct rockchip_chg_det_reg	chg_det;
+@@ -168,6 +185,7 @@ struct rockchip_usb2phy_cfg {
+  * @port_id: flag for otg port or host port.
+  * @suspended: phy suspended flag.
+  * @vbus_attached: otg device vbus status.
++ * @host_disconnect: usb host disconnect status.
+  * @bvalid_irq: IRQ number assigned for vbus valid rise detection.
+  * @id_irq: IRQ number assigned for ID pin detection.
+  * @ls_irq: IRQ number assigned for linestate detection.
+@@ -187,6 +205,7 @@ struct rockchip_usb2phy_port {
+ 	unsigned int	port_id;
+ 	bool		suspended;
+ 	bool		vbus_attached;
++	bool            host_disconnect;
+ 	int		bvalid_irq;
+ 	int		id_irq;
+ 	int		ls_irq;
+@@ -209,6 +228,7 @@ struct rockchip_usb2phy_port {
+  * @clk: clock struct of phy input clk.
+  * @clk480m: clock struct of phy output clk.
+  * @clk480m_hw: clock struct of phy output clk management.
++ * @phy_reset: phy reset control.
+  * @chg_state: states involved in USB charger detection.
+  * @chg_type: USB charger types.
+  * @dcd_retries: The retry count used to track Data contact
+@@ -225,6 +245,7 @@ struct rockchip_usb2phy {
+ 	struct clk	*clk;
+ 	struct clk	*clk480m;
+ 	struct clk_hw	clk480m_hw;
++	struct reset_control	*phy_reset;
+ 	enum usb_chg_state	chg_state;
+ 	enum power_supply_type	chg_type;
+ 	u8			dcd_retries;
+@@ -266,6 +287,25 @@ static inline bool property_enabled(struct regmap *base,
+ 	return tmp != reg->disable;
+ }
+ 
++static int rockchip_usb2phy_reset(struct rockchip_usb2phy *rphy)
++{
++	int ret;
++
++	ret = reset_control_assert(rphy->phy_reset);
++	if (ret)
++		return ret;
++
++	udelay(10);
++
++	ret = reset_control_deassert(rphy->phy_reset);
++	if (ret)
++		return ret;
++
++	usleep_range(100, 200);
++
++	return 0;
++}
++
+ static int rockchip_usb2phy_clk480m_prepare(struct clk_hw *hw)
+ {
+ 	struct rockchip_usb2phy *rphy =
+@@ -405,6 +445,27 @@ static int rockchip_usb2phy_extcon_register(struct rockchip_usb2phy *rphy)
+ 	return 0;
+ }
+ 
++static int rockchip_usb2phy_enable_host_disc_irq(struct rockchip_usb2phy *rphy,
++						 struct rockchip_usb2phy_port *rport,
++						 bool en)
++{
++	int ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disfall_clr, true);
++	if (ret)
++		return ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disfall_en, en);
++	if (ret)
++		return ret;
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->disrise_clr, true);
++	if (ret)
++		return ret;
++
++	return property_enable(rphy->grf, &rport->port_cfg->disrise_en, en);
++}
++
+ static int rockchip_usb2phy_init(struct phy *phy)
+ {
+ 	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+@@ -449,6 +510,15 @@ static int rockchip_usb2phy_init(struct phy *phy)
+ 			dev_dbg(&rport->phy->dev, "mode %d\n", rport->mode);
+ 		}
+ 	} else if (rport->port_id == USB2PHY_PORT_HOST) {
++		if (rport->port_cfg->disfall_en.offset) {
++			rport->host_disconnect = true;
++			ret = rockchip_usb2phy_enable_host_disc_irq(rphy, rport, true);
++			if (ret) {
++				dev_err(rphy->dev, "failed to enable disconnect irq\n");
++				goto out;
++			}
++		}
++
+ 		/* clear linestate and enable linestate detect irq */
+ 		ret = property_enable(rphy->grf,
+ 				      &rport->port_cfg->ls_det_clr, true);
+@@ -490,6 +560,18 @@ static int rockchip_usb2phy_power_on(struct phy *phy)
+ 		return ret;
+ 	}
+ 
++	/*
++	 * For rk3588, it needs to reset phy when exit from
++	 * suspend mode with common_on_n 1'b1(aka REFCLK_LOGIC,
++	 * Bias, and PLL blocks are powered down) for lower
++	 * power consumption. If you don't want to reset phy,
++	 * please keep the common_on_n 1'b0 to set these blocks
++	 * remain powered.
++	 */
++	ret = rockchip_usb2phy_reset(rphy);
++	if (ret)
++		return ret;
++
+ 	/* waiting for the utmi_clk to become stable */
+ 	usleep_range(1500, 2000);
+ 
+@@ -810,9 +892,7 @@ static void rockchip_usb2phy_sm_work(struct work_struct *work)
+ 	struct rockchip_usb2phy_port *rport =
+ 		container_of(work, struct rockchip_usb2phy_port, sm_work.work);
+ 	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
+-	unsigned int sh = rport->port_cfg->utmi_hstdet.bitend -
+-			  rport->port_cfg->utmi_hstdet.bitstart + 1;
+-	unsigned int ul, uhd, state;
++	unsigned int sh, ul, uhd, state;
+ 	unsigned int ul_mask, uhd_mask;
+ 	int ret;
+ 
+@@ -822,18 +902,26 @@ static void rockchip_usb2phy_sm_work(struct work_struct *work)
+ 	if (ret < 0)
+ 		goto next_schedule;
+ 
+-	ret = regmap_read(rphy->grf, rport->port_cfg->utmi_hstdet.offset, &uhd);
+-	if (ret < 0)
+-		goto next_schedule;
+-
+-	uhd_mask = GENMASK(rport->port_cfg->utmi_hstdet.bitend,
+-			   rport->port_cfg->utmi_hstdet.bitstart);
+ 	ul_mask = GENMASK(rport->port_cfg->utmi_ls.bitend,
+ 			  rport->port_cfg->utmi_ls.bitstart);
+ 
+-	/* stitch on utmi_ls and utmi_hstdet as phy state */
+-	state = ((uhd & uhd_mask) >> rport->port_cfg->utmi_hstdet.bitstart) |
+-		(((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << sh);
++	if (rport->port_cfg->utmi_hstdet.offset) {
++		ret = regmap_read(rphy->grf, rport->port_cfg->utmi_hstdet.offset, &uhd);
++		if (ret < 0)
++			goto next_schedule;
++
++		uhd_mask = GENMASK(rport->port_cfg->utmi_hstdet.bitend,
++				   rport->port_cfg->utmi_hstdet.bitstart);
++
++		sh = rport->port_cfg->utmi_hstdet.bitend -
++		     rport->port_cfg->utmi_hstdet.bitstart + 1;
++		/* stitch on utmi_ls and utmi_hstdet as phy state */
++		state = ((uhd & uhd_mask) >> rport->port_cfg->utmi_hstdet.bitstart) |
++			(((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << sh);
++	} else {
++		state = ((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart) << 1 |
++			rport->host_disconnect;
++	}
+ 
+ 	switch (state) {
+ 	case PHY_STATE_HS_ONLINE:
+@@ -966,6 +1054,31 @@ static irqreturn_t rockchip_usb2phy_otg_mux_irq(int irq, void *data)
+ 	return ret;
+ }
+ 
++static irqreturn_t rockchip_usb2phy_host_disc_irq(int irq, void *data)
++{
++	struct rockchip_usb2phy_port *rport = data;
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
++
++	if (!property_enabled(rphy->grf, &rport->port_cfg->disfall_st) &&
++	    !property_enabled(rphy->grf, &rport->port_cfg->disrise_st))
++		return IRQ_NONE;
++
++	mutex_lock(&rport->mutex);
++
++	/* clear disconnect fall or rise detect irq pending status */
++	if (property_enabled(rphy->grf, &rport->port_cfg->disfall_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->disfall_clr, true);
++		rport->host_disconnect = false;
++	} else if (property_enabled(rphy->grf, &rport->port_cfg->disrise_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->disrise_clr, true);
++		rport->host_disconnect = true;
++	}
++
++	mutex_unlock(&rport->mutex);
++
++	return IRQ_HANDLED;
++}
++
+ static irqreturn_t rockchip_usb2phy_irq(int irq, void *data)
+ {
+ 	struct rockchip_usb2phy *rphy = data;
+@@ -978,6 +1091,10 @@ static irqreturn_t rockchip_usb2phy_irq(int irq, void *data)
+ 		if (!rport->phy)
+ 			continue;
+ 
++		if (rport->port_id == USB2PHY_PORT_HOST &&
++		    rport->port_cfg->disfall_en.offset)
++			ret |= rockchip_usb2phy_host_disc_irq(irq, rport);
++
+ 		switch (rport->port_id) {
+ 		case USB2PHY_PORT_OTG:
+ 			if (rport->mode != USB_DR_MODE_HOST &&
+@@ -1188,7 +1305,6 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	struct phy_provider *provider;
+ 	struct rockchip_usb2phy *rphy;
+ 	const struct rockchip_usb2phy_cfg *phy_cfgs;
+-	const struct of_device_id *match;
+ 	unsigned int reg;
+ 	int index, ret;
+ 
+@@ -1196,12 +1312,6 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	if (!rphy)
+ 		return -ENOMEM;
+ 
+-	match = of_match_device(dev->driver->of_match_table, dev);
+-	if (!match || !match->data) {
+-		dev_err(dev, "phy configs are not assigned!\n");
+-		return -EINVAL;
+-	}
+-
+ 	if (!dev->parent || !dev->parent->of_node) {
+ 		rphy->grf = syscon_regmap_lookup_by_phandle(np, "rockchip,usbgrf");
+ 		if (IS_ERR(rphy->grf)) {
+@@ -1233,7 +1343,7 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/* support address_cells=2 */
+-	if (reg == 0) {
++	if (of_property_count_u32_elems(np, "reg") > 2 && reg == 0) {
+ 		if (of_property_read_u32_index(np, "reg", 1, &reg)) {
+ 			dev_err(dev, "the reg property is not assigned in %pOFn node\n",
+ 				np);
+@@ -1242,45 +1352,55 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	rphy->dev = dev;
+-	phy_cfgs = match->data;
++	phy_cfgs = device_get_match_data(dev);
+ 	rphy->chg_state = USB_CHG_STATE_UNDEFINED;
+ 	rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
+ 	rphy->irq = platform_get_irq_optional(pdev, 0);
+ 	platform_set_drvdata(pdev, rphy);
+ 
++	if (!phy_cfgs)
++		return dev_err_probe(dev, -EINVAL, "phy configs are not assigned!\n");
++
+ 	ret = rockchip_usb2phy_extcon_register(rphy);
+ 	if (ret)
+ 		return ret;
+ 
+ 	/* find out a proper config which can be matched with dt. */
+ 	index = 0;
+-	while (phy_cfgs[index].reg) {
++	do {
+ 		if (phy_cfgs[index].reg == reg) {
+ 			rphy->phy_cfg = &phy_cfgs[index];
+ 			break;
+ 		}
+ 
+ 		++index;
+-	}
++	} while (phy_cfgs[index].reg);
+ 
+ 	if (!rphy->phy_cfg) {
+-		dev_err(dev, "no phy-config can be matched with %pOFn node\n",
+-			np);
++		dev_err(dev, "could not find phy config for reg=0x%08x\n", reg);
+ 		return -EINVAL;
+ 	}
+ 
+-	rphy->clk = of_clk_get_by_name(np, "phyclk");
+-	if (!IS_ERR(rphy->clk)) {
+-		clk_prepare_enable(rphy->clk);
+-	} else {
+-		dev_info(&pdev->dev, "no phyclk specified\n");
+-		rphy->clk = NULL;
++	rphy->phy_reset = devm_reset_control_get_optional(dev, "phy");
++	if (IS_ERR(rphy->phy_reset))
++		return PTR_ERR(rphy->phy_reset);
++
++	rphy->clk = devm_clk_get_optional_enabled(dev, "phyclk");
++	if (IS_ERR(rphy->clk)) {
++		return dev_err_probe(&pdev->dev, PTR_ERR(rphy->clk),
++				     "failed to get phyclk\n");
+ 	}
+ 
+ 	ret = rockchip_usb2phy_clk480m_register(rphy);
+ 	if (ret) {
+ 		dev_err(dev, "failed to register 480m output clock\n");
+-		goto disable_clks;
++		return ret;
++	}
++
++	if (rphy->phy_cfg->phy_tuning) {
++		ret = rphy->phy_cfg->phy_tuning(rphy);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	index = 0;
+@@ -1343,11 +1463,55 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 
+ put_child:
+ 	of_node_put(child_np);
+-disable_clks:
+-	if (rphy->clk) {
+-		clk_disable_unprepare(rphy->clk);
+-		clk_put(rphy->clk);
++	return ret;
++}
++
++static int rk3588_usb2phy_tuning(struct rockchip_usb2phy *rphy)
++{
++	int ret = 0;
++	bool usb3otg = false;
++	/*
++	 * utmi_termselect = 1'b1 (en FS terminations)
++	 * utmi_xcvrselect = 2'b01 (FS transceiver)
++	 */
++	int suspend_cfg = 0x14;
++
++	if (rphy->phy_cfg->reg == 0x0000 || rphy->phy_cfg->reg == 0x4000) {
++		/* USB2 config for USB3_0 and USB3_1 */
++		suspend_cfg |= 0x01; /* utmi_opmode = 2'b01 (no-driving) */
++		usb3otg = true;
++	} else if (rphy->phy_cfg->reg == 0x8000 || rphy->phy_cfg->reg == 0xc000) {
++		/* USB2 config for USB2_0 and USB2_1 */
++		suspend_cfg |= 0x00; /* utmi_opmode = 2'b00 (normal) */
++	} else {
++		return -EINVAL;
+ 	}
++
++	/* Deassert SIDDQ to power on analog block */
++	ret = regmap_write(rphy->grf, 0x0008, GENMASK(29, 29) | 0x0000);
++	if (ret)
++		return ret;
++
++	/* Do reset after exit IDDQ mode */
++	ret = rockchip_usb2phy_reset(rphy);
++	if (ret)
++		return ret;
++
++	/* suspend configuration */
++	ret |= regmap_write(rphy->grf, 0x000c, GENMASK(20, 16) | suspend_cfg);
++
++	/* HS DC Voltage Level Adjustment 4'b1001 : +5.89% */
++	ret |= regmap_write(rphy->grf, 0x0004, GENMASK(27, 24) | 0x0900);
++
++	/* HS Transmitter Pre-Emphasis Current Control 2'b10 : 2x */
++	ret |= regmap_write(rphy->grf, 0x0008, GENMASK(20, 19) | 0x0010);
++
++	if (!usb3otg)
++		return ret;
++
++	/* Pullup iddig pin for USB3_0 OTG mode */
++	ret |= regmap_write(rphy->grf, 0x0010, GENMASK(17, 16) | 0x0003);
++
+ 	return ret;
+ }
+ 
+@@ -1664,6 +1828,126 @@ static const struct rockchip_usb2phy_cfg rk3568_phy_cfgs[] = {
+ 	{ /* sentinel */ }
+ };
+ 
++static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
++	{
++		.reg = 0x0000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x000c, 11, 11, 0, 1 },
++				.bvalid_det_en	= { 0x0080, 1, 1, 0, 1 },
++				.bvalid_det_st	= { 0x0084, 1, 1, 0, 1 },
++				.bvalid_det_clr = { 0x0088, 1, 1, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_avalid	= { 0x00c0, 7, 7, 0, 1 },
++				.utmi_bvalid	= { 0x00c0, 6, 6, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++		.chg_det = {
++			.cp_det		= { 0x00c0, 0, 0, 0, 1 },
++			.dcp_det	= { 0x00c0, 0, 0, 0, 1 },
++			.dp_det		= { 0x00c0, 1, 1, 1, 0 },
++			.idm_sink_en	= { 0x0008, 5, 5, 1, 0 },
++			.idp_sink_en	= { 0x0008, 5, 5, 0, 1 },
++			.idp_src_en	= { 0x0008, 14, 14, 0, 1 },
++			.rdm_pdwn_en	= { 0x0008, 14, 14, 0, 1 },
++			.vdm_src_en	= { 0x0008, 7, 6, 0, 3 },
++			.vdp_src_en	= { 0x0008, 7, 6, 0, 3 },
++		},
++	},
++	{
++		.reg = 0x4000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x000c, 11, 11, 0, 1 },
++				.bvalid_det_en	= { 0x0080, 1, 1, 0, 1 },
++				.bvalid_det_st	= { 0x0084, 1, 1, 0, 1 },
++				.bvalid_det_clr = { 0x0088, 1, 1, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_avalid	= { 0x00c0, 7, 7, 0, 1 },
++				.utmi_bvalid	= { 0x00c0, 6, 6, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++		.chg_det = {
++			.cp_det		= { 0x00c0, 0, 0, 0, 1 },
++			.dcp_det	= { 0x00c0, 0, 0, 0, 1 },
++			.dp_det		= { 0x00c0, 1, 1, 1, 0 },
++			.idm_sink_en	= { 0x0008, 5, 5, 1, 0 },
++			.idp_sink_en	= { 0x0008, 5, 5, 0, 1 },
++			.idp_src_en	= { 0x0008, 14, 14, 0, 1 },
++			.rdm_pdwn_en	= { 0x0008, 14, 14, 0, 1 },
++			.vdm_src_en	= { 0x0008, 7, 6, 0, 3 },
++			.vdp_src_en	= { 0x0008, 7, 6, 0, 3 },
++		},
++	},
++	{
++		.reg = 0x8000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_HOST] = {
++				.phy_sus	= { 0x0008, 2, 2, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++	},
++	{
++		.reg = 0xc000,
++		.num_ports	= 1,
++		.phy_tuning	= rk3588_usb2phy_tuning,
++		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_HOST] = {
++				.phy_sus	= { 0x0008, 2, 2, 0, 1 },
++				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
++				.disfall_en	= { 0x0080, 6, 6, 0, 1 },
++				.disfall_st	= { 0x0084, 6, 6, 0, 1 },
++				.disfall_clr	= { 0x0088, 6, 6, 0, 1 },
++				.disrise_en	= { 0x0080, 5, 5, 0, 1 },
++				.disrise_st	= { 0x0084, 5, 5, 0, 1 },
++				.disrise_clr	= { 0x0088, 5, 5, 0, 1 },
++				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
++			}
++		},
++	},
++	{ /* sentinel */ }
++};
++
+ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
+ 	{
+ 		.reg = 0x100,
+@@ -1714,6 +1998,7 @@ static const struct of_device_id rockchip_usb2phy_dt_match[] = {
+ 	{ .compatible = "rockchip,rk3366-usb2phy", .data = &rk3366_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3399-usb2phy", .data = &rk3399_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3568-usb2phy", .data = &rk3568_phy_cfgs },
++	{ .compatible = "rockchip,rk3588-usb2phy", .data = &rk3588_phy_cfgs },
+ 	{ .compatible = "rockchip,rv1108-usb2phy", .data = &rv1108_phy_cfgs },
+ 	{}
+ };
 diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index dcb53c4a958..38e6c540155 100644
+index 5787c579dcf..77ff9a641ae 100644
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
 @@ -407,7 +407,7 @@ config PINCTRL_PISTACHIO
@@ -3348,7 +5883,7 @@ index c78be9f322e..4a5e8e1d123 100644
  	  Say Y to include support for Rockchip RK817 Battery Charger.
  
 diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index aae28d0a489..7f479753de5 100644
+index e5f3613c15f..f2881fe3e0a 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
 @@ -1056,7 +1056,7 @@ config REGULATOR_RC5T583
@@ -3408,7 +5943,7 @@ index ad2237a9557..586f42e378e 100644
  	if (ret) {
  		dev_warn(rdev_get_dev(rdev),
 diff --git a/drivers/regulator/rk808-regulator.c b/drivers/regulator/rk808-regulator.c
-index 94f359b88de..c58e3fc2ae6 100644
+index 3637e81654a..460525ed006 100644
 --- a/drivers/regulator/rk808-regulator.c
 +++ b/drivers/regulator/rk808-regulator.c
 @@ -3,9 +3,11 @@
@@ -3489,8 +6024,8 @@ index 94f359b88de..c58e3fc2ae6 100644
 +
  struct rk808_regulator_data {
  	struct gpio_desc *dvs_gpio[2];
- 	unsigned max_buck_steps_per_change;
-@@ -217,6 +265,133 @@ static const unsigned int rk817_buck1_4_ramp_table[] = {
+ };
+@@ -216,6 +264,133 @@ static const unsigned int rk817_buck1_4_ramp_table[] = {
  	3000, 6300, 12500, 25000
  };
  
@@ -3624,7 +6159,7 @@ index 94f359b88de..c58e3fc2ae6 100644
  static int rk808_buck1_2_get_voltage_sel_regmap(struct regulator_dev *rdev)
  {
  	struct rk808_regulator_data *pdata = rdev_get_drvdata(rdev);
-@@ -396,6 +571,45 @@ static int rk805_set_suspend_disable(struct regulator_dev *rdev)
+@@ -393,6 +568,47 @@ static int rk805_set_suspend_disable(struct regulator_dev *rdev)
  				  0);
  }
  
@@ -3655,6 +6190,7 @@ index 94f359b88de..c58e3fc2ae6 100644
 +static int rk806_set_suspend_enable(struct regulator_dev *rdev)
 +{
 +	int rid = rdev_get_id(rdev);
++
 +	return regmap_update_bits(rdev->regmap, rk806_suspend_bits[rid].reg,
 +				  rk806_suspend_bits[rid].bit,
 +				  rk806_suspend_bits[rid].bit);
@@ -3663,6 +6199,7 @@ index 94f359b88de..c58e3fc2ae6 100644
 +static int rk806_set_suspend_disable(struct regulator_dev *rdev)
 +{
 +	int rid = rdev_get_id(rdev);
++
 +	return regmap_update_bits(rdev->regmap, rk806_suspend_bits[rid].reg,
 +				  rk806_suspend_bits[rid].bit, 0);
 +}
@@ -3670,7 +6207,7 @@ index 94f359b88de..c58e3fc2ae6 100644
  static int rk808_set_suspend_enable(struct regulator_dev *rdev)
  {
  	unsigned int reg;
-@@ -564,6 +778,64 @@ static const struct regulator_ops rk805_switch_ops = {
+@@ -561,6 +777,64 @@ static const struct regulator_ops rk805_switch_ops = {
  	.set_suspend_disable    = rk805_set_suspend_disable,
  };
  
@@ -3735,7 +6272,7 @@ index 94f359b88de..c58e3fc2ae6 100644
  static const struct regulator_ops rk808_buck1_2_ops = {
  	.list_voltage		= regulator_list_voltage_linear,
  	.map_voltage		= regulator_map_voltage_linear,
-@@ -746,6 +1018,112 @@ static const struct regulator_desc rk805_reg[] = {
+@@ -743,6 +1017,112 @@ static const struct regulator_desc rk805_reg[] = {
  		BIT(2), 400),
  };
  
@@ -3848,7 +6385,50 @@ index 94f359b88de..c58e3fc2ae6 100644
  static const struct regulator_desc rk808_reg[] = {
  	{
  		.name = "DCDC_REG1",
-@@ -1321,6 +1699,10 @@ static int rk808_regulator_probe(struct platform_device *pdev)
+@@ -1245,20 +1625,19 @@ static const struct regulator_desc rk818_reg[] = {
+ };
+ 
+ static int rk808_regulator_dt_parse_pdata(struct device *dev,
+-				   struct device *client_dev,
+ 				   struct regmap *map,
+ 				   struct rk808_regulator_data *pdata)
+ {
+ 	struct device_node *np;
+ 	int tmp, ret = 0, i;
+ 
+-	np = of_get_child_by_name(client_dev->of_node, "regulators");
++	np = of_get_child_by_name(dev->of_node, "regulators");
+ 	if (!np)
+ 		return -ENXIO;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(pdata->dvs_gpio); i++) {
+ 		pdata->dvs_gpio[i] =
+-			devm_gpiod_get_index_optional(client_dev, "dvs", i,
++			devm_gpiod_get_index_optional(dev, "dvs", i,
+ 						      GPIOD_OUT_LOW);
+ 		if (IS_ERR(pdata->dvs_gpio[i])) {
+ 			ret = PTR_ERR(pdata->dvs_gpio[i]);
+@@ -1292,6 +1671,9 @@ static int rk808_regulator_probe(struct platform_device *pdev)
+ 	struct regmap *regmap;
+ 	int ret, i, nregulators;
+ 
++	pdev->dev.of_node = pdev->dev.parent->of_node;
++	pdev->dev.of_node_reused = true;
++
+ 	regmap = dev_get_regmap(pdev->dev.parent, NULL);
+ 	if (!regmap)
+ 		return -ENODEV;
+@@ -1300,8 +1682,7 @@ static int rk808_regulator_probe(struct platform_device *pdev)
+ 	if (!pdata)
+ 		return -ENOMEM;
+ 
+-	ret = rk808_regulator_dt_parse_pdata(&pdev->dev, pdev->dev.parent,
+-					     regmap, pdata);
++	ret = rk808_regulator_dt_parse_pdata(&pdev->dev, regmap, pdata);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1312,6 +1693,10 @@ static int rk808_regulator_probe(struct platform_device *pdev)
  		regulators = rk805_reg;
  		nregulators = RK805_NUM_REGULATORS;
  		break;
@@ -3859,7 +6439,24 @@ index 94f359b88de..c58e3fc2ae6 100644
  	case RK808_ID:
  		regulators = rk808_reg;
  		nregulators = RK808_NUM_REGULATORS;
-@@ -1374,5 +1756,6 @@ MODULE_AUTHOR("Tony xie <tony.xie@rock-chips.com>");
+@@ -1335,7 +1720,6 @@ static int rk808_regulator_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	config.dev = &pdev->dev;
+-	config.dev->of_node = pdev->dev.parent->of_node;
+ 	config.driver_data = pdata;
+ 	config.regmap = regmap;
+ 
+@@ -1355,7 +1739,7 @@ static struct platform_driver rk808_regulator_driver = {
+ 	.probe = rk808_regulator_probe,
+ 	.driver = {
+ 		.name = "rk808-regulator",
+-		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
++		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+ 	},
+ };
+ 
+@@ -1366,5 +1750,6 @@ MODULE_AUTHOR("Tony xie <tony.xie@rock-chips.com>");
  MODULE_AUTHOR("Chris Zhong <zyw@rock-chips.com>");
  MODULE_AUTHOR("Zhang Qing <zhangqing@rock-chips.com>");
  MODULE_AUTHOR("Wadim Egorov <w.egorov@phytec.de>");
@@ -3867,7 +6464,7 @@ index 94f359b88de..c58e3fc2ae6 100644
  MODULE_LICENSE("GPL");
  MODULE_ALIAS("platform:rk808-regulator");
 diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 5a71579af0a..86c5cee2cb3 100644
+index 75387240861..ffca9a8bb87 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
 @@ -395,7 +395,7 @@ config RTC_DRV_NCT3018Y
@@ -3879,597 +6476,263 @@ index 5a71579af0a..86c5cee2cb3 100644
  	help
  	  If you say yes here you will get support for the
  	  RTC of RK805, RK809 and RK817, RK808 and RK818 PMIC.
-diff --git a/drivers/thermal/rockchip_thermal.c b/drivers/thermal/rockchip_thermal.c
-index 4b7c43f34d1..e69c10a2a74 100644
---- a/drivers/thermal/rockchip_thermal.c
-+++ b/drivers/thermal/rockchip_thermal.c
-@@ -39,15 +39,6 @@ enum tshut_polarity {
- 	TSHUT_HIGH_ACTIVE,
+diff --git a/drivers/soc/rockchip/pm_domains.c b/drivers/soc/rockchip/pm_domains.c
+index 84bc022f9e5..e3de49e671d 100644
+--- a/drivers/soc/rockchip/pm_domains.c
++++ b/drivers/soc/rockchip/pm_domains.c
+@@ -43,8 +43,10 @@ struct rockchip_domain_info {
+ 	bool active_wakeup;
+ 	int pwr_w_mask;
+ 	int req_w_mask;
++	int mem_status_mask;
+ 	int repair_status_mask;
+ 	u32 pwr_offset;
++	u32 mem_offset;
+ 	u32 req_offset;
  };
  
--/*
-- * The system has two Temperature Sensors.
-- * sensor0 is for CPU, and sensor1 is for GPU.
-- */
--enum sensor_id {
--	SENSOR_CPU = 0,
--	SENSOR_GPU,
--};
--
- /*
-  * The conversion table has the adc value and temperature.
-  * ADC_DECREMENT: the adc value is of diminishing.(e.g. rk3288_code_table)
-@@ -60,12 +51,6 @@ enum adc_sort_mode {
+@@ -54,6 +56,9 @@ struct rockchip_pmu_info {
+ 	u32 req_offset;
+ 	u32 idle_offset;
+ 	u32 ack_offset;
++	u32 mem_pwr_offset;
++	u32 chain_status_offset;
++	u32 mem_status_offset;
+ 	u32 repair_status_offset;
  
- #include "thermal_hwmon.h"
- 
--/*
-- * The max sensors is two in rockchip SoCs.
-- * Two sensors: CPU and GPU sensor.
-- */
--#define SOC_MAX_SENSORS	2
--
- /**
-  * struct chip_tsadc_table - hold information about chip-specific differences
-  * @id: conversion table
-@@ -82,7 +67,7 @@ struct chip_tsadc_table {
- 
- /**
-  * struct rockchip_tsadc_chip - hold the private data of tsadc chip
-- * @chn_id: array of sensor ids of chip corresponding to the channel
-+ * @chn_offset: the channel offset of the first channel
-  * @chn_num: the channel number of tsadc chip
-  * @tshut_temp: the hardware-controlled shutdown temperature value
-  * @tshut_mode: the hardware-controlled shutdown mode (0:CRU 1:GPIO)
-@@ -98,7 +83,7 @@ struct chip_tsadc_table {
-  */
- struct rockchip_tsadc_chip {
- 	/* The sensor id of chip correspond to the ADC channel */
--	int chn_id[SOC_MAX_SENSORS];
-+	int chn_offset;
- 	int chn_num;
- 
- 	/* The hardware-controlled tshut property */
-@@ -156,7 +141,7 @@ struct rockchip_thermal_data {
- 	struct platform_device *pdev;
- 	struct reset_control *reset;
- 
--	struct rockchip_thermal_sensor sensors[SOC_MAX_SENSORS];
-+	struct rockchip_thermal_sensor *sensors;
- 
- 	struct clk *clk;
- 	struct clk *pclk;
-@@ -180,29 +165,49 @@ struct rockchip_thermal_data {
- #define TSADCV2_AUTO_CON			0x04
- #define TSADCV2_INT_EN				0x08
- #define TSADCV2_INT_PD				0x0c
-+#define TSADCV3_AUTO_SRC_CON			0x0c
-+#define TSADCV3_HT_INT_EN			0x14
-+#define TSADCV3_HSHUT_GPIO_INT_EN		0x18
-+#define TSADCV3_HSHUT_CRU_INT_EN		0x1c
-+#define TSADCV3_INT_PD				0x24
-+#define TSADCV3_HSHUT_PD			0x28
- #define TSADCV2_DATA(chn)			(0x20 + (chn) * 0x04)
- #define TSADCV2_COMP_INT(chn)		        (0x30 + (chn) * 0x04)
- #define TSADCV2_COMP_SHUT(chn)		        (0x40 + (chn) * 0x04)
-+#define TSADCV3_DATA(chn)			(0x2c + (chn) * 0x04)
-+#define TSADCV3_COMP_INT(chn)		        (0x6c + (chn) * 0x04)
-+#define TSADCV3_COMP_SHUT(chn)		        (0x10c + (chn) * 0x04)
- #define TSADCV2_HIGHT_INT_DEBOUNCE		0x60
- #define TSADCV2_HIGHT_TSHUT_DEBOUNCE		0x64
-+#define TSADCV3_HIGHT_INT_DEBOUNCE		0x14c
-+#define TSADCV3_HIGHT_TSHUT_DEBOUNCE		0x150
- #define TSADCV2_AUTO_PERIOD			0x68
- #define TSADCV2_AUTO_PERIOD_HT			0x6c
-+#define TSADCV3_AUTO_PERIOD			0x154
-+#define TSADCV3_AUTO_PERIOD_HT			0x158
- 
- #define TSADCV2_AUTO_EN				BIT(0)
-+#define TSADCV2_AUTO_EN_MASK			BIT(16)
- #define TSADCV2_AUTO_SRC_EN(chn)		BIT(4 + (chn))
-+#define TSADCV3_AUTO_SRC_EN(chn)		BIT(chn)
-+#define TSADCV3_AUTO_SRC_EN_MASK(chn)		BIT(16 + chn)
- #define TSADCV2_AUTO_TSHUT_POLARITY_HIGH	BIT(8)
-+#define TSADCV2_AUTO_TSHUT_POLARITY_MASK	BIT(24)
- 
- #define TSADCV3_AUTO_Q_SEL_EN			BIT(1)
- 
- #define TSADCV2_INT_SRC_EN(chn)			BIT(chn)
-+#define TSADCV2_INT_SRC_EN_MASK(chn)		BIT(16 + (chn))
- #define TSADCV2_SHUT_2GPIO_SRC_EN(chn)		BIT(4 + (chn))
- #define TSADCV2_SHUT_2CRU_SRC_EN(chn)		BIT(8 + (chn))
- 
- #define TSADCV2_INT_PD_CLEAR_MASK		~BIT(8)
- #define TSADCV3_INT_PD_CLEAR_MASK		~BIT(16)
-+#define TSADCV4_INT_PD_CLEAR_MASK		0xffffffff
- 
- #define TSADCV2_DATA_MASK			0xfff
- #define TSADCV3_DATA_MASK			0x3ff
-+#define TSADCV4_DATA_MASK			0x1ff
- 
- #define TSADCV2_HIGHT_INT_DEBOUNCE_COUNT	4
- #define TSADCV2_HIGHT_TSHUT_DEBOUNCE_COUNT	4
-@@ -213,6 +218,8 @@ struct rockchip_thermal_data {
- 
- #define TSADCV5_AUTO_PERIOD_TIME		1622 /* 2.5ms */
- #define TSADCV5_AUTO_PERIOD_HT_TIME		1622 /* 2.5ms */
-+#define TSADCV6_AUTO_PERIOD_TIME		5000 /* 2.5ms */
-+#define TSADCV6_AUTO_PERIOD_HT_TIME		5000 /* 2.5ms */
- 
- #define TSADCV2_USER_INTER_PD_SOC		0x340 /* 13 clocks */
- #define TSADCV5_USER_INTER_PD_SOC		0xfc0 /* 97us, at least 90us */
-@@ -229,6 +236,12 @@ struct rockchip_thermal_data {
- #define RK3568_GRF_TSADC_ANA_REG2		(0x10001 << 2)
- #define RK3568_GRF_TSADC_TSEN			(0x10001 << 8)
- 
-+#define RK3588_GRF0_TSADC_CON			0x0100
-+
-+#define RK3588_GRF0_TSADC_TRM			(0xff0077 << 0)
-+#define RK3588_GRF0_TSADC_SHUT_2CRU		(0x30003 << 10)
-+#define RK3588_GRF0_TSADC_SHUT_2GPIO		(0x70007 << 12)
-+
- #define GRF_SARADC_TESTBIT_ON			(0x10001 << 2)
- #define GRF_TSADC_TESTBIT_H_ON			(0x10001 << 2)
- #define GRF_TSADC_VCM_EN_L			(0x10001 << 7)
-@@ -523,6 +536,15 @@ static const struct tsadc_table rk3568_code_table[] = {
- 	{TSADCV2_DATA_MASK, 125000},
- };
- 
-+static const struct tsadc_table rk3588_code_table[] = {
-+	{0, -40000},
-+	{215, -40000},
-+	{285, 25000},
-+	{350, 85000},
-+	{395, 125000},
-+	{TSADCV4_DATA_MASK, 125000},
-+};
-+
- static u32 rk_tsadcv2_temp_to_code(const struct chip_tsadc_table *table,
- 				   int temp)
- {
-@@ -793,6 +815,25 @@ static void rk_tsadcv7_initialize(struct regmap *grf, void __iomem *regs,
- 	}
+ 	u32 core_pwrcnt_offset;
+@@ -119,13 +124,15 @@ struct rockchip_pmu {
+ 	.active_wakeup = wakeup,			\
  }
  
-+static void rk_tsadcv8_initialize(struct regmap *grf, void __iomem *regs,
-+				  enum tshut_polarity tshut_polarity)
+-#define DOMAIN_M_O_R(_name, p_offset, pwr, status, r_status, r_offset, req, idle, ack, wakeup)	\
++#define DOMAIN_M_O_R(_name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, ack, wakeup)	\
+ {							\
+ 	.name = _name,					\
+ 	.pwr_offset = p_offset,				\
+ 	.pwr_w_mask = (pwr) << 16,			\
+ 	.pwr_mask = (pwr),				\
+ 	.status_mask = (status),			\
++	.mem_offset = m_offset,				\
++	.mem_status_mask = (m_status),			\
+ 	.repair_status_mask = (r_status),		\
+ 	.req_offset = r_offset,				\
+ 	.req_w_mask = (req) << 16,			\
+@@ -269,8 +276,8 @@ void rockchip_pmu_unblock(void)
+ }
+ EXPORT_SYMBOL_GPL(rockchip_pmu_unblock);
+ 
+-#define DOMAIN_RK3588(name, p_offset, pwr, status, r_status, r_offset, req, idle, wakeup)	\
+-	DOMAIN_M_O_R(name, p_offset, pwr, status, r_status, r_offset, req, idle, idle, wakeup)
++#define DOMAIN_RK3588(name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, wakeup)	\
++	DOMAIN_M_O_R(name, p_offset, pwr, status, m_offset, m_status, r_status, r_offset, req, idle, idle, wakeup)
+ 
+ static bool rockchip_pmu_domain_is_idle(struct rockchip_pm_domain *pd)
+ {
+@@ -408,17 +415,92 @@ static bool rockchip_pmu_domain_is_on(struct rockchip_pm_domain *pd)
+ 	return !(val & pd->info->status_mask);
+ }
+ 
++static bool rockchip_pmu_domain_is_mem_on(struct rockchip_pm_domain *pd)
 +{
-+	writel_relaxed(TSADCV6_AUTO_PERIOD_TIME, regs + TSADCV3_AUTO_PERIOD);
-+	writel_relaxed(TSADCV6_AUTO_PERIOD_HT_TIME,
-+		       regs + TSADCV3_AUTO_PERIOD_HT);
-+	writel_relaxed(TSADCV2_HIGHT_INT_DEBOUNCE_COUNT,
-+		       regs + TSADCV3_HIGHT_INT_DEBOUNCE);
-+	writel_relaxed(TSADCV2_HIGHT_TSHUT_DEBOUNCE_COUNT,
-+		       regs + TSADCV3_HIGHT_TSHUT_DEBOUNCE);
-+	if (tshut_polarity == TSHUT_HIGH_ACTIVE)
-+		writel_relaxed(TSADCV2_AUTO_TSHUT_POLARITY_HIGH |
-+			       TSADCV2_AUTO_TSHUT_POLARITY_MASK,
-+			       regs + TSADCV2_AUTO_CON);
-+	else
-+		writel_relaxed(TSADCV2_AUTO_TSHUT_POLARITY_MASK,
-+			       regs + TSADCV2_AUTO_CON);
++	struct rockchip_pmu *pmu = pd->pmu;
++	unsigned int val;
++
++	regmap_read(pmu->regmap,
++		    pmu->info->mem_status_offset + pd->info->mem_offset, &val);
++
++	/* 1'b0: power on, 1'b1: power off */
++	return !(val & pd->info->mem_status_mask);
 +}
 +
- static void rk_tsadcv2_irq_ack(void __iomem *regs)
- {
- 	u32 val;
-@@ -809,6 +850,17 @@ static void rk_tsadcv3_irq_ack(void __iomem *regs)
- 	writel_relaxed(val & TSADCV3_INT_PD_CLEAR_MASK, regs + TSADCV2_INT_PD);
- }
- 
-+static void rk_tsadcv4_irq_ack(void __iomem *regs)
++static bool rockchip_pmu_domain_is_chain_on(struct rockchip_pm_domain *pd)
 +{
-+	u32 val;
++	struct rockchip_pmu *pmu = pd->pmu;
++	unsigned int val;
 +
-+	val = readl_relaxed(regs + TSADCV3_INT_PD);
-+	writel_relaxed(val & TSADCV4_INT_PD_CLEAR_MASK, regs + TSADCV3_INT_PD);
-+	val = readl_relaxed(regs + TSADCV3_HSHUT_PD);
-+	writel_relaxed(val & TSADCV3_INT_PD_CLEAR_MASK,
-+		       regs + TSADCV3_HSHUT_PD);
++	regmap_read(pmu->regmap,
++		    pmu->info->chain_status_offset + pd->info->mem_offset, &val);
++
++	/* 1'b1: power on, 1'b0: power off */
++	return val & pd->info->mem_status_mask;
 +}
 +
- static void rk_tsadcv2_control(void __iomem *regs, bool enable)
- {
- 	u32 val;
-@@ -844,6 +896,18 @@ static void rk_tsadcv3_control(void __iomem *regs, bool enable)
- 	writel_relaxed(val, regs + TSADCV2_AUTO_CON);
- }
- 
-+static void rk_tsadcv4_control(void __iomem *regs, bool enable)
++static int rockchip_pmu_domain_mem_reset(struct rockchip_pm_domain *pd)
 +{
-+	u32 val;
++	struct rockchip_pmu *pmu = pd->pmu;
++	struct generic_pm_domain *genpd = &pd->genpd;
++	bool is_on;
++	int ret = 0;
 +
-+	if (enable)
-+		val = TSADCV2_AUTO_EN | TSADCV2_AUTO_EN_MASK;
-+	else
-+		val = TSADCV2_AUTO_EN_MASK;
-+
-+	writel_relaxed(val, regs + TSADCV2_AUTO_CON);
-+}
-+
- static int rk_tsadcv2_get_temp(const struct chip_tsadc_table *table,
- 			       int chn, void __iomem *regs, int *temp)
- {
-@@ -854,6 +918,16 @@ static int rk_tsadcv2_get_temp(const struct chip_tsadc_table *table,
- 	return rk_tsadcv2_code_to_temp(table, val, temp);
- }
- 
-+static int rk_tsadcv4_get_temp(const struct chip_tsadc_table *table,
-+			       int chn, void __iomem *regs, int *temp)
-+{
-+	u32 val;
-+
-+	val = readl_relaxed(regs + TSADCV3_DATA(chn));
-+
-+	return rk_tsadcv2_code_to_temp(table, val, temp);
-+}
-+
- static int rk_tsadcv2_alarm_temp(const struct chip_tsadc_table *table,
- 				 int chn, void __iomem *regs, int temp)
- {
-@@ -888,6 +962,33 @@ static int rk_tsadcv2_alarm_temp(const struct chip_tsadc_table *table,
- 	return 0;
- }
- 
-+static int rk_tsadcv3_alarm_temp(const struct chip_tsadc_table *table,
-+				 int chn, void __iomem *regs, int temp)
-+{
-+	u32 alarm_value;
-+
-+	/*
-+	 * In some cases, some sensors didn't need the trip points, the
-+	 * set_trips will pass {-INT_MAX, INT_MAX} to trigger tsadc alarm
-+	 * in the end, ignore this case and disable the high temperature
-+	 * interrupt.
-+	 */
-+	if (temp == INT_MAX) {
-+		writel_relaxed(TSADCV2_INT_SRC_EN_MASK(chn),
-+			       regs + TSADCV3_HT_INT_EN);
-+		return 0;
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_chain_on, pd, is_on,
++					is_on == true, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get chain status '%s', target_on=1, val=%d\n",
++			genpd->name, is_on);
++		goto error;
 +	}
-+	/* Make sure the value is valid */
-+	alarm_value = rk_tsadcv2_temp_to_code(table, temp);
-+	if (alarm_value == table->data_mask)
-+		return -ERANGE;
-+	writel_relaxed(alarm_value & table->data_mask,
-+		       regs + TSADCV3_COMP_INT(chn));
-+	writel_relaxed(TSADCV2_INT_SRC_EN(chn) | TSADCV2_INT_SRC_EN_MASK(chn),
-+		       regs + TSADCV3_HT_INT_EN);
-+	return 0;
-+}
 +
- static int rk_tsadcv2_tshut_temp(const struct chip_tsadc_table *table,
- 				 int chn, void __iomem *regs, int temp)
- {
-@@ -907,6 +1008,25 @@ static int rk_tsadcv2_tshut_temp(const struct chip_tsadc_table *table,
- 	return 0;
- }
- 
-+static int rk_tsadcv3_tshut_temp(const struct chip_tsadc_table *table,
-+				 int chn, void __iomem *regs, int temp)
-+{
-+	u32 tshut_value;
++	udelay(20);
 +
-+	/* Make sure the value is valid */
-+	tshut_value = rk_tsadcv2_temp_to_code(table, temp);
-+	if (tshut_value == table->data_mask)
-+		return -ERANGE;
++	regmap_write(pmu->regmap, pmu->info->mem_pwr_offset + pd->info->pwr_offset,
++		     (pd->info->pwr_mask | pd->info->pwr_w_mask));
++	wmb();
 +
-+	writel_relaxed(tshut_value, regs + TSADCV3_COMP_SHUT(chn));
-+
-+	/* TSHUT will be valid */
-+	writel_relaxed(TSADCV3_AUTO_SRC_EN(chn) | TSADCV3_AUTO_SRC_EN_MASK(chn),
-+		       regs + TSADCV3_AUTO_SRC_CON);
-+
-+	return 0;
-+}
-+
- static void rk_tsadcv2_tshut_mode(int chn, void __iomem *regs,
- 				  enum tshut_mode mode)
- {
-@@ -924,9 +1044,25 @@ static void rk_tsadcv2_tshut_mode(int chn, void __iomem *regs,
- 	writel_relaxed(val, regs + TSADCV2_INT_EN);
- }
- 
-+static void rk_tsadcv3_tshut_mode(int chn, void __iomem *regs,
-+				  enum tshut_mode mode)
-+{
-+	u32 val_gpio, val_cru;
-+
-+	if (mode == TSHUT_MODE_GPIO) {
-+		val_gpio = TSADCV2_INT_SRC_EN(chn) | TSADCV2_INT_SRC_EN_MASK(chn);
-+		val_cru = TSADCV2_INT_SRC_EN_MASK(chn);
-+	} else {
-+		val_cru = TSADCV2_INT_SRC_EN(chn) | TSADCV2_INT_SRC_EN_MASK(chn);
-+		val_gpio = TSADCV2_INT_SRC_EN_MASK(chn);
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_mem_on, pd, is_on,
++					is_on == false, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get mem status '%s', target_on=0, val=%d\n",
++			genpd->name, is_on);
++		goto error;
 +	}
-+	writel_relaxed(val_gpio, regs + TSADCV3_HSHUT_GPIO_INT_EN);
-+	writel_relaxed(val_cru, regs + TSADCV3_HSHUT_CRU_INT_EN);
++
++	regmap_write(pmu->regmap, pmu->info->mem_pwr_offset + pd->info->pwr_offset,
++		     pd->info->pwr_w_mask);
++	wmb();
++
++	ret = readx_poll_timeout_atomic(rockchip_pmu_domain_is_mem_on, pd, is_on,
++					is_on == true, 0, 10000);
++	if (ret) {
++		dev_err(pmu->dev,
++			"failed to get mem status '%s', target_on=1, val=%d\n",
++			genpd->name, is_on);
++	}
++
++error:
++	return ret;
 +}
 +
- static const struct rockchip_tsadc_chip px30_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
--	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
-+	/* cpu, gpu */
-+	.chn_offset = 0,
- 	.chn_num = 2, /* 2 channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_CRU, /* default TSHUT via CRU */
-@@ -949,7 +1085,8 @@ static const struct rockchip_tsadc_chip px30_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rv1108_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
-+	/* cpu */
-+	.chn_offset = 0,
- 	.chn_num = 1, /* one channel for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -973,7 +1110,8 @@ static const struct rockchip_tsadc_chip rv1108_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3228_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
-+	/* cpu */
-+	.chn_offset = 0,
- 	.chn_num = 1, /* one channel for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -997,8 +1135,8 @@ static const struct rockchip_tsadc_chip rk3228_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3288_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 1, /* cpu sensor is channel 1 */
--	.chn_id[SENSOR_GPU] = 2, /* gpu sensor is channel 2 */
-+	/* cpu, gpu */
-+	.chn_offset = 1,
- 	.chn_num = 2, /* two channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -1022,7 +1160,8 @@ static const struct rockchip_tsadc_chip rk3288_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3328_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
-+	/* cpu */
-+	.chn_offset = 0,
- 	.chn_num = 1, /* one channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_CRU, /* default TSHUT via CRU */
-@@ -1045,8 +1184,8 @@ static const struct rockchip_tsadc_chip rk3328_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3366_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
--	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
-+	/* cpu, gpu */
-+	.chn_offset = 0,
- 	.chn_num = 2, /* two channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -1070,8 +1209,8 @@ static const struct rockchip_tsadc_chip rk3366_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3368_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
--	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
-+	/* cpu, gpu */
-+	.chn_offset = 0,
- 	.chn_num = 2, /* two channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -1095,8 +1234,8 @@ static const struct rockchip_tsadc_chip rk3368_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3399_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
--	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
-+	/* cpu, gpu */
-+	.chn_offset = 0,
- 	.chn_num = 2, /* two channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -1120,8 +1259,8 @@ static const struct rockchip_tsadc_chip rk3399_tsadc_data = {
- };
- 
- static const struct rockchip_tsadc_chip rk3568_tsadc_data = {
--	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
--	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
-+	/* cpu, gpu */
-+	.chn_offset = 0,
- 	.chn_num = 2, /* two channels for tsadc */
- 
- 	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-@@ -1144,6 +1283,28 @@ static const struct rockchip_tsadc_chip rk3568_tsadc_data = {
- 	},
- };
- 
-+static const struct rockchip_tsadc_chip rk3588_tsadc_data = {
-+	/* top, big_core0, big_core1, little_core, center, gpu, npu */
-+	.chn_offset = 0,
-+	.chn_num = 7, /* seven channels for tsadc */
-+	.tshut_mode = TSHUT_MODE_GPIO, /* default TSHUT via GPIO give PMIC */
-+	.tshut_polarity = TSHUT_LOW_ACTIVE, /* default TSHUT LOW ACTIVE */
-+	.tshut_temp = 95000,
-+	.initialize = rk_tsadcv8_initialize,
-+	.irq_ack = rk_tsadcv4_irq_ack,
-+	.control = rk_tsadcv4_control,
-+	.get_temp = rk_tsadcv4_get_temp,
-+	.set_alarm_temp = rk_tsadcv3_alarm_temp,
-+	.set_tshut_temp = rk_tsadcv3_tshut_temp,
-+	.set_tshut_mode = rk_tsadcv3_tshut_mode,
-+	.table = {
-+		.id = rk3588_code_table,
-+		.length = ARRAY_SIZE(rk3588_code_table),
-+		.data_mask = TSADCV4_DATA_MASK,
-+		.mode = ADC_INCREMENT,
-+	},
-+};
-+
- static const struct of_device_id of_rockchip_thermal_match[] = {
- 	{	.compatible = "rockchip,px30-tsadc",
- 		.data = (void *)&px30_tsadc_data,
-@@ -1180,6 +1341,10 @@ static const struct of_device_id of_rockchip_thermal_match[] = {
- 		.compatible = "rockchip,rk3568-tsadc",
- 		.data = (void *)&rk3568_tsadc_data,
- 	},
-+	{
-+		.compatible = "rockchip,rk3588-tsadc",
-+		.data = (void *)&rk3588_tsadc_data,
-+	},
- 	{ /* end */ },
- };
- MODULE_DEVICE_TABLE(of, of_rockchip_thermal_match);
-@@ -1353,15 +1518,10 @@ static int rockchip_thermal_probe(struct platform_device *pdev)
+ static void rockchip_do_pmu_set_power_domain(struct rockchip_pm_domain *pd,
+ 					     bool on)
  {
- 	struct device_node *np = pdev->dev.of_node;
- 	struct rockchip_thermal_data *thermal;
--	const struct of_device_id *match;
- 	int irq;
- 	int i;
- 	int error;
+ 	struct rockchip_pmu *pmu = pd->pmu;
+ 	struct generic_pm_domain *genpd = &pd->genpd;
+ 	u32 pd_pwr_offset = pd->info->pwr_offset;
+-	bool is_on;
++	bool is_on, is_mem_on = false;
  
--	match = of_match_node(of_rockchip_thermal_match, np);
--	if (!match)
--		return -ENXIO;
--
- 	irq = platform_get_irq(pdev, 0);
- 	if (irq < 0)
- 		return -EINVAL;
-@@ -1373,57 +1533,40 @@ static int rockchip_thermal_probe(struct platform_device *pdev)
- 
- 	thermal->pdev = pdev;
- 
--	thermal->chip = (const struct rockchip_tsadc_chip *)match->data;
-+	thermal->chip = device_get_match_data(&pdev->dev);
- 	if (!thermal->chip)
- 		return -EINVAL;
- 
-+	thermal->sensors = devm_kcalloc(&pdev->dev, thermal->chip->chn_num,
-+					sizeof(*thermal->sensors), GFP_KERNEL);
-+	if (!thermal->sensors)
-+		return -ENOMEM;
+ 	if (pd->info->pwr_mask == 0)
+ 		return;
+-	else if (pd->info->pwr_w_mask)
 +
- 	thermal->regs = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
- 	if (IS_ERR(thermal->regs))
- 		return PTR_ERR(thermal->regs);
++	if (on && pd->info->mem_status_mask)
++		is_mem_on = rockchip_pmu_domain_is_mem_on(pd);
++
++	if (pd->info->pwr_w_mask)
+ 		regmap_write(pmu->regmap, pmu->info->pwr_offset + pd_pwr_offset,
+ 			     on ? pd->info->pwr_w_mask :
+ 			     (pd->info->pwr_mask | pd->info->pwr_w_mask));
+@@ -428,6 +510,9 @@ static void rockchip_do_pmu_set_power_domain(struct rockchip_pm_domain *pd,
  
- 	thermal->reset = devm_reset_control_array_get(&pdev->dev, false, false);
--	if (IS_ERR(thermal->reset)) {
--		error = PTR_ERR(thermal->reset);
--		dev_err(&pdev->dev, "failed to get tsadc reset: %d\n", error);
--		return error;
--	}
-+	if (IS_ERR(thermal->reset))
-+		return dev_err_probe(&pdev->dev, PTR_ERR(thermal->reset),
-+				     "failed to get tsadc reset.\n");
+ 	wmb();
  
--	thermal->clk = devm_clk_get(&pdev->dev, "tsadc");
--	if (IS_ERR(thermal->clk)) {
--		error = PTR_ERR(thermal->clk);
--		dev_err(&pdev->dev, "failed to get tsadc clock: %d\n", error);
--		return error;
--	}
--
--	thermal->pclk = devm_clk_get(&pdev->dev, "apb_pclk");
--	if (IS_ERR(thermal->pclk)) {
--		error = PTR_ERR(thermal->pclk);
--		dev_err(&pdev->dev, "failed to get apb_pclk clock: %d\n",
--			error);
--		return error;
--	}
-+	thermal->clk = devm_clk_get_enabled(&pdev->dev, "tsadc");
-+	if (IS_ERR(thermal->clk))
-+		return dev_err_probe(&pdev->dev, PTR_ERR(thermal->clk),
-+				     "failed to get tsadc clock.\n");
++	if (is_mem_on && rockchip_pmu_domain_mem_reset(pd))
++		return;
++
+ 	if (readx_poll_timeout_atomic(rockchip_pmu_domain_is_on, pd, is_on,
+ 				      is_on == on, 0, 10000)) {
+ 		dev_err(pmu->dev,
+@@ -645,7 +730,9 @@ static int rockchip_pm_add_one_domain(struct rockchip_pmu *pmu,
+ 	pd->genpd.flags = GENPD_FLAG_PM_CLK;
+ 	if (pd_info->active_wakeup)
+ 		pd->genpd.flags |= GENPD_FLAG_ACTIVE_WAKEUP;
+-	pm_genpd_init(&pd->genpd, NULL, !rockchip_pmu_domain_is_on(pd));
++	pm_genpd_init(&pd->genpd, NULL,
++		      !rockchip_pmu_domain_is_on(pd) ||
++		      (pd->info->mem_status_mask && !rockchip_pmu_domain_is_mem_on(pd)));
  
--	error = clk_prepare_enable(thermal->clk);
--	if (error) {
--		dev_err(&pdev->dev, "failed to enable converter clock: %d\n",
--			error);
--		return error;
--	}
--
--	error = clk_prepare_enable(thermal->pclk);
--	if (error) {
--		dev_err(&pdev->dev, "failed to enable pclk: %d\n", error);
--		goto err_disable_clk;
--	}
-+	thermal->pclk = devm_clk_get_enabled(&pdev->dev, "apb_pclk");
-+	if (IS_ERR(thermal->pclk))
-+		return dev_err_probe(&pdev->dev, PTR_ERR(thermal->pclk),
-+				     "failed to get apb_pclk clock.\n");
- 
- 	rockchip_thermal_reset_controller(thermal->reset);
- 
- 	error = rockchip_configure_from_dt(&pdev->dev, np, thermal);
--	if (error) {
--		dev_err(&pdev->dev, "failed to parse device tree data: %d\n",
--			error);
--		goto err_disable_pclk;
--	}
-+	if (error)
-+		return dev_err_probe(&pdev->dev, error,
-+				"failed to parse device tree data\n");
- 
- 	thermal->chip->initialize(thermal->grf, thermal->regs,
- 				  thermal->tshut_polarity);
-@@ -1431,24 +1574,19 @@ static int rockchip_thermal_probe(struct platform_device *pdev)
- 	for (i = 0; i < thermal->chip->chn_num; i++) {
- 		error = rockchip_thermal_register_sensor(pdev, thermal,
- 						&thermal->sensors[i],
--						thermal->chip->chn_id[i]);
--		if (error) {
--			dev_err(&pdev->dev,
--				"failed to register sensor[%d] : error = %d\n",
--				i, error);
--			goto err_disable_pclk;
--		}
-+						thermal->chip->chn_offset + i);
-+		if (error)
-+			return dev_err_probe(&pdev->dev, error,
-+				"failed to register sensor[%d].\n", i);
- 	}
- 
- 	error = devm_request_threaded_irq(&pdev->dev, irq, NULL,
- 					  &rockchip_thermal_alarm_irq_thread,
- 					  IRQF_ONESHOT,
- 					  "rockchip_thermal", thermal);
--	if (error) {
--		dev_err(&pdev->dev,
--			"failed to request tsadc irq: %d\n", error);
--		goto err_disable_pclk;
--	}
-+	if (error)
-+		return dev_err_probe(&pdev->dev, error,
-+				     "failed to request tsadc irq.\n");
- 
- 	thermal->chip->control(thermal->regs, true);
- 
-@@ -1465,13 +1603,6 @@ static int rockchip_thermal_probe(struct platform_device *pdev)
- 	platform_set_drvdata(pdev, thermal);
- 
+ 	pmu->genpd_data.domains[id] = &pd->genpd;
  	return 0;
--
--err_disable_pclk:
--	clk_disable_unprepare(thermal->pclk);
--err_disable_clk:
--	clk_disable_unprepare(thermal->clk);
--
--	return error;
- }
+@@ -1024,35 +1111,35 @@ static const struct rockchip_domain_info rk3568_pm_domains[] = {
+ };
  
- static int rockchip_thermal_remove(struct platform_device *pdev)
-@@ -1488,9 +1619,6 @@ static int rockchip_thermal_remove(struct platform_device *pdev)
+ static const struct rockchip_domain_info rk3588_pm_domains[] = {
+-	[RK3588_PD_GPU]		= DOMAIN_RK3588("gpu",     0x0, BIT(0),  0,       BIT(1),  0x0, BIT(0),  BIT(0),  false),
+-	[RK3588_PD_NPU]		= DOMAIN_RK3588("npu",     0x0, BIT(1),  BIT(1),  0,       0x0, 0,       0,       false),
+-	[RK3588_PD_VCODEC]	= DOMAIN_RK3588("vcodec",  0x0, BIT(2),  BIT(2),  0,       0x0, 0,       0,       false),
+-	[RK3588_PD_NPUTOP]	= DOMAIN_RK3588("nputop",  0x0, BIT(3),  0,       BIT(2),  0x0, BIT(1),  BIT(1),  false),
+-	[RK3588_PD_NPU1]	= DOMAIN_RK3588("npu1",    0x0, BIT(4),  0,       BIT(3),  0x0, BIT(2),  BIT(2),  false),
+-	[RK3588_PD_NPU2]	= DOMAIN_RK3588("npu2",    0x0, BIT(5),  0,       BIT(4),  0x0, BIT(3),  BIT(3),  false),
+-	[RK3588_PD_VENC0]	= DOMAIN_RK3588("venc0",   0x0, BIT(6),  0,       BIT(5),  0x0, BIT(4),  BIT(4),  false),
+-	[RK3588_PD_VENC1]	= DOMAIN_RK3588("venc1",   0x0, BIT(7),  0,       BIT(6),  0x0, BIT(5),  BIT(5),  false),
+-	[RK3588_PD_RKVDEC0]	= DOMAIN_RK3588("rkvdec0", 0x0, BIT(8),  0,       BIT(7),  0x0, BIT(6),  BIT(6),  false),
+-	[RK3588_PD_RKVDEC1]	= DOMAIN_RK3588("rkvdec1", 0x0, BIT(9),  0,       BIT(8),  0x0, BIT(7),  BIT(7),  false),
+-	[RK3588_PD_VDPU]	= DOMAIN_RK3588("vdpu",    0x0, BIT(10), 0,       BIT(9),  0x0, BIT(8),  BIT(8),  false),
+-	[RK3588_PD_RGA30]	= DOMAIN_RK3588("rga30",   0x0, BIT(11), 0,       BIT(10), 0x0, 0,       0,       false),
+-	[RK3588_PD_AV1]		= DOMAIN_RK3588("av1",     0x0, BIT(12), 0,       BIT(11), 0x0, BIT(9),  BIT(9),  false),
+-	[RK3588_PD_VI]		= DOMAIN_RK3588("vi",      0x0, BIT(13), 0,       BIT(12), 0x0, BIT(10), BIT(10), false),
+-	[RK3588_PD_FEC]		= DOMAIN_RK3588("fec",     0x0, BIT(14), 0,       BIT(13), 0x0, 0,       0,       false),
+-	[RK3588_PD_ISP1]	= DOMAIN_RK3588("isp1",    0x0, BIT(15), 0,       BIT(14), 0x0, BIT(11), BIT(11), false),
+-	[RK3588_PD_RGA31]	= DOMAIN_RK3588("rga31",   0x4, BIT(0),  0,       BIT(15), 0x0, BIT(12), BIT(12), false),
+-	[RK3588_PD_VOP]		= DOMAIN_RK3588("vop",     0x4, BIT(1),  0,       BIT(16), 0x0, BIT(13) | BIT(14), BIT(13) | BIT(14), false),
+-	[RK3588_PD_VO0]		= DOMAIN_RK3588("vo0",     0x4, BIT(2),  0,       BIT(17), 0x0, BIT(15), BIT(15), false),
+-	[RK3588_PD_VO1]		= DOMAIN_RK3588("vo1",     0x4, BIT(3),  0,       BIT(18), 0x4, BIT(0),  BIT(16), false),
+-	[RK3588_PD_AUDIO]	= DOMAIN_RK3588("audio",   0x4, BIT(4),  0,       BIT(19), 0x4, BIT(1),  BIT(17), false),
+-	[RK3588_PD_PHP]		= DOMAIN_RK3588("php",     0x4, BIT(5),  0,       BIT(20), 0x4, BIT(5),  BIT(21), false),
+-	[RK3588_PD_GMAC]	= DOMAIN_RK3588("gmac",    0x4, BIT(6),  0,       BIT(21), 0x0, 0,       0,       false),
+-	[RK3588_PD_PCIE]	= DOMAIN_RK3588("pcie",    0x4, BIT(7),  0,       BIT(22), 0x0, 0,       0,       true),
+-	[RK3588_PD_NVM]		= DOMAIN_RK3588("nvm",     0x4, BIT(8),  BIT(24), 0,       0x4, BIT(2),  BIT(18), false),
+-	[RK3588_PD_NVM0]	= DOMAIN_RK3588("nvm0",    0x4, BIT(9),  0,       BIT(23), 0x0, 0,       0,       false),
+-	[RK3588_PD_SDIO]	= DOMAIN_RK3588("sdio",    0x4, BIT(10), 0,       BIT(24), 0x4, BIT(3),  BIT(19), false),
+-	[RK3588_PD_USB]		= DOMAIN_RK3588("usb",     0x4, BIT(11), 0,       BIT(25), 0x4, BIT(4),  BIT(20), true),
+-	[RK3588_PD_SDMMC]	= DOMAIN_RK3588("sdmmc",   0x4, BIT(13), 0,       BIT(26), 0x0, 0,       0,       false),
++	[RK3588_PD_GPU]		= DOMAIN_RK3588("gpu",     0x0, BIT(0),  0,       0x0, 0,       BIT(1),  0x0, BIT(0),  BIT(0),  false),
++	[RK3588_PD_NPU]		= DOMAIN_RK3588("npu",     0x0, BIT(1),  BIT(1),  0x0, 0,       0,       0x0, 0,       0,       false),
++	[RK3588_PD_VCODEC]	= DOMAIN_RK3588("vcodec",  0x0, BIT(2),  BIT(2),  0x0, 0,       0,       0x0, 0,       0,       false),
++	[RK3588_PD_NPUTOP]	= DOMAIN_RK3588("nputop",  0x0, BIT(3),  0,       0x0, BIT(11), BIT(2),  0x0, BIT(1),  BIT(1),  false),
++	[RK3588_PD_NPU1]	= DOMAIN_RK3588("npu1",    0x0, BIT(4),  0,       0x0, BIT(12), BIT(3),  0x0, BIT(2),  BIT(2),  false),
++	[RK3588_PD_NPU2]	= DOMAIN_RK3588("npu2",    0x0, BIT(5),  0,       0x0, BIT(13), BIT(4),  0x0, BIT(3),  BIT(3),  false),
++	[RK3588_PD_VENC0]	= DOMAIN_RK3588("venc0",   0x0, BIT(6),  0,       0x0, BIT(14), BIT(5),  0x0, BIT(4),  BIT(4),  false),
++	[RK3588_PD_VENC1]	= DOMAIN_RK3588("venc1",   0x0, BIT(7),  0,       0x0, BIT(15), BIT(6),  0x0, BIT(5),  BIT(5),  false),
++	[RK3588_PD_RKVDEC0]	= DOMAIN_RK3588("rkvdec0", 0x0, BIT(8),  0,       0x0, BIT(16), BIT(7),  0x0, BIT(6),  BIT(6),  false),
++	[RK3588_PD_RKVDEC1]	= DOMAIN_RK3588("rkvdec1", 0x0, BIT(9),  0,       0x0, BIT(17), BIT(8),  0x0, BIT(7),  BIT(7),  false),
++	[RK3588_PD_VDPU]	= DOMAIN_RK3588("vdpu",    0x0, BIT(10), 0,       0x0, BIT(18), BIT(9),  0x0, BIT(8),  BIT(8),  false),
++	[RK3588_PD_RGA30]	= DOMAIN_RK3588("rga30",   0x0, BIT(11), 0,       0x0, BIT(19), BIT(10), 0x0, 0,       0,       false),
++	[RK3588_PD_AV1]		= DOMAIN_RK3588("av1",     0x0, BIT(12), 0,       0x0, BIT(20), BIT(11), 0x0, BIT(9),  BIT(9),  false),
++	[RK3588_PD_VI]		= DOMAIN_RK3588("vi",      0x0, BIT(13), 0,       0x0, BIT(21), BIT(12), 0x0, BIT(10), BIT(10), false),
++	[RK3588_PD_FEC]		= DOMAIN_RK3588("fec",     0x0, BIT(14), 0,       0x0, BIT(22), BIT(13), 0x0, 0,       0,       false),
++	[RK3588_PD_ISP1]	= DOMAIN_RK3588("isp1",    0x0, BIT(15), 0,       0x0, BIT(23), BIT(14), 0x0, BIT(11), BIT(11), false),
++	[RK3588_PD_RGA31]	= DOMAIN_RK3588("rga31",   0x4, BIT(0),  0,       0x0, BIT(24), BIT(15), 0x0, BIT(12), BIT(12), false),
++	[RK3588_PD_VOP]		= DOMAIN_RK3588("vop",     0x4, BIT(1),  0,       0x0, BIT(25), BIT(16), 0x0, BIT(13) | BIT(14), BIT(13) | BIT(14), false),
++	[RK3588_PD_VO0]		= DOMAIN_RK3588("vo0",     0x4, BIT(2),  0,       0x0, BIT(26), BIT(17), 0x0, BIT(15), BIT(15), false),
++	[RK3588_PD_VO1]		= DOMAIN_RK3588("vo1",     0x4, BIT(3),  0,       0x0, BIT(27), BIT(18), 0x4, BIT(0),  BIT(16), false),
++	[RK3588_PD_AUDIO]	= DOMAIN_RK3588("audio",   0x4, BIT(4),  0,       0x0, BIT(28), BIT(19), 0x4, BIT(1),  BIT(17), false),
++	[RK3588_PD_PHP]		= DOMAIN_RK3588("php",     0x4, BIT(5),  0,       0x0, BIT(29), BIT(20), 0x4, BIT(5),  BIT(21), false),
++	[RK3588_PD_GMAC]	= DOMAIN_RK3588("gmac",    0x4, BIT(6),  0,       0x0, BIT(30), BIT(21), 0x0, 0,       0,       false),
++	[RK3588_PD_PCIE]	= DOMAIN_RK3588("pcie",    0x4, BIT(7),  0,       0x0, BIT(31), BIT(22), 0x0, 0,       0,       true),
++	[RK3588_PD_NVM]		= DOMAIN_RK3588("nvm",     0x4, BIT(8),  BIT(24), 0x4, 0,       0,       0x4, BIT(2),  BIT(18), false),
++	[RK3588_PD_NVM0]	= DOMAIN_RK3588("nvm0",    0x4, BIT(9),  0,       0x4, BIT(1),  BIT(23), 0x0, 0,       0,       false),
++	[RK3588_PD_SDIO]	= DOMAIN_RK3588("sdio",    0x4, BIT(10), 0,       0x4, BIT(2),  BIT(24), 0x4, BIT(3),  BIT(19), false),
++	[RK3588_PD_USB]		= DOMAIN_RK3588("usb",     0x4, BIT(11), 0,       0x4, BIT(3),  BIT(25), 0x4, BIT(4),  BIT(20), true),
++	[RK3588_PD_SDMMC]	= DOMAIN_RK3588("sdmmc",   0x4, BIT(13), 0,       0x4, BIT(5),  BIT(26), 0x0, 0,       0,       false),
+ };
  
- 	thermal->chip->control(thermal->regs, false);
+ static const struct rockchip_pmu_info px30_pmu = {
+@@ -1207,6 +1294,9 @@ static const struct rockchip_pmu_info rk3588_pmu = {
+ 	.req_offset = 0x10c,
+ 	.idle_offset = 0x120,
+ 	.ack_offset = 0x118,
++	.mem_pwr_offset = 0x1a0,
++	.chain_status_offset = 0x1f0,
++	.mem_status_offset = 0x1f8,
+ 	.repair_status_offset = 0x290,
  
--	clk_disable_unprepare(thermal->pclk);
--	clk_disable_unprepare(thermal->clk);
--
- 	return 0;
- }
+ 	.num_domains = ARRAY_SIZE(rk3588_pm_domains),
+diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
+index a84305091c4..dec38a845cf 100644
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -33,7 +33,7 @@
+ #include "ohci.h"
  
+ #define DRIVER_DESC "OHCI generic platform driver"
+-#define OHCI_MAX_CLKS 3
++#define OHCI_MAX_CLKS 4
+ #define hcd_to_ohci_priv(h) ((struct ohci_platform_priv *)hcd_to_ohci(h)->priv)
+ 
+ struct ohci_platform_priv {
 diff --git a/include/linux/mfd/rk808.h b/include/linux/mfd/rk808.h
 index 9af1f3105f8..78e167a9248 100644
 --- a/include/linux/mfd/rk808.h
@@ -4930,10 +7193,10 @@ index d3b4a3d4514..c6ef7d68eb9 100644
  int regulator_sync_voltage_rdev(struct regulator_dev *rdev);
  
 diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index b2022258f1e..0344c9cc817 100644
+index 97ee43f3c82..499f4a847fb 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
-@@ -1256,7 +1256,7 @@ config SND_SOC_RK3328
+@@ -1312,7 +1312,7 @@ config SND_SOC_RK3328
  
  config SND_SOC_RK817
  	tristate "Rockchip RK817 audio CODEC"

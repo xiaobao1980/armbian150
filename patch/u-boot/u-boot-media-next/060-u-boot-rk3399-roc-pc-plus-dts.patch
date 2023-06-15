@@ -1,13 +1,3 @@
---- a/arch/arm/dts/Makefile
-+++ b/arch/arm/dts/Makefile
-@@ -144,6 +144,7 @@
- 	rk3399-puma-haikou.dtb \
- 	rk3399-roc-pc.dtb \
- 	rk3399-roc-pc-mezzanine.dtb \
-+	rk3399-roc-pc-plus.dtb \
- 	rk3399-rock-pi-4a.dtb \
- 	rk3399-rock-pi-4b.dtb \
- 	rk3399-rock-pi-4c.dtb \
 
 new file mode 100644
 index 00000000..02a8f9f5

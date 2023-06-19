@@ -3181,19 +3181,6 @@ index 016814e1553..c0c8e526a1e 100644
  	help
  	  This driver supports RK805, RK809 and RK817, RK808 and RK818 crystal oscillator clock.
  	  These multi-function devices have two fixed-rate oscillators, clocked at 32KHz each.
-diff --git a/drivers/clk/clk-composite.c b/drivers/clk/clk-composite.c
-index edfa94641bb..3fab488704d 100644
---- a/drivers/clk/clk-composite.c
-+++ b/drivers/clk/clk-composite.c
-@@ -119,7 +119,7 @@ static int clk_composite_determine_rate(struct clk_hw *hw,
- 			if (ret)
- 				continue;
- 
--			rate_diff = abs(req->rate - tmp_req.rate);
-+			rate_diff = req->rate > tmp_req.rate ? req->rate - tmp_req.rate : tmp_req.rate - req->rate;
- 
- 			if (!rate_diff || !req->best_parent_hw
- 				       || best_rate_diff > rate_diff) {
 diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
 index a2c2b5203b0..6dba6ab30e1 100644
 --- a/drivers/clk/clk-divider.c

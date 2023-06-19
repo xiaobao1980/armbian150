@@ -363,7 +363,7 @@ family_tweaks() {
 
 	fi
 
-	if [[ $BRANCH != legacy && ($BOARD == rock-5b || $BOARD == khadas-edge2 || $BOARD == orangepi5) ]]; then
+	if [[ $BRANCH != legacy && ($BOARD == rock-5b || $BOARD == khadas-edge2 || $BOARD == orangepi5 || $BOARD == firefly-itx-3588j) ]]; then
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
 		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
 	fi

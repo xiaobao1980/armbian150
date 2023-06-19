@@ -343,7 +343,7 @@ family_tweaks() {
 		chroot $SDCARD /bin/bash -c "echo HandlePowerKey=ignore >> /etc/systemd/login.d"
 	fi
 
-	if [[ $BOARD == station* ]]; then
+	if [[ ($BOARD == station* || $BOARD == firefly-itx-3588j) ]]; then
 
 		cp -R $SRC/packages/blobs/rtl8723bt_fw/* $SDCARD/lib/firmware/rtl_bt/
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
@@ -363,7 +363,7 @@ family_tweaks() {
 
 	fi
 
-	if [[ $BRANCH != legacy && ($BOARD == rock-5b || $BOARD == khadas-edge2 || $BOARD == orangepi5 || $BOARD == firefly-itx-3588j) ]]; then
+	if [[ $BRANCH != legacy && ($BOARD == rock-5b || $BOARD == khadas-edge2 || $BOARD == orangepi5) ]]; then
 		cp -R $SRC/packages/blobs/station/firmware/* $SDCARD/lib/firmware/
 		install -m 755 $SRC/packages/blobs/station/station.sh $SDCARD/etc/initramfs-tools/hooks/station.sh
 	fi

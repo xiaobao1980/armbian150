@@ -123,7 +123,8 @@ function interactive_desktop_main_configuration() {
 			options+=("${config_filename}" "${config_name} configuration")
 		done
 
-		DESKTOP_ENVIRONMENT_CONFIG_NAME=$(show_menu "Choose the desktop environment config" "$backtitle" "Select the configuration for this environment.\nThese are sourced from ${desktop_environment_config_dir}" "${options[@]}")
+#		DESKTOP_ENVIRONMENT_CONFIG_NAME=$(show_menu "Choose the desktop environment config" "$backtitle" "Select the configuration for this environment.\nThese are sourced from ${desktop_environment_config_dir}" "${options[@]}")
+		DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"
 		unset options
 
 		if [[ -z $DESKTOP_ENVIRONMENT_CONFIG_NAME ]]; then
@@ -142,18 +143,20 @@ function interactive_desktop_main_configuration() {
 	if [[ $BUILD_DESKTOP == "yes" && -z ${DESKTOP_APPGROUPS_SELECTED+x} ]]; then
 
 		options=()
-		for appgroup_path in "${DESKTOP_APPGROUPS_DIR}/"*; do
-			appgroup="$(basename "${appgroup_path}")"
-			options+=("${appgroup}" "${appgroup^}" off)
-		done
+#		for appgroup_path in "${DESKTOP_APPGROUPS_DIR}/"*; do
+#			appgroup="$(basename "${appgroup_path}")"
+#			options+=("${appgroup}" "${appgroup^}" off)
+#		done
 
-		DESKTOP_APPGROUPS_SELECTED=$(
-			show_select_menu \
-				"Choose desktop softwares to add" \
-				"$backtitle" \
-				"Select which kind of softwares you'd like to add to your build" \
-				"${options[@]}"
-		)
+#		DESKTOP_APPGROUPS_SELECTED=$(
+#			show_select_menu \
+#				"Choose desktop softwares to add" \
+#				"$backtitle" \
+#				"Select which kind of softwares you'd like to add to your build" \
+#				"${options[@]}"
+#		)
+		DESKTOP_APPGROUPS_SELECTED="default"
+
 
 		unset options
 	fi

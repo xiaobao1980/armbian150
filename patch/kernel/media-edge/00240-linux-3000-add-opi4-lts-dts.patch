@@ -558,52 +558,52 @@ index 00000000000000..1fcd397ef69302
 +	i2c-scl-falling-time-ns = <30>;
 +	status = "okay";
 +
-+//	fusb302@22 {
-+//		compatible = "fcs,fusb302";
-+//		reg = <0x22>;
-+//		interrupt-parent = <&gpio1>;
-+//		interrupts = <RK_PA2 IRQ_TYPE_LEVEL_LOW>;
-+//		pinctrl-names = "default";
-+//		pinctrl-0 = <&chg_cc_int_l>;
-+//		vbus-supply = <&vbus_typec>;
++	fusb302@22 {
++		compatible = "fcs,fusb302";
++		reg = <0x22>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <RK_PA2 IRQ_TYPE_LEVEL_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&chg_cc_int_l>;
++		vbus-supply = <&vbus_typec>;
 +
-+//		typec_con: connector {
-+//			compatible = "usb-c-connector";
-+//			data-role = "host";
-+//			label = "USB-C";
-+//			op-sink-microwatt = <1000000>;
-+//			power-role = "dual";
++		typec_con: connector {
++			compatible = "usb-c-connector";
++			data-role = "host";
++			label = "USB-C";
++			op-sink-microwatt = <1000000>;
++			power-role = "dual";
 +//			sink-pdos =
 +//				<PDO_FIXED(5000, 2500, PDO_FIXED_USB_COMM)>;
 +//			source-pdos =
 +//				<PDO_FIXED(5000, 1400, PDO_FIXED_USB_COMM)>;
-+//			try-power-role = "sink";
-+//
-+//			ports {
-+//				#address-cells = <1>;
-+//				#size-cells = <0>;
-+//
-+//				port@0 {
-+//					reg = <0>;
-+//					typec_hs: endpoint {
++			try-power-role = "sink";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++					typec_hs: endpoint {
 +//						remote-endpoint = <&u2phy0_typec_hs>;
-+//					};
-+//				};
-+//				port@1 {
-+//					reg = <1>;
-+//					typec_ss: endpoint {
++					};
++				};
++				port@1 {
++					reg = <1>;
++					typec_ss: endpoint {
 +//						remote-endpoint = <&tcphy0_typec_ss>;
-+//					};
-+//				};
-+//				port@2 {
-+//					reg = <2>;
-+//					typec_dp: endpoint {
++					};
++				};
++				port@2 {
++					reg = <2>;
++					typec_dp: endpoint {
 +//						remote-endpoint = <&tcphy0_typec_dp>;
-+//					};
-+//				};
-+//			};
-+//		};
-+//	};
++					};
++				};
++			};
++		};
++	};
 +};
 +
 +&i2c7 {
@@ -819,14 +819,14 @@ index 00000000000000..1fcd397ef69302
 +	status = "okay";
 +};
 +
-+//&tcphy0 {
++&tcphy0 {
 +//	extcon = <&fusb0>;
-+//	status = "okay";
-+//};
++	status = "okay";
++};
 +
-+//&tcphy1 {
-+//	status = "okay";
-+//};
++&tcphy1 {
++	status = "okay";
++};
 +
 +&u2phy0 {
 +	status = "okay";

@@ -4895,20 +4895,6 @@ index 00000000000..6a60ec05d65
 +MODULE_AUTHOR("Finley Xiao <finley.xiao@rock-chips.com>");
 +MODULE_DESCRIPTION("Rockchip cpufreq driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/irqchip/irq-gic-v3-its.c b/drivers/irqchip/irq-gic-v3-its.c
-index 1994541eaef..034ece9ac47 100644
---- a/drivers/irqchip/irq-gic-v3-its.c
-+++ b/drivers/irqchip/irq-gic-v3-its.c
-@@ -4727,7 +4727,8 @@ static bool __maybe_unused its_enable_rk3588001(void *data)
- {
- 	struct its_node *its = data;
- 
--	if (!of_machine_is_compatible("rockchip,rk3588"))
-+	if (!of_machine_is_compatible("rockchip,rk3588") &&
-+	    !of_machine_is_compatible("rockchip,rk3588s"))
- 		return false;
- 
- 	its->flags |= ITS_FLAGS_FORCE_NON_SHAREABLE;
 diff --git a/drivers/media/platform/verisilicon/rockchip_vpu_hw.c b/drivers/media/platform/verisilicon/rockchip_vpu_hw.c
 index 816ffa905a4..f9752767078 100644
 --- a/drivers/media/platform/verisilicon/rockchip_vpu_hw.c

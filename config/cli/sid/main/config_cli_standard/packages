@@ -28,7 +28,6 @@ nfs-common
 python3-distutils
 python3-lib2to3
 rng-tools
-selinux-policy-default
 sudo
 unattended-upgrades
 unicode-data
